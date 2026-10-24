@@ -6,6 +6,11 @@ This document separates the **current implementation** from the **target
 architecture**. Planned components are not represented as existing code.
 Implementation status and work sequence live in
 [the project roadmap](../PROJECT_ROADMAP.md).
+Development is gated by release keys **key101-key110**; each key must pass its
+acceptance checks before the next begins. The
+[topic tracker](TOPIC_TRACKER.md) records learning progress, and the
+[learning guide](learning-guide.md) expands concepts in the order their feature
+is implemented.
 
 ## Product vision
 

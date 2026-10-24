@@ -41,6 +41,384 @@ File names shown for future features describe intended code locations; they may
 change as implementation evolves. Update this table when the repository
 structure is established.
 
+## Required teaching format for every topic
+
+Each detailed topic card in this guide uses the same structure:
+
+1. **Definition** — what the concept means in plain, technically accurate
+   language.
+2. **Why we use it** — the problem it solves in this application.
+3. **How we use it** — the specific design or implementation steps.
+4. **Project example** — an actual snippet/file once implemented; until then,
+   label examples as proposed rather than pretending planned code exists.
+5. **Trade-offs and alternatives** — disadvantages, misuse cases, and another
+   reasonable choice.
+6. **Interview-ready answer** — a concise explanation plus likely follow-up
+   questions.
+7. **Check your understanding** — a practical question/task; mark the tracker
+   topic Done only after you can answer it and connect it to evidence.
+
+The topic inventory is in [TOPIC_TRACKER.md](TOPIC_TRACKER.md). To keep examples
+accurate and useful, detailed cards are expanded just before or during their
+release key. This guide includes the **key101 foundation cards** now; later
+keys add the same full card format for their topics. The tracker lists all 120
+topics from the outset, but listing a topic is not the same as having completed
+its lesson.
+
+The release sequence and its completion gates are in the
+[key101-key110 roadmap](../PROJECT_ROADMAP.md#release-train-gated-feature-keys).
+Do not start a later key until the prior key's exit gate is met and its
+documentation and tracker are updated.
+
+## key101 foundation: tested code-explanation API
+
+### Request-to-provider-to-HTTP response flow
+
+```mermaid
+sequenceDiagram
+    participant Client as HTTP client
+    participant Controller as ChatController
+    participant Service as IChatApiService
+    participant Provider as Ollama/OpenAI adapter
+    participant Model as Model endpoint
+    Client->>Controller: POST /api/chat/explain + CodeRequest
+    Controller->>Controller: Bind and validate request
+    Controller->>Service: GetExplanationAsync(code, cancellationToken)
+    Service->>Provider: Send provider-neutral request
+    Provider->>Model: HTTP request with timeout/token
+    Model-->>Provider: Completion or provider error
+    Provider-->>Service: Application outcome
+    Service-->>Controller: Result/outcome
+    Controller-->>Client: HTTP status + stable JSON contract
+```
+
+The current code is an early implementation of this flow. Provider-neutral
+request/outcome types and fully consistent error mapping are key101 work, not
+assumptions about the current implementation.
+
+### Topic card: REST endpoint and HTTP semantics (tracker T021)
+
+**Definition.** REST is a way to design a network API around resources and
+representations, using HTTP methods/statuses consistently. A chat action can
+also be modeled as an operation endpoint; the important part is a stable,
+understandable contract and correct HTTP behavior.
+
+**Why we use it.** Angular, Swagger, automated tests, and future clients need a
+clear way to submit code and understand success, validation errors, and provider
+failures.
+
+**How we use it.** Expose a route such as `POST /api/chat/explain`; bind a
+request DTO; return a documented success representation; use `400` for invalid
+client input, `401` for absent/invalid authentication after auth is added,
+`403` for insufficient permission, `429` for rate limits, and a safe server or
+gateway status for provider failures. Do not return `200` with an error hidden
+in the response body.
+
+**Current project example.** [ChatController.cs](../Controllers/ChatController.cs)
+has a controller route and an `explain` action. The implementation calls the
+service and uses its returned status. key101 will stabilize the result-to-HTTP
+mapping and document the contract.
+
+```csharp
+[HttpPost("explain")]
+public async Task<IActionResult> Explain(
+    [FromBody] CodeRequest request,
+    CancellationToken cancellationToken)
+{
+    var result = await _chatApiService.GetExplanationAsync(
+        request.Code, cancellationToken);
+    return StatusCode(result.StatusCode, result);
+}
+```
+
+**Trade-offs and alternatives.** A controller can return `IActionResult` for
+flexible status mapping, or a typed `ActionResult<T>` when the response
+contract is fixed. A `POST` action is reasonable for a completion request; do
+not force it into CRUD-shaped routes. Returning provider status codes directly
+couples the public API to vendors, so map provider errors to application-owned
+outcomes.
+
+**Interview-ready answer.** “I define an HTTP contract independently of the
+provider protocol. The controller owns HTTP status mapping; the service returns
+an application outcome. That keeps provider changes from changing the client
+contract and lets us test status behavior at the API boundary.”
+
+**Check your understanding.** Explain why a malformed request should not return
+`200`, and distinguish `400`, `401`, `403`, `429`, and a provider failure.
+
+### Topic card: DTOs and API contracts (tracker T023)
+
+**Definition.** A Data Transfer Object (DTO) is an explicit shape used to move
+data across a boundary, such as JSON between Angular and ASP.NET Core. It is not
+the same thing as a database entity or provider SDK request.
+
+**Why we use it.** Separate DTOs let us evolve database and AI-provider
+internals without accidentally changing the public API or exposing fields the
+client should not see.
+
+**How we use it.** Define a request contract for code and a response contract
+for the explanation/error. Keep secrets, database navigation properties, raw
+provider payloads, and internal exceptions out of these types. Validate at the
+API boundary and version the contract deliberately.
+
+**Current project example.** `CodeRequest` is currently declared at the bottom
+of [ChatController.cs](../Controllers/ChatController.cs). key101 moves public
+contracts into a dedicated API contracts location and adds bounds/validation.
+The shared [Result.cs](../Responses/Result.cs) is the current response envelope.
+
+```csharp
+public record CodeRequest(string Code);
+```
+
+**Trade-offs and alternatives.** Records provide concise value-based models but
+do not automatically make every DTO correct or validate it. A separate DTO per
+endpoint can create mapping work; reusing database entities saves lines but
+couples layers and risks data exposure. Prefer boundary-specific types when
+their contracts have different lifetimes or responsibilities.
+
+**Interview-ready answer.** “DTOs isolate transport contracts from domain,
+persistence, and vendor models. I validate them at the boundary and map them to
+application inputs so schema changes do not ripple through every layer.”
+
+**Check your understanding.** Name two fields that belong in an AI provider
+request but should not appear in the public chat response.
+
+### Topic card: Validation and input limits (tracker T024)
+
+**Definition.** Validation checks whether input satisfies syntactic and
+business rules before expensive or stateful work begins. A size limit bounds
+resource consumption even when the input is otherwise valid.
+
+**Why we use it.** Empty, malformed, or extremely large source code can waste
+inference cost, exceed model context, or make the API vulnerable to resource
+exhaustion.
+
+**How we use it.** Validate required fields, maximum length, allowed options,
+and request-body size on the server. Return a stable client error before making
+the model call. Angular can mirror simple checks for user experience, but the
+API remains authoritative.
+
+**Current project example.** The current `CodeRequest` has no visible length
+constraint. key101 adds server validation and tests for missing/blank and
+over-limit values.
+
+```csharp
+// Illustrative key101 direction, not yet an implemented DTO:
+public sealed record ExplainCodeRequest
+{
+    [System.ComponentModel.DataAnnotations.Required]
+    [System.ComponentModel.DataAnnotations.MaxLength(20_000)]
+    public required string Code { get; init; }
+}
+```
+
+**Trade-offs and alternatives.** Data annotations are simple for basic rules;
+dedicated validators are useful for complex or reusable rules. Duplicating
+validation in Angular improves UX but duplicates logic, so keep server rules
+authoritative. Choose limits from context/token and cost requirements, not an
+arbitrary number.
+
+**Interview-ready answer.** “I validate at the trust boundary before model
+inference, enforce both content and transport limits, and return actionable
+client errors. Client-side validation is convenience, never authorization or
+security.”
+
+**Check your understanding.** Where would you enforce a maximum request body
+size, and why should an Angular-only length check not be trusted?
+
+### Topic card: Async I/O and cancellation (tracker T011/T012)
+
+**Definition.** `async`/`await` lets a method suspend while an I/O operation is
+pending instead of blocking a request thread. A `CancellationToken` communicates
+that the caller no longer needs the work.
+
+**Why we use it.** Model calls can take seconds. Blocking threads for every
+active request limits server throughput. If a browser disconnects, continuing
+an expensive inference may waste compute and money.
+
+**How we use it.** Use asynchronous HTTP APIs, accept a token at the endpoint,
+and pass it through each service and `HttpClient` call. Distinguish caller
+cancellation from provider timeout; do not catch cancellation and return a
+success-shaped result.
+
+**Current project example.** The controller accepts `CancellationToken` and
+passes it to `GetExplanationAsync`; [OllamaChatApiService.cs](../Services/OllamaChatApiService.cs)
+passes it to `PostAsync` and response body reading.
+
+```csharp
+using var response = await client.PostAsync(
+    endpoint, content, cancellationToken);
+```
+
+**Trade-offs and alternatives.** Async does not make model inference faster; it
+improves thread utilization during I/O. Cancellation is cooperative and may not
+stop remote work already accepted by a provider. Use a finite timeout/deadline
+as well as cancellation; avoid `.Result`/`.Wait()` on async operations.
+
+**Interview-ready answer.** “I propagate the request cancellation token through
+the full I/O call chain and configure a separate timeout budget. Cancellation
+means the caller disconnected; timeout means the operation exceeded our
+service limit, so I observe and handle them distinctly.”
+
+**Check your understanding.** Trace cancellation from controller to the remote
+HTTP request. What can happen if the provider has already started generation?
+
+### Topic card: Interfaces, dependency injection, and lifetimes (tracker T018)
+
+**Definition.** An interface describes a behavior contract; dependency
+injection supplies an implementation to a consumer. Lifetime determines
+whether the container creates a new instance per request, per scope, or for the
+application lifetime.
+
+**Why we use it.** The controller should not know whether an explanation comes
+from Ollama, OpenAI, or a test fake. DI centralizes composition and allows
+automated tests to replace external boundaries.
+
+**How we use it.** Inject `IChatApiService` into the controller and register the
+selected implementation in `Program.cs`. Select lifetime according to state
+and dependencies; do not inject a scoped database context into a singleton.
+
+**Current project example.** [IChatApiService.cs](../Services/IChatApiService.cs)
+defines the chat contract, [ChatController.cs](../Controllers/ChatController.cs)
+depends on the interface, and [Program.cs](../Program.cs) currently registers
+`OllamaChatApiService` as scoped.
+
+```csharp
+builder.Services.AddScoped<IChatApiService, OllamaChatApiService>();
+```
+
+**Trade-offs and alternatives.** Interfaces can become unnecessary indirection
+if they have only one implementation and no seam is needed. A singleton is
+appropriate only for thread-safe, application-wide state; a transient service
+may be wasteful or unsafe if it owns expensive resources. `HttpClientFactory`
+is preferred over creating/discarding raw clients for every call.
+
+**Interview-ready answer.** “I use DI at genuine substitution boundaries, such
+as external AI providers. I select lifetimes based on thread safety and
+dependency lifetimes, and test orchestration using a fake implementation
+without calling a real model.”
+
+**Check your understanding.** Why is a singleton service that captures a
+scoped `DbContext` invalid, and what lifetime does the current chat service use?
+
+### Topic card: Middleware and centralized exception handling (tracker T025/T026)
+
+**Definition.** Middleware is an ordered request/response pipeline. Exception
+handling middleware can catch unhandled downstream exceptions and create a
+consistent safe response.
+
+**Why we use it.** Without a central policy, endpoints may expose stack traces,
+return inconsistent errors, or duplicate try/catch logic.
+
+**How we use it.** Register the exception handler and place it early enough in
+the pipeline to cover downstream middleware/endpoints. Log internal details
+server-side with redaction; return a stable public message and correct status.
+Expected validation/provider failures should be represented deliberately,
+rather than relying on a broad catch to hide all programming errors.
+
+**Current project example.** [Program.cs](../Program.cs) registers and enables
+`ApiExceptionHandler`; [ApiExceptionHandler.cs](../Middleware/ApiExceptionHandler.cs)
+logs an unhandled error and writes a `Result`. key101 verifies that this does
+not conflict with deliberate application outcomes.
+
+```csharp
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddProblemDetails();
+app.UseExceptionHandler();
+```
+
+**Trade-offs and alternatives.** Global handling is a safety net, not a reason
+to catch every exception in a service and convert it to `500`. RFC Problem
+Details and a custom `Result` envelope are both possible; choose one public
+error contract and document it.
+
+**Interview-ready answer.** “The global handler is for unexpected exceptions;
+known validation and provider failures are mapped intentionally. I keep
+internal details in protected logs and return a stable, non-sensitive API
+error.”
+
+**Check your understanding.** Which exceptions should become validation errors,
+which should remain unexpected, and how does middleware order affect handling?
+
+### Topic card: Configuration and secret separation (tracker T019/T069)
+
+**Definition.** Configuration is environment-dependent application behavior
+such as endpoint and model selection. A secret is sensitive configuration such
+as an API key and needs stricter storage/access controls.
+
+**Why we use it.** The same build should run locally, in CI, and in hosting
+without recompilation. Credentials must not be committed or shipped to
+Angular.
+
+**How we use it.** Use safe defaults for non-secret values, typed validated
+Options for related settings, and User Secrets/environment/secret stores for
+credentials. Fail clearly when required production settings are missing.
+
+**Current project example.** [appsettings.json](../appsettings.json) currently
+contains the local Ollama endpoint and model name. A hosted provider key should
+not be added there as a real value.
+
+```json
+{
+  "Ollama": {
+    "Endpoint": "http://localhost:11434/v1/chat/completions",
+    "Model": "llama3.2"
+  }
+}
+```
+
+**Trade-offs and alternatives.** Environment variables work across many hosts
+but need secure provisioning and rotation. A secret manager gives access
+control/audit integration but adds cloud dependency/cost. Never treat a
+frontend environment file as secret storage; browser bundles are public.
+
+**Interview-ready answer.** “I separate non-secret configuration from
+credentials, validate settings at startup, and use a local secret store during
+development and managed identity/secret management in hosting. The Angular
+bundle never receives model-provider credentials.”
+
+**Check your understanding.** Which Ollama settings are safe defaults, and
+where would you put an OpenAI key locally and in Azure?
+
+### Topic card: Unit tests, integration tests, and provider fakes (tracker T071-T073)
+
+**Definition.** Unit tests check a small behavior in isolation. Integration
+tests exercise collaborating application components. A fake transport supplies
+controlled HTTP responses without using the real provider.
+
+**Why we use it.** Hosted inference is slow, costly, nondeterministic, and
+unavailable in CI. A test should verify our contract and error handling without
+depending on model wording or network availability.
+
+**How we use it.** Unit-test validation/orchestration with a fake service. Test
+provider serialization and parsing through a fake `HttpMessageHandler`. Use an
+API test host for routing, serialization, middleware, and status behavior.
+Reserve live-model calls for a clearly labeled manual smoke test.
+
+**Current project example.** The project has no test project yet. key101 adds
+the first test suite before moving to the next release key.
+
+```csharp
+// Conceptual fake-handler test:
+var handler = new StubHttpMessageHandler(
+    HttpStatusCode.OK,
+    """{"choices":[{"message":{"content":"Explanation"}}]}""");
+```
+
+**Trade-offs and alternatives.** Excessive mocking can test implementation
+details instead of behavior. A real provider smoke test catches configuration
+issues but is not deterministic and must not be required for every PR.
+Testcontainers or a disposable SQL instance is more representative than EF
+InMemory for database behavior.
+
+**Interview-ready answer.** “I isolate external inference behind a transport
+seam. Automated tests assert request shape, parsing, status mapping, and
+cancellation using deterministic responses; a separate opt-in smoke test checks
+live provider connectivity.”
+
+**Check your understanding.** Which assertions should not compare exact
+AI-generated prose, and what does a fake HTTP handler let you verify?
+
 ## Important concepts, with practical examples
 
 ### C# and .NET

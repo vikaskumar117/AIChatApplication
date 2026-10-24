@@ -12,6 +12,10 @@ features.
 - [Architecture overview](docs/architecture.md) — current implementation,
   target diagrams, request flows, security boundaries, and hosting topologies.
 - [Learning guide](docs/learning-guide.md) — concepts mapped to features and
-  code responsibilities.
+  code responsibilities, using definition/why/how/trade-off/project-example/
+  interview/check-understanding topic cards.
+- [Topic tracker](docs/TOPIC_TRACKER.md) — 120 trackable topics with status,
+  evidence, release-key mapping, and a manually maintained completion
+  percentage.
 - [Architecture Decision Records](docs/decisions/README.md) — proposed choices,
   alternatives, and open questions.

@@ -48,6 +48,484 @@ SAML may be integrated at the identity-provider boundary (for example, an
 enterprise identity provider federating upstream with SAML and issuing OIDC
 tokens to this application); do not build an identity provider into the app.
 
+## Release train: gated feature keys
+
+This is the authoritative implementation order. The earlier Phase 0-12 sections
+are a topic/capability reference; they are not a second release numbering
+system. Release IDs are stable: **key101** through **key110**. A key is not
+complete when code merely compiles: finish its acceptance checks, tests,
+documentation, review, and demo before starting the next key. Testing,
+security, and documentation remain cross-cutting even when they have a
+dedicated later key.
+
+For every key:
+
+1. Create a feature branch from the latest `dev`.
+2. Confirm the key's outcome, dependencies, scope, and acceptance criteria.
+3. Implement the smallest end-to-end slice that meets the outcome.
+4. Add/update tests before relying on manual testing alone.
+5. Update architecture/learning/tracker docs as the implementation changes.
+6. Run the key's required checks; fix failures before opening a PR.
+7. Open a PR to `dev`; review code, security, tests, cost, and docs.
+8. Merge only after checks and review pass; demo the result and mark the tracker.
+9. Start the next key only after recording any follow-up work as an explicit
+   deferred task.
+
+### key101 — Reliable code-explanation API (first release)
+
+**Goal:** A developer can run the API locally, submit code, receive a consistent
+explanation or actionable error, and verify the feature without a live hosted AI
+account. Use Ollama locally when available; tests must use fake HTTP responses
+and must not require Ollama to be running.
+
+**Dependencies:** Existing ASP.NET Core API and current AI service.
+
+**Small technical tasks**
+
+1. Record the current endpoint route, request JSON, success JSON, invalid-input
+   behavior, and provider-failure behavior in a checked-in API example.
+2. Confirm the supported .NET SDK and document the exact restore/build/run
+   commands for a clean clone.
+3. Check configuration precedence: checked-in defaults, Development settings,
+   environment variables, and User Secrets.
+4. Remove any placeholder or real credential from tracked configuration; add
+   safe example values and document secret setup.
+5. Define the request DTO in an API contracts location rather than beside the
+   controller.
+6. Add required-code validation and an explicit maximum input length.
+7. Define the public success/error response contract and keep its JSON property
+   names stable.
+8. Decide and document whether errors use the shared `Result` envelope or
+   Problem Details; do not accidentally mix contracts.
+9. Define a provider-neutral application outcome; keep HTTP status selection
+   at the API boundary rather than letting arbitrary provider status codes
+   dictate HTTP responses.
+10. Keep the controller limited to request binding, application-service call,
+    and outcome-to-HTTP mapping.
+11. Add OpenAPI summary, request schema, success schema, and documented
+    validation/provider error responses.
+12. Make downstream HTTP calls respect the request cancellation token.
+13. Configure a finite provider request timeout and document its relationship
+    to the API request deadline.
+14. Parse the provider response defensively; reject missing, empty, or
+    incorrectly typed completion content as a provider failure.
+15. Log provider failures with structured context, but never log API keys,
+    bearer tokens, or submitted source code by default.
+16. Return a safe public error message; expose internal exception detail only
+    under an explicitly controlled local-development policy.
+17. Add unit tests for valid input, blank input, too-long input, valid provider
+    response, malformed provider response, non-success HTTP response, timeout,
+    and caller cancellation.
+18. Use a fake `HttpMessageHandler` or equivalent transport seam so unit tests
+    are deterministic and do not call Ollama/OpenAI.
+19. Add an API integration test for route, JSON binding, status code, response
+    shape, and exception middleware behavior.
+20. Add manual smoke-test requests and state clearly which one requires Ollama
+    and a downloaded model.
+21. Run formatter/analyzers, focused tests, full build, and `git diff --check`.
+22. Update the architecture guide with actual request flow and update the
+    learning guide with the real DTO/controller/service code paths.
+
+**Exit gate:** clean restore/build, all focused and integration tests pass,
+Swagger matches observed responses, valid and invalid requests are demoed, and
+no provider call is needed to run automated tests.
+
+### key102 — Configurable multi-model provider system
+
+**Goal:** Switch between Ollama and OpenAI-compatible providers through
+validated server configuration without changing controller or application
+orchestration code.
+
+**Dependencies:** key101 response and application boundaries are stable.
+
+**Small technical tasks**
+
+1. List provider-neutral capabilities required by the use case: messages,
+   model, generation limits, completion text, usage metadata if available.
+2. Define immutable application request/completion types; exclude HTTP-specific
+   headers and JSON payloads.
+3. Define an AI completion interface in the application-facing layer.
+4. Move Ollama URL, model, and timeout to a typed options class.
+5. Move OpenAI endpoint, model, timeout, and API key configuration to a typed
+   options class.
+6. Validate required settings and URI formats at application startup.
+7. Register typed/named `HttpClient` instances with explicit timeouts.
+8. Refactor Ollama serialization/parsing into its provider adapter.
+9. Refactor OpenAI-compatible serialization/parsing into its provider adapter.
+10. Normalize provider HTTP errors to safe application-level failures while
+    preserving useful internal log context.
+11. Create a provider selector that resolves only configured, registered
+    providers.
+12. Reject unknown provider names during startup instead of silently falling
+    back to another model.
+13. Register providers through DI; keep controllers unaware of concrete
+    provider types.
+14. Prevent credentials from being written to logs, exceptions, JSON responses,
+    frontend settings, or source control.
+15. Decide which generation settings are common and which remain optional
+    provider capabilities.
+16. Add provider adapter tests for request body, endpoint, headers, response
+    parsing, non-success status, malformed response, timeout, and cancellation.
+17. Add selector tests for each valid provider and invalid configuration.
+18. Add a local smoke-test checklist for Ollama and an opt-in checklist for
+    hosted inference.
+19. Record provider trade-offs (latency, quality, privacy, cost, model license)
+    in a decision record.
+20. Update API/architecture/learning docs to reflect actual provider-selection
+    code.
+
+**Exit gate:** tests prove both adapters satisfy the same application contract;
+changing one configuration value switches provider; invalid config fails
+clearly; no hosted provider secret is required for the local test suite.
+
+### key103 — Angular chat single-page application
+
+**Goal:** A user can submit code from a browser, see the AI response, and
+understand loading, validation, and failure states. This is a local learning
+client; do not expose it publicly until authentication and security gates pass.
+
+**Dependencies:** key101 API contract; key102 recommended for provider stability.
+
+**Small technical tasks**
+
+1. Scaffold Angular in a dedicated frontend directory with a supported Node
+   version recorded in the repository.
+2. Enable TypeScript strict mode and record package manager/install commands.
+3. Create the root application shell and a responsive chat page.
+4. Define TypeScript API request/response types matching the API contract.
+5. Add environment-specific API base URL configuration with no secrets.
+6. Implement a typed Angular API service using `HttpClient`.
+7. Build a reactive code-input form with required and length validation.
+8. Disable duplicate submissions while a request is in flight.
+9. Add an accessible loading indicator and announce relevant status changes.
+10. Render model response as plain text by default.
+11. If Markdown is required, select a maintained renderer and sanitize output;
+    do not bypass Angular's security APIs to inject raw model HTML.
+12. Display validation errors next to fields and provider/network errors in a
+    recoverable message area.
+13. Add retry behavior only for safe client actions; do not automatically
+    resubmit expensive AI calls without user intent.
+14. Configure a development proxy or an explicit local CORS origin.
+15. Confirm production CORS is not widened just to make local development work.
+16. Add unit tests for valid form, invalid form, success, error, loading state,
+    and repeated clicks.
+17. Add one browser-level test for submit-to-response using a controlled fake
+    API.
+18. Verify keyboard-only interaction, labels, focus, contrast, and mobile
+    layout.
+19. Add frontend lint/build/test commands to the README and CI plan.
+20. Update architecture and learning docs with actual component and service
+    paths.
+
+**Exit gate:** local Angular UI calls the local API; success/error/loading
+behavior is tested; no secrets or provider endpoints appear in the browser
+bundle; key flows are keyboard accessible.
+
+### key104 — OIDC sign-in and API authorization
+
+**Goal:** A user signs in through a trusted identity provider, and the API
+validates access tokens before granting protected access. SAML is supported
+through enterprise federation when required, not custom protocol code.
+
+**Dependencies:** key101 API contract and key103 Angular client. Select an
+identity provider before implementation; record cost/terms in an ADR.
+
+**Small technical tasks**
+
+1. Compare identity providers for local development, Angular OIDC support,
+   API JWT validation, free-tier limits, and production pricing.
+2. Create separate client/resource registrations for SPA and API where the
+   provider requires them.
+3. Configure exact redirect/logout URLs for local development.
+4. Configure authorization-code flow with PKCE using a maintained Angular OIDC
+   library.
+5. Configure API JWT bearer validation for issuer, audience, signature,
+   lifetime, and HTTPS metadata.
+6. Add a protected API endpoint/policy and verify anonymous requests return
+   `401`.
+7. Verify authenticated-but-forbidden requests return `403`.
+8. Define scopes/roles only for actual authorization needs.
+9. Derive the application user key from validated token claims; never accept
+   ownership solely from a request body/query string.
+10. Implement a current-user abstraction so application code does not parse
+    HTTP claims everywhere.
+11. Add tests for missing, malformed, expired, wrong-issuer, wrong-audience,
+    insufficient-scope, and valid tokens.
+12. Add Angular sign-in, signed-in, signed-out, expired-session, and
+    unauthorized UI states.
+13. Attach access tokens only to the intended API origin using the OIDC
+    library/interceptor.
+14. Review and document token storage, refresh, logout, XSS, and CSRF trade-offs.
+15. Ensure browser code never receives provider API keys or client secrets.
+16. For SAML requirements, configure identity-provider federation upstream and
+    continue to let the application consume OIDC/JWT where possible.
+17. Test that direct API calls cannot bypass UI route guards.
+18. Update the identity ADR with actual provider decision, settings, and
+    limitations.
+
+**Exit gate:** API denies anonymous requests, tests enforce token validation,
+and an authenticated user can use the Angular client without trusting client-
+supplied identity values.
+
+### key105 — SQL conversation persistence and private history
+
+**Goal:** Authenticated users can save and retrieve their own conversations;
+conversation context is loaded from SQL and sent to the selected AI provider
+within a bounded context budget.
+
+**Dependencies:** key104 identity and stable key102 provider contract.
+
+**Small technical tasks**
+
+1. Select initial SQL engine and record local/hosted options and cost.
+2. Define retention, export, and deletion requirements before storing chats.
+3. Model Conversation, Message, timestamps, provider/model metadata, and
+   external user subject.
+4. Define primary keys, foreign keys, required fields, max lengths, and
+   ownership relation.
+5. Add EF Core packages and configure `DbContext`.
+6. Add indexes for owner-based list/detail access and message ordering.
+7. Create and review the first EF migration.
+8. Document local database creation and migration commands.
+9. Define repository interfaces around actual conversation use cases.
+10. Ensure repository contracts do not leak `DbContext`, EF entities, or
+    `IQueryable`.
+11. Implement EF Core repositories with parameterized queries.
+12. Use no-tracking for read-only results when appropriate and verify query
+    behavior.
+13. Add repository integration tests against the actual SQL provider or a
+    disposable SQL instance.
+14. Add create conversation and append message application use cases.
+15. Add owner-filtered history endpoints with bounded pagination.
+16. Add owner checks to every read, update, and delete path.
+17. Build prompt context from a documented number/token budget of recent
+    messages.
+18. Define behavior when the history exceeds the model context window.
+19. Define transaction and simultaneous append/concurrency behavior.
+20. Add retention/deletion tests and ensure deleted data is not reloaded into
+    model context.
+21. Inspect generated SQL and query plans for history/list queries.
+22. Explain repository portability limitations; document what a MongoDB
+    implementation would need to change.
+23. Update architecture diagram and learning guide with concrete persistence
+    paths and migration commands.
+
+**Exit gate:** migrations apply to an empty local database; authenticated users
+can create/list/read only their own histories; integration tests prove
+isolation and pagination; model prompt context is bounded.
+
+### key106 — API, frontend, and AI security hardening
+
+**Goal:** The application safely handles untrusted users/content and limits
+resource and model-cost abuse before any public deployment.
+
+**Dependencies:** key104 identity and key105 ownership rules.
+
+**Small technical tasks**
+
+1. Draw a threat model covering browser, identity provider, API, database,
+   provider, logs, and future document ingestion.
+2. Create an allowlist of development/production Angular origins.
+3. Verify CORS does not use permissive wildcard origins with credentials.
+4. Add request body size and input length limits.
+5. Add per-user authenticated rate limits.
+6. Add an appropriate unauthenticated/IP-partitioned rate-limit policy for
+   endpoints that remain public.
+7. Return and test `429` behavior and retry guidance.
+8. Add provider/model usage quotas or a clearly documented local-only mode.
+9. Put local credentials in User Secrets/environment settings and check tracked
+   config for credentials.
+10. Configure hosted secret storage and managed identity where supported.
+11. Run secret scanning and dependency vulnerability checks in CI.
+12. Redact prompt, source code, access tokens, and provider credentials from
+    logs/traces by default.
+13. Document what code/chat content is sent to hosted providers and retention
+    implications.
+14. Treat user code and any retrieved content as untrusted prompt material.
+15. Ensure model output cannot directly run code, SQL, shell commands, or
+    privileged tools.
+16. Validate model-generated structured output before application use.
+17. Verify Angular renders generated content safely.
+18. Add tests for rate limits, CORS, input limits, authorization ownership,
+    sensitive logging, and safe failure behavior.
+19. Add user-facing privacy/retention information before public demo.
+20. Update threat model, architecture security boundaries, and learning cards.
+
+**Exit gate:** documented threat model mitigations have tests; no secrets are
+committed or shipped to the browser; rate limits and ownership controls are
+verified.
+
+### key107 — Quality engineering and continuous integration
+
+**Goal:** Each pull request receives repeatable build, test, security, and
+documentation validation.
+
+**Dependencies:** Start the relevant tests in key101 and keep expanding them in
+every prior key.
+
+**Small technical tasks**
+
+1. Inventory API, provider, frontend, persistence, and security test projects.
+2. Set deterministic test configuration and avoid real external AI calls.
+3. Add unit tests for application validation, context selection, provider
+   selection, and error translation.
+4. Add fake transport tests for every provider adapter branch.
+5. Add API integration tests for routing, JSON, middleware, auth, and status
+   mapping.
+6. Add database integration tests for migrations, ownership, pagination, and
+   concurrency behavior.
+7. Add Angular component/service tests for form and state behavior.
+8. Add Playwright end-to-end tests for the most important user journey.
+9. Configure CI restore/install, build, lint/format, test, and artifact output.
+10. Add dependency and secret scanning; document false-positive handling.
+11. Configure required status checks before merging PRs.
+12. Add PR checklist covering code, API compatibility, security, database
+    migrations, tests, docs, and cost.
+13. Publish test results and make failures actionable.
+14. Verify CI from a clean branch with no local files or secrets.
+15. Add a test coverage baseline; use coverage to find untested behavior, not
+    as the only quality target.
+16. Record test commands by backend/frontend test type in README.
+
+**Exit gate:** clean checkout CI passes; core flows and security boundaries are
+covered; merges cannot bypass required checks.
+
+### key108 — RAG knowledge feature with measurable quality
+
+**Goal:** Users can ask questions grounded in authorized knowledge documents
+and receive relevant citations.
+
+**Dependencies:** key105 ownership and persistence, key106 security rules, and
+an explicit decision that grounded knowledge is in product scope.
+
+**Small technical tasks**
+
+1. Choose one supported document source and file type for the first slice.
+2. Define upload permission, document owner, version, and deletion lifecycle.
+3. Enforce file size, file type, and content extraction limits.
+4. Create ingestion status and failure reporting.
+5. Extract plain text with a safe, tested parser.
+6. Define chunk metadata including source ID and page/section where available.
+7. Add chunking tests for boundaries, empty content, and large documents.
+8. Select embedding provider/model and calculate cost/privacy impact.
+9. Select a local/hosted vector or search backend and record trade-offs.
+10. Persist embeddings with owner/tenant access metadata.
+11. Retrieve only authorized chunks and cap count and token budget.
+12. Add source references to the application completion contract.
+13. Return a safe insufficient-evidence outcome when retrieval is weak.
+14. Create a small versioned evaluation dataset for retrieval and groundedness.
+15. Measure retrieval relevance, citation correctness, and answer support.
+16. Test prompt injection embedded in a document.
+17. Test that users cannot retrieve documents owned by another user.
+18. Ensure deletion removes content from future retrieval.
+19. Add re-indexing behavior for updated documents.
+20. Document embedding/index cost, data retention, and source attribution.
+
+**Exit gate:** answers cite authorized documents; retrieval behavior is evaluated;
+deletion and tenant-isolation tests pass; no result is claimed as grounded
+without source evidence.
+
+### key109 — Hosting and deployment
+
+**Goal:** Deploy the tested application to a chosen environment with repeatable
+configuration, secure secrets, health checks, and cost controls.
+
+**Dependencies:** key107 CI and key106 security; key105 database migration
+strategy.
+
+**Small technical tasks**
+
+1. Choose a deployment target and record why it fits runtime, learning, budget,
+   and availability requirements.
+2. Compare local-only, Azure free allowances, static frontend plus API host, and
+   IIS/self-hosted options.
+3. Calculate expected cost for compute, SQL, identity, model inference,
+   telemetry, domain, storage, and egress.
+4. Confirm runtime/OS/region and free-tier eligibility from current official
+   documentation.
+5. Create separate development/staging/production configuration values.
+6. Create infrastructure-as-code for required cloud resources when using Azure.
+7. Configure Angular build/deployment and the correct API URL.
+8. Configure API hosting, HTTPS, health probes, and managed identity.
+9. Configure database networking and least privilege.
+10. Store secrets in platform secret storage/Key Vault; verify no secret enters
+    build artifacts.
+11. Define safe database migration execution and expand/contract changes.
+12. Add CI/CD deployment to a non-production environment.
+13. Require approval before production deployment.
+14. Add rollback/redeploy procedure and verify it works.
+15. Configure budget alerts, log retention, and cleanup instructions.
+16. If IIS is chosen, document hosting bundle, app pool identity, TLS,
+    firewall, reverse proxy, backups, and patching.
+17. If hosting Ollama, verify RAM/CPU/GPU and model licensing; otherwise
+    configure a remote provider without exposing its secret to Angular.
+18. Run post-deployment smoke tests and verify telemetry/health state.
+
+**Exit gate:** deployment can be repeated from CI; public endpoints use HTTPS;
+secrets are server-side; health/smoke checks pass; budget alerts and teardown
+steps are documented.
+
+### key110 — Production-readiness, optional jobs, and capstone
+
+**Goal:** Demonstrate operational reliability, senior-level trade-offs, and
+optional durable background work only if measurements justify it.
+
+**Dependencies:** key109 deployed environment and measured request behavior.
+
+**Small technical tasks**
+
+1. Measure request latency, provider failure rate, database query time, and
+   model cost before adding reliability features.
+2. Add structured logs with correlation IDs and safe fields.
+3. Add metrics for endpoint status/duration, provider latency/error, and
+   resource usage without sensitive prompt content.
+4. Add distributed traces across API, database, and provider calls.
+5. Distinguish liveness from readiness checks and test dependency outage states.
+6. Define end-to-end deadline and per-provider timeout budgets.
+7. Add bounded retry/backoff only for safe transient failures; test duplicate
+   cost and cancellation behavior.
+8. Add circuit breaker/backpressure only if outage/load evidence warrants it.
+9. Profile memory/CPU and inspect SQL plans before optimizing.
+10. Add cache only with documented privacy, freshness, key, and invalidation
+    behavior.
+11. Decide whether long inference/document ingestion needs background jobs.
+12. If needed, add `202 Accepted`, job ID, durable status, and authorized result
+    polling.
+13. If using a queue, implement idempotent handlers, bounded retries, poison
+    message handling, and dead-letter monitoring.
+14. Add an outbox only if database write plus event publication needs atomic
+    coordination.
+15. Test duplicate delivery, worker restarts, cancellation, and permanent
+    failure.
+16. Write runbooks for provider outage, database outage, expired credentials,
+    queue backlog, and budget threshold.
+17. Conduct a final threat-model and dependency review.
+18. Update the implemented architecture diagram, ADR status, and learning
+    guide code references.
+19. Prepare a demo covering auth, ownership, provider selection, SQL history,
+    testing, and deployment.
+20. Prepare interview answers explaining requirements, alternatives, scaling,
+    failure modes, cost, and why the project remains a modular monolith.
+
+**Exit gate:** operational dashboards/runbooks are usable; optional jobs are
+justified by evidence; core failure scenarios are tested; the implementation
+and docs agree; capstone demo can be completed from a clean setup.
+
+### Key gates and dependencies
+
+| Release key | Deliverable | Must pass before next key |
+|---|---|---|
+| key101 | Tested local API vertical slice | API contract, validation, provider fake tests, integration tests, docs |
+| key102 | Configurable model providers | Settings validation, adapter tests, provider switch demo |
+| key103 | Angular chat SPA | UI states, accessibility, frontend tests, API integration |
+| key104 | OIDC/JWT identity | Token validation, `401`/`403`, ownership identity tests |
+| key105 | Private SQL conversation history | Migrations, repository tests, owner isolation, bounded context |
+| key106 | Security hardening | Threat-model controls, CORS/rate-limit/secrets/output tests |
+| key107 | CI and maintainable tests | Clean CI pass and merge gates |
+| key108 | Evaluated RAG | Authorized retrieval, citations, evaluation, deletion tests |
+| key109 | Secure hosted deployment | Repeatable deploy, smoke/health checks, cost/teardown plan |
+| key110 | Operational capstone | Runbooks, observability, reliability tests, demo, updated docs |
+
 ## Feature delivery roadmap
 
 Each phase adds a user-visible or operational capability. Concepts are learned
