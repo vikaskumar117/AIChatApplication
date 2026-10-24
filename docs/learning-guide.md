@@ -61,7 +61,7 @@ Each detailed topic card in this guide uses the same structure:
 The topic inventory is in [TOPIC_TRACKER.md](TOPIC_TRACKER.md). To keep examples
 accurate and useful, detailed cards are expanded just before or during their
 release key. This guide includes the **key101 foundation cards** now; later
-keys add the same full card format for their topics. The tracker lists all 120
+keys add the same full card format for their topics. The tracker lists all 122
 topics from the outset, but listing a topic is not the same as having completed
 its lesson.
 
@@ -735,6 +735,117 @@ the password not a value to persist?
 | Session expires | Try approved renewal once or require sign-in | Infinite API retry loop |
 | API returns 401/403 | Prompt sign-in or show access denied | Treat forbidden data as empty success |
 | Auth state cannot be checked | Fail closed and keep composer disabled | Assume the old in-memory flag is valid |
+
+### Topic card: RBAC and feature-level authorization (tracker T121)
+
+**Definition.** Role-Based Access Control (RBAC) assigns users roles and grants
+permissions to roles. A permission is a stable capability such as `chat.use`
+or `admin.users.review`. Feature-level authorization checks the specific
+capability required by an operation instead of making every decision a
+hard-coded role-name comparison.
+
+**Why we use it.** The first release needs `Admin` and `GeneralUser`, and later
+the admin should be able to restrict individual features. A role-permission
+mapping supports that growth without scattering role checks throughout every
+controller.
+
+**How we use it.**
+
+1. Authenticate the subject, then load the application profile by trusted
+   identity issuer + subject.
+2. Check account status independently of role. Pending and blocked accounts
+   cannot use chat even if a role has `chat.use`.
+3. For an active account, check the named permission required by the operation.
+4. Record admin approval/block/role/permission changes with actor, target,
+   timestamp, and reason.
+5. Enforce the decision in the API/application layer. Angular guards and
+   hidden controls only improve UX.
+
+**Project example.** This is planned, not current code. The proposed relational
+schema is in
+[architecture.md](architecture.md#user-roles-approval-status-and-feature-permissions).
+Initial roles are `Admin` and `GeneralUser`; feature permissions are designed
+so later configuration can restrict capabilities.
+
+```csharp
+// Illustrative policy check; not yet implemented in this repository.
+if (user.AccountStatus != AccountStatus.Active ||
+    !userPermissions.Contains("chat.use"))
+{
+    return ChatOutcome.Forbidden();
+}
+```
+
+**Trade-offs and alternatives.** Direct `[Authorize(Roles = "Admin")]` checks
+are simple when a small role list will remain fixed. They become rigid when
+each feature needs configurable access. Fine-grained permissions add schema,
+policy, caching, and admin UI complexity. Start with role-to-permission
+mapping, but defer user-specific overrides until there is a concrete need.
+Never store comma-separated role strings or trust roles supplied by Angular.
+
+**Interview-ready answer.** “I authenticate the subject, check application
+account status, then evaluate a named feature permission. Roles map to
+permissions, while pending/blocked status is an independent deny gate. The API
+is authoritative; frontend guards are not security.”
+
+**Check your understanding.** Why does Admin not automatically mean Active?
+What happens if a GeneralUser has `chat.use` but their account is Blocked?
+
+### Topic card: Account approval, lifecycle, and admin audit (tracker T122)
+
+**Definition.** An approval workflow is an authorized transition in an
+account's lifecycle. An audit trail records who changed what, when, and why.
+Account lifecycle status (for example, `PendingApproval`, `Active`, or
+`Blocked`) is distinct from role (for example, `Admin` or `GeneralUser`).
+
+**Why we use it.** New accounts must wait for an Admin, and an Admin can block
+an account later. These decisions must take effect even if a user keeps an old
+browser tab or calls the API directly.
+
+**How we use it.**
+
+- New local/SSO identities become `GeneralUser + PendingApproval`.
+- Only an authorized Admin may approve/reject/block/unblock; every change is
+  checked against allowed transitions.
+- Pending and blocked users see only the public home and their own
+  account-status page; they cannot read previous conversation history. The API
+  denies chat, model, conversation, RAG, and tool operations.
+- Re-check current application status on protected calls, or define a
+  short-lived cache/revocation mechanism with a maximum block propagation time.
+- Save an append-only audit record with actor, target, prior/new state, reason,
+  time, and correlation ID.
+- Bootstrap the first Admin with an audited out-of-band operator procedure;
+  never allow public self-registration as Admin. Protect the last active Admin.
+
+**Project example.** This is planned for key104/key105. The
+[architecture guide](architecture.md) includes the account-state diagram and a
+relational design with `AppUsers.AccountStatus`, `Roles`, `UserRoles`, and
+`AdminAuditEvents`.
+
+```text
+PendingApproval --Admin approves--> Active
+Active          --Admin blocks----> Blocked
+Blocked         --Admin unblocks--> Active
+
+PendingApproval or Blocked + any role -> AI/chat denied
+PendingApproval or Blocked -> status page only; no conversation history
+```
+
+**Trade-offs and alternatives.** An identity provider may disable sign-in, but
+application feature approval can still require app-owned state. Storing status
+only in a long-lived JWT is fast but permits stale access until expiry. Reading
+the database for every operation is current but adds load; caching needs
+explicit invalidation/expiry. Approval queues add admin workload and require a
+secure initial-admin recovery plan.
+
+**Interview-ready answer.** “I model lifecycle status separately from roles.
+New users default to pending, an audited Admin action activates them, and
+blocking overrides every feature grant. The API checks current status so
+disabling the chat in Angular cannot bypass approval.”
+
+**Check your understanding.** Draw the legal status transitions. After an
+Admin blocks a user, what stops an old token from continuing to authorize chat?
+Why must the user lose access to existing history as well as new AI requests?
 
 ### Azure, delivery, and operations
 

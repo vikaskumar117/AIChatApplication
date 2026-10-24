@@ -76,6 +76,8 @@ flowchart TB
     IdP[OIDC identity provider]
     API[ASP.NET Core API]
     Auth[JWT authentication and authorization policies]
+    AccountAccess[Account status + permission evaluation]
+    AdminUI[Admin user review and access UI]
     Validation[DTO validation, request limits, CORS, rate limits]
     App[Chat application / orchestration service]
     Repo[Conversation repository interface]
@@ -97,7 +99,9 @@ flowchart TB
     SPA -->|Bearer access token| API
     IdP -->|Issuer, audience, keys, claims| Auth
     API --> Auth
-    Auth --> Validation
+    Auth --> AccountAccess
+    AdminUI -->|approve / block / role permissions| API
+    AccountAccess --> Validation
     Validation --> App
     App --> Repo
     Repo --> SqlRepo
@@ -135,6 +139,10 @@ flowchart TB
     IdP[Trusted identity provider]
     Callback[OIDC callback: state, nonce, code exchange]
     Session[Authenticated app session]
+    Profile[Application profile, status, and permissions]
+    Access{Account Active + permission?}
+    Admin[Authorized Admin reviews account]
+    Status[Public home + own status page only]
     Chat[Angular chat enabled]
     API[ASP.NET Core API]
     Auth[JWT/session validation and authorization]
@@ -151,7 +159,10 @@ flowchart TB
     Choice --> SSO --> OIDC --> IdP
     IdP -->|Authorization response| Callback
     Callback -->|Validated identity/session| Session
-    Session --> Chat
+    Session --> Profile --> Access
+    Access -->|Active + permitted| Chat
+    Access -->|Pending / blocked / denied| Status
+    Admin -->|approve / reject / block / unblock| Profile
     Chat -->|Authorized request| API --> Auth
     Local -. invalid credentials / locked .-> Fail
     Register -. invalid / duplicate / verification .-> Fail
@@ -209,14 +220,207 @@ credentials must be handled at the trusted identity boundary.
 Log only safe failure categories and correlation IDs. Never log passwords,
 reset tokens, authorization codes, access tokens, or full user-info payloads.
 
+## User roles, approval status, and feature permissions
+
+### Authorization rules
+
+Authentication answers who signed in. The application then evaluates both the
+user's **account status** and **roles/permissions**:
+
+| Account status | Chat / AI calls | Read-only public/account view | Admin operations |
+|---|---:|---:|---:|
+| `PendingApproval` | Deny | Allow public home + own status page only; no history | Deny |
+| `Active` + `GeneralUser` | Allow only permitted user features | Allow | Deny |
+| `Active` + `Admin` | Allow only permitted admin features | Allow | Allow by explicit permission |
+| `Blocked` | Deny all AI/chat features | Allow public home + own status page only; no history | Deny |
+| `Rejected` / `Disabled` (if adopted) | Deny | Allow public home + approved status/help only; no history | Deny |
+
+Status and role are independent. An `Admin` role does not silently make a
+blocked account active, and approval does not grant an `Admin` role. Initial
+registration and first accepted SSO identity receive `GeneralUser` plus
+`PendingApproval`. Admin approval changes status to `Active`; it does not
+change role. Admin blocking immediately denies AI/chat and other protected
+capabilities, regardless of a still-valid identity-provider token.
+
+For this application's view-only behavior, **PendingApproval and Blocked users
+see only the public home and their own account-status page**. They cannot read
+previous conversation history. They also cannot submit prompts, invoke a
+provider, create/update/delete conversations, retrieve RAG content, use
+function/tool calling, or access admin operations.
+
+Initial active-role permission mapping should be explicit: `GeneralUser` gets
+only approved user capabilities (initially `chat.use` and own-conversation
+operations); `Admin` gets user-management capabilities and may use chat only
+if `chat.use` is granted to that role. Account status remains a deny gate over
+every role and permission.
+
+Enforce this on the server for every protected request. The Angular page
+disables chat and shows a view-only state for usability, but API middleware or
+application authorization must independently check current account state and
+permission. If using cached status/claims, define short expiration and
+revocation behavior so a block takes effect promptly.
+
+### Planned relational schema
+
+The following schema is a starting design to review during key104/key105, not
+an implemented migration. The identity provider owns password credentials when
+one is used; the application database stores only the external identity
+mapping and application authorization data.
+
+```mermaid
+erDiagram
+    AppUsers {
+        uuid AppUserId PK
+        string IdentityIssuer
+        string IdentitySubject
+        string NormalizedEmail
+        string DisplayName
+        string PhoneNumber "optional"
+        string AccountStatus
+        datetime CreatedUtc
+        datetime UpdatedUtc
+        uuid ApprovedByUserId FK
+        datetime ApprovedUtc
+        uuid RowVersion "concurrency token"
+    }
+    Roles {
+        int RoleId PK
+        string Name UK "Admin or GeneralUser"
+        string Description
+    }
+    UserRoles {
+        uuid AppUserId PK,FK
+        int RoleId PK,FK
+        uuid AssignedByUserId FK
+        datetime AssignedUtc
+    }
+    Permissions {
+        int PermissionId PK
+        string PermissionKey UK
+        string Description
+    }
+    RolePermissions {
+        int RoleId PK,FK
+        int PermissionId PK,FK
+    }
+    UserPermissionOverrides {
+        uuid AppUserId PK,FK
+        int PermissionId PK,FK
+        boolean IsGranted
+        uuid ChangedByUserId FK
+        datetime ChangedUtc
+    }
+    AdminAuditEvents {
+        long AuditEventId PK
+        uuid ActorUserId FK
+        uuid TargetUserId FK
+        string Action
+        string PreviousValue
+        string NewValue
+        string Reason
+        datetime OccurredUtc
+        string CorrelationId
+    }
+    Conversations {
+        uuid ConversationId PK
+        uuid OwnerUserId FK
+        string Title
+        datetime CreatedUtc
+        datetime UpdatedUtc
+    }
+    Messages {
+        uuid MessageId PK
+        uuid ConversationId FK
+        string Role
+        string Content
+        datetime CreatedUtc
+    }
+
+    AppUsers ||--o{ UserRoles : has
+    Roles ||--o{ UserRoles : assigned
+    Roles ||--o{ RolePermissions : grants
+    Permissions ||--o{ RolePermissions : included
+    AppUsers ||--o{ UserPermissionOverrides : receives
+    Permissions ||--o{ UserPermissionOverrides : overridden
+    AppUsers ||--o{ AdminAuditEvents : acts
+    AppUsers ||--o{ AdminAuditEvents : targeted
+    AppUsers ||--o{ Conversations : owns
+    Conversations ||--o{ Messages : contains
+```
+
+**Schema rules to validate before migration**
+
+- `AppUsers` has a unique constraint on `(IdentityIssuer, IdentitySubject)`;
+  email is profile/contact data and must not be the sole external identity key.
+- Normalize email for lookup and uniqueness only if product requirements
+  define that behavior; identity-provider email verification is distinct from
+  application approval.
+- `AccountStatus` should be a constrained value (database check/lookup or
+  validated enum mapping). Define legal transitions in application logic and
+  test them.
+- Seed exactly `Admin` and `GeneralUser` roles initially. Never grant Admin
+  from public registration or an untrusted client-supplied claim.
+- Use a unique composite key on `UserRoles(AppUserId, RoleId)` and
+  `RolePermissions(RoleId, PermissionId)`.
+- Assign permissions through role-permission links, not client-side role
+  strings. Evaluate access as: account is `Active` **and** the required
+  permission is granted; account status is a deny gate regardless of grants.
+- Protect admin operations with active-account checks and the specific
+  `admin.*` permission. Do not assume that every Admin feature is automatically
+  available merely because a user has the `Admin` role.
+- Create stable permission keys such as `chat.use`,
+  `conversation.read.own`, `conversation.delete.own`,
+  `admin.users.review`, `admin.users.block`, and `admin.permissions.manage`.
+  The initial authorization can be coarse role-based; permissions let later
+  releases restrict features without proliferating hard-coded role checks.
+- `UserPermissionOverrides` is a future extension for per-user restrictions,
+  not required for initial role-based access. If adopted, use a unique
+  `(AppUserId, PermissionId)` key, define grant/deny precedence explicitly, and
+  audit who changed it; an explicit deny must not be accidentally overridden
+  by a role grant.
+- Keep administrative audit events append-only to application paths. Capture
+  actor, target, action, before/after status or role, reason, timestamp, and
+  correlation ID. Restrict access to audit data and never put passwords/tokens
+  in the audit payload.
+- Add concurrency protection to approval/block transitions. Do not silently
+  overwrite a concurrent admin decision.
+- Conversation/message queries must always scope by the server-derived
+  `AppUserId`; never trust an owner ID supplied by Angular.
+- Protect the last active Admin from accidental removal/blocking and document
+  a secure out-of-band break-glass bootstrap/recovery procedure.
+
+### Admin approval and blocked-user workflow
+
+```mermaid
+stateDiagram-v2
+    [*] --> PendingApproval: local registration / first SSO
+    PendingApproval --> Active: Admin approves
+    PendingApproval --> Rejected: Admin rejects (if enabled)
+    Active --> Blocked: Admin blocks
+    Blocked --> Active: Admin unblocks
+    Active --> Disabled: authorized admin action (optional)
+    Rejected --> PendingApproval: resubmission / explicit re-review (if enabled)
+```
+
+Every state change requires an Admin authorization check, a valid transition,
+and an audit event. Admin approval/block/unblock endpoints must be idempotent
+or reject stale transitions clearly. A pending or blocked user sees an
+accessible status explanation and sign-out/help actions only; they cannot read
+old chat history. The chat composer, send button, all conversation reads and
+mutations, model selection, RAG, and any tool/function calling remain
+unavailable. The API returns a consistent `403` (or a documented account-state
+outcome) for denied protected actions and must not call the model.
+
 ### Request flow: chat completion
 
 1. The user establishes a session through the approved email/password or SSO
    flow; SSO uses OIDC authorization-code flow with PKCE where configured.
 2. Angular obtains the approved API access token or uses the approved BFF
    session and calls the API over HTTPS.
-3. ASP.NET Core validates the JWT or trusted session and authorizes the
-   requested operation.
+3. ASP.NET Core validates the JWT or trusted session, resolves the
+   server-side application user, and requires an `Active` account plus the
+   permission for the requested operation. Pending/blocked users cannot use
+   this flow or retrieve old conversation history.
 4. The API validates the request and applies input, request-size, CORS, and
    rate-limit policies.
 5. The chat application verifies conversation ownership and loads only the

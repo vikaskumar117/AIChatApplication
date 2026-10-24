@@ -28,7 +28,12 @@ flowchart TB
     OIDC[OIDC authorization-code flow + PKCE]
     IdP[Identity provider: local account and/or enterprise federation]
     Callback[Angular OIDC callback: state, nonce, code exchange]
-    Session[Authenticated application session]
+    Identity[Application user profile + roles + account status]
+    Review{Admin approval and account status}
+    Admin[Admin approval/user-management UI]
+    Pending[Pending approval: home + status page only]
+    Blocked[Blocked: home + status page only]
+    Session[Authenticated and approved app session]
     Angular[Angular chat UI enabled]
     API[ASP.NET Core REST API]
     Auth[JWT/session authentication + authorization]
@@ -55,8 +60,16 @@ flowchart TB
     IdP -->|local credentials verified| Session
     Choice --> SSOButton --> OIDC --> IdP
     IdP -->|authorization response| Callback
-    Callback -->|tokens/session validated| Session
+    Register -->|identity created| Identity
+    IdP -->|identity verified / first SSO| Identity
+    Identity --> Review
+    Review -->|General User + PendingApproval| Pending
+    Review -->|Blocked| Blocked
+    Admin -->|approve / block / unblock| Review
+    Review -->|Active + required role| Session
     Session --> Angular
+    Pending --> Home
+    Blocked --> Home
     Angular -->|authorized request| API
     API --> Auth --> Chat
     Chat --> Repo --> EF --> DB
@@ -94,6 +107,22 @@ Phone number is collected only if there is a concrete product need. The current
 recommendation is optional, with a clear purpose and retention policy; do not
 use it for verification or recovery unless a verified-phone feature is
 explicitly approved.
+
+Application approval and permissions are separate from identity-provider
+authentication. The identity provider proves identity; the application stores
+its own user profile, account status, roles, and audit history. Every
+registration/first SSO login starts as `PendingApproval` with the
+`GeneralUser` role. Pending and blocked users may see only the public home and
+their own account-status page; they cannot read saved conversations. Chat,
+model calls, conversation APIs, and all other AI-related operations remain
+disabled and are rejected by the API. An admin must approve a pending user
+before the application grants chat access.
+
+Do not give an account the Admin role at registration or based on an email
+domain/claim alone. Bootstrap the first admin through an explicit, audited,
+out-of-band operator process. Prevent removing/demoting/blocking the last
+active administrator without an intentional recovery path. Require reason and
+audit records for administrative state changes.
 
 ## Release train: gated feature keys
 
@@ -249,9 +278,9 @@ API access.
    composer, attachment/send controls, and conversation actions.
 6. Explain why chat is locked and provide keyboard-accessible sign-in actions;
    do not rely on a dimmed button alone to convey the state.
-7. Define explicit `loading`, `anonymous`, `authenticated`, and `session-error`
-   UI states; never infer authentication merely from a previously clicked
-   button.
+7. Define explicit `loading`, `anonymous`, `pending-approval`, `active`,
+   `blocked`, `rejected/disabled`, and `session-error` UI states; never infer
+   access merely from a previously clicked button.
 8. Define TypeScript API request/response types matching the API contract.
 9. Add environment-specific API base URL configuration with no secrets.
 10. Implement a typed Angular API service using `HttpClient`.
@@ -277,16 +306,19 @@ API access.
 24. Update architecture and learning docs with actual component and service
     paths.
 
-**Exit gate:** signed-out chat remains unusable and visibly gated; authenticated
-mock/test state unlocks the client only in tests; responsive layout and UI
-states are tested; no secrets or provider endpoints appear in the browser
-bundle; key flows are keyboard accessible.
+**Exit gate:** signed-out, pending, and blocked chat remain unusable and visibly
+gated; only an active approved test session unlocks the client in tests;
+responsive states are tested; no secrets or provider endpoints appear in the
+browser bundle; key flows are keyboard accessible.
 
-### key104 — Local account and SSO authentication, recovery, and authorization
+### key104 — Local account, SSO, approval, roles, and authorization
 
 **Goal:** A user can choose email/password or SSO, complete the appropriate
-registration/sign-in flow, return to the Angular home page, and use chat only
-after the application confirms an authenticated and authorized session.
+registration/sign-in flow, and return to the Angular home page. New users begin
+as `GeneralUser` + `PendingApproval`. An authorized admin approves them before
+they can use chat. Pending and blocked accounts see only the public home and
+their account-status page, never saved conversations; the API denies all
+model, chat, conversation, and other AI capabilities.
 
 **Dependencies:** key103 public home/login UX. Select an identity architecture
 before implementation; record provider, token/session design, cost, and
@@ -379,8 +411,60 @@ interchangeable.
     required and continue using OIDC/JWT toward the app where possible.
 34. Update the identity ADR with provider, account ownership, recovery, and
     token/session flow decisions.
-35. Update architecture, learning cards, and tracker evidence; distinguish
-    implemented behavior from mocked tests.
+35. Define application account status separately from roles:
+    `PendingApproval`, `Active`, `Blocked`, and (if required) `Rejected` or
+    `Disabled`; specify allowed transitions and who can perform each.
+36. Define exactly two initial roles: `Admin` and `GeneralUser`. Never assign
+    `Admin` through public registration, SSO email domain, or a client claim
+    without a trusted provisioning rule.
+37. Provision a local application user profile on local-account creation and
+    on first successful SSO login; bind external identities by issuer + subject.
+38. Assign `GeneralUser` and `PendingApproval` by default, including for valid
+    SSO identities, unless an explicitly approved trusted provisioning process
+    says otherwise.
+39. Decide when the account enters the approval queue (for example, after
+    required email verification) and what user-visible state is shown while
+    waiting.
+40. Add an admin-only pending-user queue with paging/search and a minimal
+    profile view; do not expose passwords, tokens, or unnecessary PII.
+41. Add approve, reject, block, and unblock actions with explicit confirmation,
+    reason capture where appropriate, and resulting status display.
+42. Require every admin-management API operation to validate authenticated
+    `Admin` role/policy server-side; Angular route guards/buttons are not the
+    security boundary.
+43. Enforce state + role on every AI/chat endpoint: only `Active` users with an
+    allowed role/permission can invoke a model or mutate chat data.
+44. For `PendingApproval`, permit only the public home/account-status view;
+    reject conversation-history reads, chat/model calls, and other protected
+    features even if the Angular UI is bypassed.
+45. For `Blocked`, revoke/expire the application session where supported and
+    allow only the public home/account-status view; deny saved-history reads,
+    conversation operations, model calls, and every AI feature.
+46. Re-check account status on each protected request (or use a documented,
+    short-lived cache/revocation strategy) so a newly blocked user cannot keep
+    using an old long-lived token.
+47. Add a secure initial-admin bootstrap procedure: explicit operator-created
+    account/role assignment, one-time audited command or deployment procedure,
+    never a hard-coded password or public self-registration.
+48. Prevent accidental removal, demotion, or blocking of the last active
+    administrator; define a break-glass recovery procedure.
+49. Record approval, rejection, blocking, unblocking, role changes, actor,
+    target user, timestamp, reason, and correlation ID in an append-only
+    administrative audit history.
+50. Define stable feature-permission keys (for example `chat.use`,
+    `conversation.read.own`, `admin.users.review`, `admin.users.block`) and
+    map them to roles rather than scattering role-name checks across features.
+51. Include `UserPermissionOverrides` in the proposed schema for future
+    per-user feature grants/restrictions, but defer enabling it until needed;
+    define deny precedence and audit each change before exposing its admin UI.
+52. Add tests for default `GeneralUser` + `PendingApproval`, admin approval,
+    rejection, block/unblock, admin-only management, last-admin protection,
+    pending/blocked API denial, active user success, forged client role, and
+    stale status/token behavior.
+53. Add end-to-end tests for registration → pending view-only → admin approval
+    → chat enabled and active user → blocked → chat disabled/view-only.
+54. Update identity ADR, database design, architecture diagram, learning cards,
+    and tracker evidence; distinguish implemented behavior from test mocks.
 
 **Failure handling and user experience**
 
@@ -401,14 +485,29 @@ interchangeable.
   clear session and require sign-in again.
 - API `401`/`403`: show sign-in/permission behavior and never retry the same
   unauthorized request indefinitely.
+- Pending approval: show a calm “approval pending” page with sign-out and
+  support/help options; expose no conversation history and never start a model
+  request.
+- Rejected or blocked account: show only the public home/account-status page
+  and approved support/appeal guidance; do not reveal conversation history,
+  admin notes, or internal reason fields.
+- Admin approval action failure: retain queue state, show retryable error, and
+  do not claim approval succeeded until the server confirms persistence.
+- Concurrent admin decisions: reject or safely resolve stale state transitions;
+  audit the final action and avoid silently overwriting another admin's change.
+- Admin identity/permission unavailable: fail closed; never expose management
+  controls or accept the action from a client-only role flag.
 - Keep both sign-in options reachable after recoverable failures and preserve
   keyboard focus/accessibility on error messages.
 
 **Exit gate:** both approved sign-in paths work end-to-end; registration,
 verification, and recovery work according to the selected identity provider;
-public chat is disabled until authentication is confirmed; API authorization
-and account isolation are tested; failure cases are automated and manually
-demoed; no credential or token is logged or shipped to an untrusted client.
+public chat is disabled until authentication **and account approval/status**
+are confirmed; only Admin can manage approvals; pending/blocked users can see
+only public home/account status (not conversation history) and cannot use any
+AI feature even by calling the API directly; database state transitions and
+audit history are tested; failure cases are automated and manually demoed; no
+credential or token is logged or shipped to an untrusted client.
 
 ### key105 — SQL conversation persistence and private history
 
@@ -422,40 +521,58 @@ within a bounded context budget.
 
 1. Select initial SQL engine and record local/hosted options and cost.
 2. Define retention, export, and deletion requirements before storing chats.
-3. Model Conversation, Message, timestamps, provider/model metadata, and
-   external user subject.
-4. Define primary keys, foreign keys, required fields, max lengths, and
-   ownership relation.
-5. Add EF Core packages and configure `DbContext`.
-6. Add indexes for owner-based list/detail access and message ordering.
-7. Create and review the first EF migration.
-8. Document local database creation and migration commands.
-9. Define repository interfaces around actual conversation use cases.
-10. Ensure repository contracts do not leak `DbContext`, EF entities, or
+3. Extend the key104 application user/authorization schema with conversation
+   tables; keep `AppUsers`, `Roles`, `UserRoles`, `Permissions`,
+   `RolePermissions`, `AdminAuditEvents`, and the planned
+   `UserPermissionOverrides` as shared foundations.
+4. Keep authentication-provider credentials outside this application schema
+   when a managed identity provider owns passwords; store its stable issuer +
+   subject mapping and only necessary profile data.
+5. Add unique constraints for external identity `(Issuer, Subject)` and
+   appropriate normalized email rules; do not assume email alone is a
+   permanent identity key.
+6. Model Conversation, Message, timestamps, provider/model metadata, and
+   external user subject with foreign keys to the application user.
+7. Define primary keys, foreign keys, required fields, max lengths, ownership
+   relations, delete behavior, and concurrency fields.
+8. Add EF Core packages and configure `DbContext`.
+9. Add indexes for user lookup, approval queue, role/status lookup,
+   owner-based conversation list/detail, and message ordering based on actual
+   queries.
+10. Create and review migrations for user/authorization and conversation data.
+11. Document local database creation and migration commands.
+12. Define repository interfaces around actual user, approval, authorization,
+   audit, and conversation use cases.
+13. Ensure repository contracts do not leak `DbContext`, EF entities, or
     `IQueryable`.
-11. Implement EF Core repositories with parameterized queries.
-12. Use no-tracking for read-only results when appropriate and verify query
+14. Implement EF Core repositories with parameterized queries and explicit
+    state-transition checks.
+15. Use no-tracking for read-only results when appropriate and verify query
     behavior.
-13. Add repository integration tests against the actual SQL provider or a
+16. Add repository integration tests against the actual SQL provider or a
     disposable SQL instance.
-14. Add create conversation and append message application use cases.
-15. Add owner-filtered history endpoints with bounded pagination.
-16. Add owner checks to every read, update, and delete path.
-17. Build prompt context from a documented number/token budget of recent
+17. Add create conversation and append message application use cases.
+18. Add active-account/permission-filtered history endpoints with bounded
+    pagination.
+19. Add owner checks to every read, update, and delete path; reject history
+    access for pending/blocked users even when they own the conversation.
+20. Build prompt context from a documented number/token budget of recent
     messages.
-18. Define behavior when the history exceeds the model context window.
-19. Define transaction and simultaneous append/concurrency behavior.
-20. Add retention/deletion tests and ensure deleted data is not reloaded into
+21. Define behavior when the history exceeds the model context window.
+22. Define transaction and simultaneous append/concurrency behavior.
+23. Add retention/deletion tests and ensure deleted data is not reloaded into
     model context.
-21. Inspect generated SQL and query plans for history/list queries.
-22. Explain repository portability limitations; document what a MongoDB
+24. Inspect generated SQL and query plans for history/list/approval queries.
+25. Explain repository portability limitations; document what a MongoDB
     implementation would need to change.
-23. Update architecture diagram and learning guide with concrete persistence
+26. Update architecture diagram and learning guide with concrete persistence
     paths and migration commands.
 
-**Exit gate:** migrations apply to an empty local database; authenticated users
-can create/list/read only their own histories; integration tests prove
-isolation and pagination; model prompt context is bounded.
+**Exit gate:** migrations apply to an empty local database; active authorized
+users can create/list/read only their own histories; pending/blocked users
+cannot read history or call AI; approval, role, permission, and audit records
+are persisted; integration tests prove authorization isolation and pagination;
+model prompt context is bounded.
 
 ### key106 — API, frontend, and AI security hardening
 
@@ -737,19 +854,25 @@ handling, retries, circuit-breaker trade-offs, model and token limits.
 without modifying the controller; invalid configuration has a useful
 diagnostic and a safe API response.
 
-### Phase 3 — Persist conversations and provide relevant context
+### Phase 3 — Persist users, approvals, roles, and conversation context
 
-**Feature outcome:** A signed-in user can continue previous conversations and
-the API can provide authorized history as model context.
+**Feature outcome:** Application user/account status and authorization are
+persisted separately from identity-provider credentials. Admin decisions are
+audited, and users can access only their own conversation history.
 
-- Design SQL entities for users (or external subject identifiers), conversations,
-  messages, timestamps, and provider/model metadata.
+- Design SQL entities for app users, external issuer/subject identifiers,
+  account status, Admin/GeneralUser roles, conversations, messages, timestamps,
+  and provider/model metadata.
 - Add EF Core `DbContext`, migrations, indexes, constraints, and parameterized
   queries.
-- Define repository interfaces at the application boundary and implement them
-  with EF Core. Avoid exposing `IQueryable` or EF entities across that boundary.
-- Add pagination and ownership checks; retrieve only the conversation context
-  required for a request.
+- Define application-focused repositories for user approval, role assignment,
+  administrative audit, and conversation operations; implement with EF Core.
+- Keep account status separate from roles; default registrations to
+  GeneralUser + PendingApproval and require admin approval before AI use.
+- Add feature-permission mappings so later per-user restrictions can be managed
+  without changing every endpoint.
+- Add pagination and owner/status checks; retrieve only the conversation
+  context required for a request.
 - Document how a non-SQL implementation would satisfy the same application
   contract and which semantics would need redesign.
 
@@ -759,14 +882,17 @@ migrations, transactions, optimistic concurrency, repository trade-offs,
 Unit of Work trade-offs, indexes, execution plans, sargability, pagination,
 N+1 detection, and database-specific behavior.
 
-**Done when:** Conversation history is isolated per user, data access is
-testable, schema changes are migration-driven, and list endpoints use bounded
+**Done when:** Approval/status/role/audit and conversation history are
+persisted with migrations; only approved active accounts can use AI; history is
+isolated per user; data access is testable; list endpoints use bounded
 pagination.
 
-### Phase 4 — Build the Angular single-page chat application
+### Phase 4 — Build the Angular public home and gated chat SPA
 
-**Feature outcome:** Users can submit code, read responses, see progress/errors,
-and navigate conversation history in a browser.
+**Feature outcome:** Visitors see a responsive home page with email/password
+and SSO choices; the chat UI remains locked until the application reports an
+approved active session. Pending and blocked users see only the public home and
+account-status page, not conversation history.
 
 - Create an Angular SPA with standalone components and a typed API client.
 - Add a code-entry/chat view, conversation list, loading state, error state, and
@@ -776,6 +902,12 @@ and navigate conversation history in a browser.
 - Use RxJS and Angular lifecycle-safe patterns for requests, cancellation, and
   state updates.
 - Configure development proxy/origin settings without weakening production CORS.
+- Show separate **Sign in** and **Continue with SSO** actions; provide
+  registration and forgot-password entry points.
+- Display pending-approval, blocked, denied, and failed-session states without
+  exposing conversation history or internal admin notes.
+- Hide/disable AI controls in view-only states while relying on API enforcement
+  to deny direct calls.
 
 **Learning in context:** TypeScript strict typing, generics and discriminated
 unions, Angular components/templates/binding, services and DI, `HttpClient`,
@@ -783,14 +915,17 @@ Observables and operators, reactive forms, routing, lazy loading, change
 detection/signals trade-offs, accessibility, frontend tests, and end-to-end
 tests.
 
-**Done when:** The Angular app can create and resume conversations, clearly
-communicates loading and failure, works with keyboard navigation, and calls
-only the API rather than AI provider endpoints directly.
+**Done when:** The Angular app shows the correct signed-out/pending/blocked/
+active UX, active approved users can chat, failures are accessible, and the
+browser calls only the API rather than AI provider endpoints directly.
 
-### Phase 5 — Add identity, authentication, and authorization
+### Phase 5 — Add identity, account approval, roles, and authorization
 
-**Feature outcome:** Users sign in through a trusted identity provider and can
-only access their own conversations.
+**Feature outcome:** Users authenticate by email/password or SSO, start as
+GeneralUser + PendingApproval, and only gain chat access after Admin approval.
+Admins can approve, reject, block, and unblock users. Pending/blocked users
+see only public home/account status with no conversation history; the API
+denies all AI-related features and protected conversation operations.
 
 - Register an OIDC client for Angular and an API audience/resource with the
   identity provider.
@@ -800,7 +935,14 @@ only access their own conversations.
   and token lifetime. Validate policies and claims server-side.
 - Enforce ownership at every conversation/message operation; never trust a user
   identifier supplied only by the client.
-- Add roles/scopes/policies only for actual product authorization requirements.
+- Keep application account status separate from identity and role; enforce
+  status + permission server-side on each protected request.
+- Seed only Admin and GeneralUser roles; provision initial admin out-of-band,
+  audit it, and protect the last active admin.
+- Record approval/block/unblock/rejection and future permission changes in
+  append-only audit history.
+- Model feature permissions and role-permission associations now; introduce
+  user-specific overrides only when the admin feature requires them.
 - Support enterprise SAML needs through identity-provider federation where
   appropriate; keep the app/API token contract OIDC/JWT-based unless a concrete
   integration requires otherwise.
@@ -811,8 +953,9 @@ token lifecycle, SAML federation, secure redirect handling, and multi-tenant
 identity boundaries.
 
 **Done when:** Anonymous calls are rejected, authorized calls have least
-privilege, and automated tests prove users cannot read or alter another user's
-data.
+privilege, only Admin can manage approvals, pending/blocked users cannot use
+AI or read saved conversation history, and automated tests prove role/status
+enforcement and user data isolation.
 
 ### Phase 6 — Harden the public API and AI interaction
 

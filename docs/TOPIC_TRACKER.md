@@ -2,9 +2,9 @@
 
 ## Overall progress
 
-**Topics completed: 0 / 120 — 0%**
+**Topics completed: 0 / 122 — 0%**
 
-Progress formula: `completed topics ÷ 120 × 100`. Count only rows whose status
+Progress formula: `completed topics ÷ 122 × 100`. Count only rows whose status
 is **Done**. Update the number and percentage at the top whenever a status
 changes. Markdown does not calculate this value automatically; the maintainer
 must update it in the same documentation change. “Done” means you can explain
@@ -26,9 +26,9 @@ was generated or copied.
 
 ## Topic inventory
 
-There are **12 modules × 10 topics = 120 topics**. IDs remain stable when
-statuses change. Add topics by increasing the denominator and updating this
-inventory count and completion formula.
+There are **122 topics** across 12 modules. IDs remain stable when statuses
+change. Add topics by increasing the denominator and updating this inventory
+count and completion formula.
 
 ## Planned release-key coverage
 
@@ -41,8 +41,8 @@ the learning guide as that key is worked.
 |---|---|
 | key101 | T001-T003, T007, T011-T012, T018-T019, T021-T027, T071-T073, T075 |
 | key102 | T004-T006, T020, T034-T040 |
-| key103 | T051-T060 |
-| key104 | T061-T067 |
+| key103 | T051-T060, gated public-home states |
+| key104 | T061-T067, T121-T122 |
 | key105 | T008-T009, T041-T050, ownership aspects of T068 |
 | key106 | T030, T068-T070, T088-T090 |
 | key107 | T071-T080 |
@@ -140,7 +140,7 @@ the learning guide as that key is worked.
 | T059 | Accessibility and safe rendering of generated content | Not started | |
 | T060 | Angular component and browser end-to-end tests | Not started | |
 
-### Module 7 — Authentication, authorization, and API security (10)
+### Module 7 — Authentication, authorization, and API security (12)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -154,6 +154,8 @@ the learning guide as that key is worked.
 | T068 | CORS, cookies, CSRF, and browser security boundaries | Not started | |
 | T069 | Secret storage, rotation, and managed identity | Not started | |
 | T070 | OWASP risks, prompt injection, PII, and tenant isolation | Not started | |
+| T121 | RBAC, roles, permissions, and feature-level authorization | Not started | |
+| T122 | Account lifecycle, approval workflows, admin actions, and audit | Not started | |
 
 ### Module 8 — Testing, maintainability, and engineering workflow (10)
 
@@ -234,5 +236,6 @@ the learning guide as that key is worked.
 
 | Date | Release key | Topics updated | Notes |
 |---|---|---|---|
-| 2026-10-25 | Planning | 120 topics inventoried | Initial statuses are Not started; implementation has not begun. |
-| 2026-10-25 | key103-key104 planning | T061, T063-T070 lesson scope clarified | Added local-account/SSO UX, account recovery, session gating, and auth failure scenarios to the roadmap and learning guide; no topics marked Done. |
+| 2026-10-25 | Planning | 122 topics inventoried | Initial statuses are Not started; implementation has not begun. |
+| 2026-10-25 | key103-key104 planning | T061, T063-T070, T121-T122 lesson scope clarified | Added local-account/SSO UX, account recovery, session gating, approval status, role/permission, and admin audit requirements; no topics marked Done. |
+| 2026-10-25 | key104 status-policy refinement | T121-T122 | Pending and blocked accounts are limited to the public home/account-status page; conversation history is inaccessible. Permission overrides are planned for future per-user restrictions; no topics marked Done. |
