@@ -1,0 +1,15 @@
+# .NET build output
+bin/
+obj/
+
+# Visual Studio local state
+.vs/
+*.user
+*.suo
+
+# Local VS Code workspace settings
+.vscode/
+
+# Postman workspace metadata and local globals
+.postman/
+postman/globals/workspace.globals.yaml
