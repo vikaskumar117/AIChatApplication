@@ -17,29 +17,61 @@ persistence, RAG, and cloud deployment are future work.
 ## Target architecture
 
 ```mermaid
-flowchart LR
-    User[User] --> Angular[Angular SPA]
-    Angular -->|OIDC sign-in| IdP[Identity Provider]
-    Angular -->|JWT access token| API[ASP.NET Core REST API]
-    IdP -->|OIDC / OAuth 2.0| API
+flowchart TB
+    Visitor[Visitor opens public Angular home]
+    Home[Public home: chat composer disabled]
+    Choice{Choose sign-in method}
+    LocalUI[Email/password sign-in dialog]
+    Register[Registration: name, email, phone, password, confirm]
+    Recovery[Forgot-password / reset flow]
+    SSOButton[Continue with SSO]
+    OIDC[OIDC authorization-code flow + PKCE]
+    IdP[Identity provider: local account and/or enterprise federation]
+    Callback[Angular OIDC callback: state, nonce, code exchange]
+    Session[Authenticated application session]
+    Angular[Angular chat UI enabled]
+    API[ASP.NET Core REST API]
+    Auth[JWT/session authentication + authorization]
+    Chat[Chat application service]
+    Repo[Conversation repository]
+    EF[EF Core persistence adapter]
+    DB[(SQL database)]
+    Selector[Configured AI provider selector]
+    Models[Ollama / OpenAI-compatible / future providers]
+    RAG[Optional authorized knowledge retrieval]
+    Search[(Vector or search index)]
+    Docs[User-authorized documents]
+    Ops[Rate limits, CORS, health, telemetry]
+    Secrets[Server-side secret store / managed identity]
+    Failure[Safe error UI + server-side diagnostics]
 
-    API --> Auth[Authentication and authorization]
-    Auth --> Chat[Chat application service]
-    Chat --> Repo[Conversation repository]
-    Repo --> EF[EF Core]
-    EF --> DB[(SQL database)]
-    Chat --> Selector[Configured AI provider selector]
-    Selector --> Ollama[Ollama provider]
-    Selector --> OpenAI[OpenAI provider]
-    Selector --> Future[Future providers]
-    Chat -. optional retrieved context .-> RAG[Knowledge retrieval]
-    RAG --> Vector[(Vector / search index)]
-    RAG --> Docs[Ingested documents]
-
-    API --> Telemetry[Logs, metrics, traces, health]
-    API --> Limits[Validation, CORS, rate limits]
-    Secrets[Secret store / managed identity] --> API
-    Queue[Optional job queue] -. long-running work .-> Chat
+    Visitor --> Home --> Choice
+    Choice --> LocalUI
+    LocalUI -->|new account| Register
+    LocalUI -->|forgot password| Recovery
+    Register --> IdP
+    Recovery --> IdP
+    LocalUI -->|email/password via approved auth flow| IdP
+    IdP -->|local credentials verified| Session
+    Choice --> SSOButton --> OIDC --> IdP
+    IdP -->|authorization response| Callback
+    Callback -->|tokens/session validated| Session
+    Session --> Angular
+    Angular -->|authorized request| API
+    API --> Auth --> Chat
+    Chat --> Repo --> EF --> DB
+    Chat --> Selector --> Models
+    Chat -. optional .-> RAG
+    RAG --> Search
+    RAG --> Docs
+    API --> Ops
+    Secrets --> Models
+    LocalUI -. auth failure .-> Failure
+    Register -. validation/verification failure .-> Failure
+    Recovery -. expired/invalid reset .-> Failure
+    OIDC -. denied/timeout .-> Failure
+    Callback -. state/token/claims failure .-> Failure
+    API -. 401/403/network failure .-> Failure
 ```
 
 SAML is an identity-federation option when required by an organization. Prefer
@@ -47,6 +79,21 @@ OIDC for the Angular application and API when the identity provider supports it.
 SAML may be integrated at the identity-provider boundary (for example, an
 enterprise identity provider federating upstream with SAML and issuing OIDC
 tokens to this application); do not build an identity provider into the app.
+
+**Identity architecture is a release-time decision, not implemented behavior.**
+The preferred direction is to use a trusted identity platform for both local
+email/password accounts and external SSO/federation, so password hashing,
+verification, recovery, lockout, MFA, and token issuance are not custom-built.
+The Angular UI can present a branded sign-in dialog and registration/recovery
+entry points while using the identity platform's supported flows. If the
+selected provider cannot support the required local-account UX, evaluate
+ASP.NET Core Identity plus a carefully designed session/token boundary before
+implementation; do not invent password hashing or token protocols.
+
+Phone number is collected only if there is a concrete product need. The current
+recommendation is optional, with a clear purpose and retention policy; do not
+use it for verification or recovery unless a verified-phone feature is
+explicitly approved.
 
 ## Release train: gated feature keys
 
@@ -178,94 +225,190 @@ orchestration code.
 changing one configuration value switches provider; invalid config fails
 clearly; no hosted provider secret is required for the local test suite.
 
-### key103 — Angular chat single-page application
+### key103 — Responsive Angular home and gated chat experience
 
-**Goal:** A user can submit code from a browser, see the AI response, and
-understand loading, validation, and failure states. This is a local learning
-client; do not expose it publicly until authentication and security gates pass.
+**Goal:** A visitor sees a polished public home page with two clear entry
+options—email/password and SSO. Chat controls are unavailable until the
+application confirms an authenticated session. This key builds the user
+experience and API integration; key104 supplies production authentication.
 
-**Dependencies:** key101 API contract; key102 recommended for provider stability.
+**Dependencies:** key101 API contract and key102 provider stability. Until
+key104, show sign-in entry points as an explicit prototype/disabled
+authentication state; do not imply that a decorative login unlocks protected
+API access.
 
 **Small technical tasks**
 
 1. Scaffold Angular in a dedicated frontend directory with a supported Node
    version recorded in the repository.
 2. Enable TypeScript strict mode and record package manager/install commands.
-3. Create the root application shell and a responsive chat page.
-4. Define TypeScript API request/response types matching the API contract.
-5. Add environment-specific API base URL configuration with no secrets.
-6. Implement a typed Angular API service using `HttpClient`.
-7. Build a reactive code-input form with required and length validation.
-8. Disable duplicate submissions while a request is in flight.
-9. Add an accessible loading indicator and announce relevant status changes.
-10. Render model response as plain text by default.
-11. If Markdown is required, select a maintained renderer and sanitize output;
+3. Create the root application shell and public home route.
+4. Design a responsive header with product identity and clear **Sign in** and
+   **Continue with SSO** actions.
+5. Show a non-interactive chat preview for signed-out visitors; disable the
+   composer, attachment/send controls, and conversation actions.
+6. Explain why chat is locked and provide keyboard-accessible sign-in actions;
+   do not rely on a dimmed button alone to convey the state.
+7. Define explicit `loading`, `anonymous`, `authenticated`, and `session-error`
+   UI states; never infer authentication merely from a previously clicked
+   button.
+8. Define TypeScript API request/response types matching the API contract.
+9. Add environment-specific API base URL configuration with no secrets.
+10. Implement a typed Angular API service using `HttpClient`.
+11. Build a reactive code-input form with required and length validation.
+12. Disable duplicate submissions while a request is in flight.
+13. Add an accessible loading indicator and announce relevant status changes.
+14. Render model response as plain text by default.
+15. If Markdown is required, select a maintained renderer and sanitize output;
     do not bypass Angular's security APIs to inject raw model HTML.
-12. Display validation errors next to fields and provider/network errors in a
+16. Display validation errors next to fields and provider/network errors in a
     recoverable message area.
-13. Add retry behavior only for safe client actions; do not automatically
+17. Add retry behavior only for safe client actions; do not automatically
     resubmit expensive AI calls without user intent.
-14. Configure a development proxy or an explicit local CORS origin.
-15. Confirm production CORS is not widened just to make local development work.
-16. Add unit tests for valid form, invalid form, success, error, loading state,
-    and repeated clicks.
-17. Add one browser-level test for submit-to-response using a controlled fake
-    API.
-18. Verify keyboard-only interaction, labels, focus, contrast, and mobile
-    layout.
-19. Add frontend lint/build/test commands to the README and CI plan.
-20. Update architecture and learning docs with actual component and service
+18. Configure a development proxy or an explicit local CORS origin.
+19. Confirm production CORS is not widened just to make local development work.
+20. Add unit tests for signed-out locked state, valid/invalid form, success,
+    error, loading state, and repeated clicks.
+21. Add a browser-level test for the signed-out landing page and
+    submit-to-response using a controlled fake API/session.
+22. Verify keyboard-only interaction, labels, focus, contrast, and mobile
+    layout at narrow, tablet, and desktop widths.
+23. Add frontend lint/build/test commands to the README and CI plan.
+24. Update architecture and learning docs with actual component and service
     paths.
 
-**Exit gate:** local Angular UI calls the local API; success/error/loading
-behavior is tested; no secrets or provider endpoints appear in the browser
+**Exit gate:** signed-out chat remains unusable and visibly gated; authenticated
+mock/test state unlocks the client only in tests; responsive layout and UI
+states are tested; no secrets or provider endpoints appear in the browser
 bundle; key flows are keyboard accessible.
 
-### key104 — OIDC sign-in and API authorization
+### key104 — Local account and SSO authentication, recovery, and authorization
 
-**Goal:** A user signs in through a trusted identity provider, and the API
-validates access tokens before granting protected access. SAML is supported
-through enterprise federation when required, not custom protocol code.
+**Goal:** A user can choose email/password or SSO, complete the appropriate
+registration/sign-in flow, return to the Angular home page, and use chat only
+after the application confirms an authenticated and authorized session.
 
-**Dependencies:** key101 API contract and key103 Angular client. Select an
-identity provider before implementation; record cost/terms in an ADR.
+**Dependencies:** key103 public home/login UX. Select an identity architecture
+before implementation; record provider, token/session design, cost, and
+limitations in the identity ADR. Do not implement custom password hashing,
+OIDC, SAML, or JWT cryptography.
+
+**Preferred architecture to evaluate:** one trusted identity platform manages
+local credentials and external OIDC/SAML federation, so password hashing,
+verification, recovery, lockout, MFA, and token issuance are not custom-built.
+The Angular UI can provide branded sign-in/register/recovery entry points while
+using supported identity-provider flows. If the selected provider cannot
+satisfy local-account UX, evaluate ASP.NET Core Identity with a reviewed
+session/token architecture before implementation; these approaches are not
+interchangeable.
 
 **Small technical tasks**
 
-1. Compare identity providers for local development, Angular OIDC support,
-   API JWT validation, free-tier limits, and production pricing.
-2. Create separate client/resource registrations for SPA and API where the
-   provider requires them.
-3. Configure exact redirect/logout URLs for local development.
-4. Configure authorization-code flow with PKCE using a maintained Angular OIDC
+1. Compare identity providers for local username/password accounts, branded
+   login/register/recovery, SSO federation, OIDC/JWT support, Angular libraries,
+   email verification, MFA, free-tier limits, and production pricing.
+2. Decide whether the email/password form is rendered in our Angular modal or
+   provided by the identity platform; verify supported APIs for registration,
+   recovery, lockout, and verification.
+3. Decide phone-number policy. Default to optional and collect only for a
+   documented purpose; decide whether it needs verification and retention.
+4. Define only the account states needed by the selected provider (for example,
+   pending verification, active, locked, disabled).
+5. Create separate SPA client and API resource/audience registrations where
+   required.
+6. Configure exact local and deployed redirect, callback, and logout URLs.
+7. Configure authorization-code flow with PKCE using a maintained OIDC
    library.
-5. Configure API JWT bearer validation for issuer, audience, signature,
-   lifetime, and HTTPS metadata.
-6. Add a protected API endpoint/policy and verify anonymous requests return
-   `401`.
-7. Verify authenticated-but-forbidden requests return `403`.
-8. Define scopes/roles only for actual authorization needs.
-9. Derive the application user key from validated token claims; never accept
-   ownership solely from a request body/query string.
-10. Implement a current-user abstraction so application code does not parse
-    HTTP claims everywhere.
-11. Add tests for missing, malformed, expired, wrong-issuer, wrong-audience,
-    insufficient-scope, and valid tokens.
-12. Add Angular sign-in, signed-in, signed-out, expired-session, and
-    unauthorized UI states.
-13. Attach access tokens only to the intended API origin using the OIDC
-    library/interceptor.
-14. Review and document token storage, refresh, logout, XSS, and CSRF trade-offs.
-15. Ensure browser code never receives provider API keys or client secrets.
-16. For SAML requirements, configure identity-provider federation upstream and
-    continue to let the application consume OIDC/JWT where possible.
-17. Test that direct API calls cannot bypass UI route guards.
-18. Update the identity ADR with actual provider decision, settings, and
-    limitations.
+8. Implement SSO start action; redirect to the identity provider instead of
+   collecting SSO credentials in the application.
+9. Validate callback `state` and `nonce` through the OIDC library and handle
+   authorization-code exchange according to the approved client/BFF design.
+10. Validate issuer, audience, signature, lifetime, and required scopes/claims
+    in the API or trusted session boundary.
+11. Obtain only required identity/profile data; bind userinfo claims to the
+    validated issuer and subject.
+12. Link external accounts by stable issuer + subject, not email alone. Define
+    a safe reconciliation policy for duplicate emails.
+13. Build email/password sign-in form with email and password, show/hide
+    password control, submit/loading/error states, and accessible labels.
+14. Build registration form with name, email, phone (per the agreed policy),
+    password, and confirm-password fields.
+15. Validate password confirmation in the UI; validate security-critical fields
+    again at the trusted server/identity boundary.
+16. Never store or log raw passwords or confirmation values. Delegate password
+    hashing, verification, lockout, and password policy to the selected
+    identity platform / ASP.NET Core Identity.
+17. Add email verification with a single-use, expiring token if required by the
+    chosen provider and product decision.
+18. Add forgot-password request that always shows a generic confirmation,
+    whether or not the email address exists.
+19. Add reset-password page; reject expired, invalid, reused, or mismatched
+    reset tokens and offer a safe retry path.
+20. Configure lockout, brute-force protection, MFA support, and per-IP/user
+    rate limits with the provider.
+21. Return users to the intended route only after successful authentication;
+    allowlist return URLs to prevent open redirects.
+22. Create a single application auth/session state source in Angular and
+    re-check it on page refresh.
+23. Enable chat only after an authenticated session is confirmed; route guards
+    improve UX but do not replace API authorization.
+24. Attach access tokens only to the intended API origin using the OIDC library
+    or use the approved BFF/session design; document token storage, refresh,
+    logout, XSS, and CSRF trade-offs.
+25. Add sign-out that clears app session state and performs provider logout
+    where supported.
+26. Configure API JWT bearer validation for issuer, audience, signature,
+    expiry, and HTTPS metadata, unless the approved BFF architecture uses
+    another authenticated server-side boundary.
+27. Add policies/scopes and a current-user abstraction; derive owner identity
+    from validated claims only.
+28. Verify `401` (missing/invalid session) vs. `403` (authenticated but not
+    authorized); never represent either as a successful chat response.
+29. Add tests for valid login, invalid credentials, unknown email without
+    account enumeration, locked account, unverified email, registration
+    validation, duplicate email, password mismatch, reset success/expiry/reuse,
+    and throttling.
+30. Add SSO tests for user cancellation/denial, provider unavailable, bad
+    `state`/`nonce`, callback error, code exchange failure, invalid issuer or
+    audience, expired token, missing required claims, and safe retry.
+31. Add session/API tests for missing/expired token, wrong issuer/audience,
+    insufficient scope, logout, and attempted cross-user data access.
+32. Add an end-to-end test for public home → email/password or SSO → return to
+    home → chat enabled, plus sign-out → chat locked.
+33. For enterprise SAML, configure upstream identity-provider federation when
+    required and continue using OIDC/JWT toward the app where possible.
+34. Update the identity ADR with provider, account ownership, recovery, and
+    token/session flow decisions.
+35. Update architecture, learning cards, and tracker evidence; distinguish
+    implemented behavior from mocked tests.
 
-**Exit gate:** API denies anonymous requests, tests enforce token validation,
-and an authenticated user can use the Angular client without trusting client-
-supplied identity values.
+**Failure handling and user experience**
+
+- Invalid credentials: show a generic sign-in error; do not reveal whether the
+  email exists.
+- Network/provider outage: keep the user signed out, preserve only a safe
+  return path, explain sign-in is unavailable, and provide retry.
+- Unverified/locked/disabled account: show an approved next action without
+  exposing unnecessary account details to an unauthenticated observer.
+- Duplicate email/account-linking conflict: never auto-link based on email
+  alone; offer a safe recovery/support path.
+- Expired/used reset link: reject it and offer a fresh reset request.
+- SSO cancelled/denied: return to the public home with a neutral message; keep
+  chat disabled.
+- OIDC callback state/nonce/code/token failure: clear partial auth state, log a
+  correlation ID without tokens, and restart sign-in safely.
+- Expired/invalid access token: attempt approved renewal once; if it fails,
+  clear session and require sign-in again.
+- API `401`/`403`: show sign-in/permission behavior and never retry the same
+  unauthorized request indefinitely.
+- Keep both sign-in options reachable after recoverable failures and preserve
+  keyboard focus/accessibility on error messages.
+
+**Exit gate:** both approved sign-in paths work end-to-end; registration,
+verification, and recovery work according to the selected identity provider;
+public chat is disabled until authentication is confirmed; API authorization
+and account isolation are tested; failure cases are automated and manually
+demoed; no credential or token is logged or shipped to an untrusted client.
 
 ### key105 — SQL conversation persistence and private history
 
@@ -1009,10 +1152,21 @@ the same pull request.
 - [ ] Add keyboard, screen-reader, contrast, mobile-layout, and generated-output
   rendering checks.
 
-### Phase 5 — OIDC sign-in, JWT API authentication, and authorization
+### Phase 5 — Email/password, SSO, account recovery, and API authorization
 
-- [ ] Select an identity provider based on budget, learning goals, and
-  deployment plan; record a comparison before committing to one.
+- [ ] Select an identity platform that supports the desired local account and
+  external SSO flows; compare budget, registration/recovery UX, federation, and
+  deployment terms in ADR 0003.
+- [ ] Present email/password and SSO as distinct choices on the public home;
+  chat remains locked until the application confirms a real session.
+- [ ] Add registration fields for name, email, phone (optional unless justified),
+  password, and confirmation; never store confirmation or raw passwords.
+- [ ] Add email verification, forgot-password, and reset-password flows using
+  the identity platform's secure single-use, expiring tokens.
+- [ ] Use generic sign-in/reset messages to prevent account enumeration; add
+  lockout, throttling, and safe duplicate-email handling.
+- [ ] Redirect SSO users to the identity provider and support authorization-code
+  flow with PKCE; do not collect enterprise SSO passwords in the app.
 - [ ] Register the SPA as a public OIDC client and the API as a protected
   resource/audience in the identity provider.
 - [ ] Configure authorization-code flow with PKCE and exact allowed redirect and
@@ -1033,6 +1187,12 @@ the same pull request.
   continue issuing OIDC/JWT access tokens to the SPA/API where possible.
 - [ ] Document that a generic SAML login is not a replacement for API bearer
   token validation.
+- [ ] Test invalid credentials, unknown email, duplicate registration,
+  verification pending, locked account, invalid/expired reset links, SSO cancel,
+  provider outage, callback state/nonce failure, invalid claims/token,
+  expired session, and unauthorized API requests.
+- [ ] Clear partial sign-in state on callback failures, log only safe
+  correlation IDs, and keep chat disabled until sign-in succeeds.
 
 ### Phase 6 — API and AI security hardening
 

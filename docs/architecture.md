@@ -120,11 +120,103 @@ flowchart TB
     Secrets -. credentials .-> ProviderSelection
 ```
 
+### Identity and home-page flow
+
+```mermaid
+flowchart TB
+    Visitor[Visitor opens public Angular home]
+    Home[Public home: chat composer disabled]
+    Choice{Choose sign-in method}
+    Local[Email/password dialog]
+    Register[Register: name, email, phone, password, confirm]
+    Forgot[Forgot password / reset]
+    SSO[Continue with SSO]
+    OIDC[OIDC authorization code + PKCE]
+    IdP[Trusted identity provider]
+    Callback[OIDC callback: state, nonce, code exchange]
+    Session[Authenticated app session]
+    Chat[Angular chat enabled]
+    API[ASP.NET Core API]
+    Auth[JWT/session validation and authorization]
+    Fail[Safe error UI + redacted diagnostics]
+
+    Visitor --> Home --> Choice
+    Choice --> Local
+    Local -->|Create account| Register
+    Local -->|Forgot password| Forgot
+    Register --> IdP
+    Forgot --> IdP
+    Local -->|Email/password via approved auth flow| IdP
+    IdP -->|Local credentials verified| Session
+    Choice --> SSO --> OIDC --> IdP
+    IdP -->|Authorization response| Callback
+    Callback -->|Validated identity/session| Session
+    Session --> Chat
+    Chat -->|Authorized request| API --> Auth
+    Local -. invalid credentials / locked .-> Fail
+    Register -. invalid / duplicate / verification .-> Fail
+    Forgot -. expired or invalid token .-> Fail
+    OIDC -. denied / provider unavailable .-> Fail
+    Callback -. state / nonce / token failure .-> Fail
+    API -. 401 / 403 / network failure .-> Fail
+```
+
+All identity components in this flow are planned. The exact identity provider
+and whether credentials are managed by that provider or ASP.NET Core Identity
+must be decided in key104 and recorded in
+[ADR 0003](decisions/0003-identity-and-federation.md). The preferred approach
+is a trusted identity platform that supports local accounts and upstream
+federation. Do not create a custom password store or token protocol simply to
+keep all screens inside Angular.
+
+### Public home and sign-in UX
+
+The home page is accessible without a session, but the chat composer and
+conversation actions stay disabled until an authenticated session is confirmed.
+Show a read-only preview and a clear message explaining why chat is locked.
+Provide two visible actions: **Sign in** (email/password dialog with create
+account and forgot-password links) and **Continue with SSO** (redirect to the
+identity provider). On small screens, stack the actions; retain visible labels,
+keyboard access, dialog focus management, and assistive-technology status
+announcements.
+
+Registration collects name, email, phone according to the approved policy,
+password, and confirmation. Confirm-password is a client-side check and must
+not be stored. Phone is recommended to be optional unless a concrete feature
+requires it. Password hashing, email verification, reset, lockout, and
+credentials must be handled at the trusted identity boundary.
+
+### Authentication failure behavior
+
+| Failure | UI behavior | Security behavior |
+|---|---|---|
+| Wrong credentials | Generic sign-in error and retry | Do not reveal if an email is registered; rate-limit attempts |
+| Duplicate registration | Offer sign-in or password-reset path | Avoid account enumeration; never auto-link by email |
+| Password confirmation mismatch | Inline validation before submit | Server/identity provider validates submitted registration |
+| Email verification pending | Offer resend/continue verification | Keep protected API/chat access disabled |
+| Locked or disabled account | Show safe next step/support route | Do not bypass lockout |
+| Unknown email on password reset | Show the same generic confirmation | Do not reveal account existence |
+| Expired/reused reset token | Explain link expiry and offer a fresh request | Reject the token; never allow replay |
+| User cancels SSO | Return to public home with neutral message | Keep chat disabled |
+| Identity provider unavailable | Show temporary issue and retry option | Do not fall back to a fake authenticated session |
+| State/nonce/code-exchange failure | Clear partial login state and offer restart | Reject callback; never log codes or tokens |
+| Invalid issuer/audience/signature/claims | Safe sign-in failure message | Reject identity/token and deny API access |
+| Expired token/session | Try only approved renewal, then request sign-in | API returns `401`; do not retry indefinitely |
+| Insufficient permission | Show access-denied state | API returns `403`; do not treat as signed out success |
+| API/network unavailable | Show retryable chat error | Never call model provider directly from Angular |
+| Session state cannot be verified | Return to locked home/login options | Fail closed until authentication is re-established |
+
+Log only safe failure categories and correlation IDs. Never log passwords,
+reset tokens, authorization codes, access tokens, or full user-info payloads.
+
 ### Request flow: chat completion
 
-1. The user signs in through the identity provider using OIDC.
-2. Angular obtains an API access token and calls the API over HTTPS.
-3. ASP.NET Core validates the JWT and authorizes the requested operation.
+1. The user establishes a session through the approved email/password or SSO
+   flow; SSO uses OIDC authorization-code flow with PKCE where configured.
+2. Angular obtains the approved API access token or uses the approved BFF
+   session and calls the API over HTTPS.
+3. ASP.NET Core validates the JWT or trusted session and authorizes the
+   requested operation.
 4. The API validates the request and applies input, request-size, CORS, and
    rate-limit policies.
 5. The chat application verifies conversation ownership and loads only the

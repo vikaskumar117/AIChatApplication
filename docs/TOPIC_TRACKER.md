@@ -235,3 +235,4 @@ the learning guide as that key is worked.
 | Date | Release key | Topics updated | Notes |
 |---|---|---|---|
 | 2026-10-25 | Planning | 120 topics inventoried | Initial statuses are Not started; implementation has not begun. |
+| 2026-10-25 | key103-key104 planning | T061, T063-T070 lesson scope clarified | Added local-account/SSO UX, account recovery, session gating, and auth failure scenarios to the roadmap and learning guide; no topics marked Done. |

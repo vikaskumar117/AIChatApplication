@@ -560,6 +560,182 @@ AI-generated prose, and what does a fake HTTP handler let you verify?
 - **OWASP mindset:** validate inputs, minimize data, apply least privilege,
   review dependencies, and test ownership/security boundaries.
 
+## key103-key104 learning: signed-out home, accounts, and SSO
+
+### User journey at a glance
+
+```mermaid
+stateDiagram-v2
+    [*] --> PublicHome
+    PublicHome --> ChatLocked: visitor / session unknown
+    ChatLocked --> EmailPasswordDialog: choose Sign in
+    ChatLocked --> SSORedirect: choose Continue with SSO
+    EmailPasswordDialog --> Register: choose Create account
+    EmailPasswordDialog --> ForgotPassword: choose Forgot password
+    Register --> VerificationPending: registration accepted
+    VerificationPending --> Authenticated: verification succeeds
+    EmailPasswordDialog --> Authenticated: credentials accepted
+    SSORedirect --> ProviderLogin: redirect with OIDC + PKCE
+    ProviderLogin --> Callback: identity provider returns
+    Callback --> Authenticated: state/nonce/tokens validated
+    Callback --> ChatLocked: cancel or any callback failure
+    Register --> ChatLocked: validation/provider failure
+    ForgotPassword --> ChatLocked: show generic confirmation
+    Authenticated --> ChatEnabled: API-backed session confirmed
+    ChatEnabled --> ChatLocked: logout / session invalid
+```
+
+The home page can be public, but chat is a protected feature. Until the session
+is confirmed, keep the composer, send action, and conversation actions disabled
+and explain the reason. The API still enforces authorization if someone bypasses
+the Angular UI.
+
+### Topic card: authentication vs. authorization (tracker T061)
+
+**Definition.** Authentication (authn) establishes the identity of a caller.
+Authorization (authz) decides whether that identity may perform a specific
+operation on a specific resource.
+
+**Why we use it.** Successful login should unlock the chat feature, but it must
+not automatically let a user read every other user's conversations.
+
+**How we use it.** Angular displays signed-in state after a verified session.
+The API validates the caller and applies authorization policies. When
+conversation persistence is implemented, each query must also scope the
+resource to the validated caller identity.
+
+**Project example.** This is target behavior for key104/key105, not current
+code. The roadmap's key104 exit gate requires API token/session validation;
+key105 adds account-scoped SQL data.
+
+```text
+No valid session                  -> 401 Unauthorized
+Valid session, insufficient rights -> 403 Forbidden
+Valid session, owns conversation   -> allow operation
+```
+
+**Trade-offs and alternatives.** Hiding a button or adding an Angular route
+guard improves UX but is not a security control. Duplicating every policy in
+the client creates drift. Keep server-side authorization authoritative and
+mirror only enough logic in the UI to guide navigation.
+
+**Interview-ready answer.** “Authentication answers who the caller is;
+authorization answers whether that caller may perform this action. I enforce
+authorization in the API and resource ownership in the data/application layer;
+frontend guards are only a user-experience aid.”
+
+**Check your understanding.** If a user has a valid JWT but requests another
+user's conversation, should the API return `401` or `403`, and where should the
+ownership check run?
+
+### Topic card: OIDC authorization code with PKCE (tracker T063/T064)
+
+**Definition.** OpenID Connect (OIDC) is an identity layer built on OAuth 2.0.
+For a browser SPA, authorization code with PKCE redirects authentication to
+the identity provider. PKCE binds the authorization code to a verifier held by
+the client flow, reducing the risk of an intercepted code being reused.
+
+**Why we use it.** The application should not collect enterprise SSO
+credentials. The identity provider handles sign-in, MFA, and any upstream
+federation (including SAML where needed), then returns a protocol response for
+the application to validate.
+
+**How we use it.** Use a maintained OIDC library; register exact client,
+redirect, logout, and API audience settings. Initiate authorization-code flow
+with PKCE, validate state/nonce, complete code exchange using the approved SPA
+or BFF design, validate the API access token at the API, and request profile
+information only when necessary.
+
+**Project example.** Planned for key104; no OIDC callback or identity provider
+is currently configured. The feature flow is documented in
+[architecture.md](architecture.md) and the key104 implementation checklist in
+[PROJECT_ROADMAP.md](../PROJECT_ROADMAP.md).
+
+```text
+Angular -> Identity Provider: authorize + PKCE challenge + state/nonce
+Identity Provider -> Angular callback: authorization code + state
+OIDC library: validate state, exchange code using PKCE verifier
+Angular -> API: access token for the API audience
+API: validate issuer, audience, signature, expiry, and scopes
+```
+
+**Trade-offs and alternatives.** A SPA with a bearer token has browser token
+storage/XSS considerations. A Backend-for-Frontend (BFF) can keep tokens
+server-side and use an HttpOnly cookie, but adds server/session and CSRF
+design. Choose the approach deliberately; do not implement an OIDC protocol by
+hand. ID token and access token have different purposes; an ID token should not
+be sent as an API bearer token unless the API contract explicitly uses it (the
+normal design is an access token).
+
+**Interview-ready answer.** “I use a maintained OIDC client with authorization
+code and PKCE for the SPA. The API validates the access token's issuer,
+audience, signature, expiry, and permissions. I choose SPA token handling or a
+BFF based on threat model and deployment, rather than treating the UI as the
+security boundary.”
+
+**Check your understanding.** What does PKCE protect, why is `state` needed,
+and why should an API validate audience as well as signature?
+
+### Topic card: Local accounts, password handling, and recovery (tracker T069)
+
+**Definition.** A local account authenticates with application-associated
+credentials (usually email/password). Registration, verification, password
+reset, lockout, and credential storage are identity-system responsibilities,
+not ordinary chat form fields.
+
+**Why we use it.** Users need an email/password option in addition to SSO, but
+password mistakes or account enumeration can expose users and create account
+takeover risk.
+
+**How we use it.** Prefer an identity platform that supports both local
+accounts and external federation. If the product requires app-managed
+credentials, use ASP.NET Core Identity or another maintained identity system
+and review its secure session/token architecture. Require server-side
+validation; use secure password hashing, single-use expiring reset tokens,
+verification/lockout policy, and rate limits. Confirm password is a UI
+validation field and is never stored. Return a generic reset confirmation
+regardless of whether the address exists.
+
+**Project example.** Planned for key104. The roadmap calls for a sign-in
+dialog, registration fields (name, email, phone by approved policy, password,
+confirm password), forgot-password/reset, and explicit failure tests. No
+credential system exists in the current repository.
+
+**Trade-offs and alternatives.** A provider-hosted flow lowers the amount of
+sensitive authentication code the application owns but can constrain branding
+and UX. Custom Angular forms provide control but must call a trusted
+identity API; never store raw passwords or implement hashing/reset tokens
+yourself. Phone number is personal data: keep it optional unless there is a
+specific need, and define purpose, verification, and retention.
+
+**Interview-ready answer.** “I delegate credential storage, hashing, reset
+tokens, lockout, and policy to a maintained identity system. The UI validates
+password confirmation but never persists it; reset responses are generic to
+avoid account enumeration, and chat remains locked until the trusted auth
+boundary confirms a session.”
+
+**Check your understanding.** What prevents an attacker from learning whether
+an email is registered through the forgot-password endpoint? Why is confirming
+the password not a value to persist?
+
+### Authentication failures: expected behavior
+
+| Scenario | User-facing result | Must not happen |
+|---|---|---|
+| Invalid email/password | Generic credentials error; retry or reset links | Reveal whether email exists |
+| Duplicate email on registration | Offer sign-in/reset guidance | Auto-link SSO identity just because email matches |
+| Password mismatch | Inline form validation | Store/send confirmation value as account data |
+| Pending email verification | Explain next verification step; chat stays locked | Create a fully authorized session if verification is required |
+| Forgot-password address unknown | Same confirmation as known address | Account enumeration |
+| Reset link invalid/expired/reused | Explain expiry and offer a fresh link | Accept token replay |
+| SSO cancel/denial | Return to public home; chat stays locked | Treat cancelled login as success |
+| Provider unavailable | Temporary error with retry/other sign-in option | Fall back to a fabricated local session |
+| Callback state/nonce mismatch | Clear partial state; restart safely | Accept callback or log code/token |
+| Invalid token or required claims missing | Safe error; stay signed out | Enable chat from untrusted userinfo |
+| Session expires | Try approved renewal once or require sign-in | Infinite API retry loop |
+| API returns 401/403 | Prompt sign-in or show access denied | Treat forbidden data as empty success |
+| Auth state cannot be checked | Fail closed and keep composer disabled | Assume the old in-memory flag is valid |
+
 ### Azure, delivery, and operations
 
 - **Hosting choice:** use App Service for managed web hosting, containers when
