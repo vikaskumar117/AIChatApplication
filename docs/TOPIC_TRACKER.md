@@ -7,10 +7,15 @@
 Progress formula: `completed topics ÷ 122 × 100`. Count only rows whose status
 is **Done**. Update the number and percentage at the top whenever a status
 changes. Markdown does not calculate this value automatically; the maintainer
-must update it in the same documentation change. “Done” means you can explain
-the concept in your own words, point to its project use (or explain why the
-project does not use it), and answer a practical trade-off question. Reading
-the guide alone does not mark a topic done.
+must update it in the same documentation change. This file is a progress
+tracker only. The canonical teaching source, with workbook mapping, project
+examples, diagrams, and references, is the
+[module-wise learning guide](learning/README.md).
+
+“Done” means you can explain the concept in your own words, trace its
+implemented or clearly labeled planned/practice example, and answer a
+practical trade-off question. Reading the guide alone does not mark a topic
+done.
 
 ## Status values
 
@@ -34,8 +39,9 @@ count and completion formula.
 
 Topics are introduced when their project feature makes them concrete. They can
 be studied earlier, but the key assignment below gives each topic a practical
-implementation/review point. The detailed lesson card is added or expanded in
-the learning guide as that key is worked.
+implementation/review point. Lesson content lives in
+[docs/learning/](learning/README.md); update it with the actual code path when
+a planned concept is implemented.
 
 | Release key | Topic IDs primarily covered |
 |---|---|
@@ -50,7 +56,7 @@ the learning guide as that key is worked.
 | key109 | T091-T100 |
 | key110 | T010, T013-T017, T028-T029, T033, T101-T120 |
 
-### Module 1 — C# language and type system (10)
+### [Module 1 — C# language and type system](learning/module-01-csharp.md) (10)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -65,7 +71,7 @@ the learning guide as that key is worked.
 | T009 | Collections: List, Dictionary, HashSet, queues | Not started | |
 | T010 | `Span<T>`, `Memory<T>`, and allocation-aware APIs | Not started | |
 
-### Module 2 — .NET runtime, async, and dependency injection (10)
+### [Module 2 — .NET runtime, async, and dependency injection](learning/module-02-dotnet-runtime.md) (10)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -80,7 +86,7 @@ the learning guide as that key is worked.
 | T019 | Configuration, Options pattern, and validation | Not started | |
 | T020 | `IHttpClientFactory`, typed clients, and HTTP timeouts | Not started | |
 
-### Module 3 — ASP.NET Core API and web platform (10)
+### [Module 3 — ASP.NET Core API and web platform](learning/module-03-aspnet-core.md) (10)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -95,7 +101,7 @@ the learning guide as that key is worked.
 | T029 | Filters, endpoint metadata, and cross-cutting behavior | Not started | |
 | T030 | Rate limiting and request-size controls | Not started | |
 
-### Module 4 — AI and GenAI application engineering (10)
+### [Module 4 — AI and GenAI application engineering](learning/module-04-ai-engineering.md) (10)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -110,7 +116,7 @@ the learning guide as that key is worked.
 | T039 | Evaluation datasets and repeatable quality checks | Not started | |
 | T040 | Tool/function calling and safe capability design | Not started | |
 
-### Module 5 — SQL and EF Core (10)
+### [Module 5 — SQL and EF Core](learning/module-05-sql-efcore.md) (10)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -125,7 +131,7 @@ the learning guide as that key is worked.
 | T049 | Indexes, execution plans, and sargability | Not started | |
 | T050 | Pagination, N+1 queries, and query performance | Not started | |
 
-### Module 6 — Angular and TypeScript (10)
+### [Module 6 — Angular and TypeScript](learning/module-06-angular.md) (10)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -140,7 +146,7 @@ the learning guide as that key is worked.
 | T059 | Accessibility and safe rendering of generated content | Not started | |
 | T060 | Angular component and browser end-to-end tests | Not started | |
 
-### Module 7 — Authentication, authorization, and API security (12)
+### [Module 7 — Authentication, authorization, and API security](learning/module-07-security.md) (12)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -157,7 +163,7 @@ the learning guide as that key is worked.
 | T121 | RBAC, roles, permissions, and feature-level authorization | Not started | |
 | T122 | Account lifecycle, approval workflows, admin actions, and audit | Not started | |
 
-### Module 8 — Testing, maintainability, and engineering workflow (10)
+### [Module 8 — Testing, maintainability, and engineering workflow](learning/module-08-quality.md) (10)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -172,7 +178,7 @@ the learning guide as that key is worked.
 | T079 | Dependency/secret scanning and supply-chain checks | Not started | |
 | T080 | Code review, PR gates, and technical documentation | Not started | |
 
-### Module 9 — RAG, responsible AI, and data governance (10)
+### [Module 9 — RAG, responsible AI, and data governance](learning/module-09-rag.md) (10)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -187,7 +193,7 @@ the learning guide as that key is worked.
 | T089 | PII, retention, deletion, and data minimization | Not started | |
 | T090 | Responsible AI, human oversight, and refusal behavior | Not started | |
 
-### Module 10 — Azure, hosting, and cloud delivery (10)
+### [Module 10 — Azure, hosting, and cloud delivery](learning/module-10-hosting.md) (10)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -202,7 +208,7 @@ the learning guide as that key is worked.
 | T099 | Free tiers, quotas, budgets, and total cost of ownership | Not started | |
 | T100 | Availability, scaling, disaster recovery, and restore tests | Not started | |
 
-### Module 11 — Reliability, observability, and distributed systems (10)
+### [Module 11 — Reliability, observability, and distributed systems](learning/module-11-reliability.md) (10)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -217,7 +223,7 @@ the learning guide as that key is worked.
 | T109 | Idempotency, duplicate delivery, outbox, and DLQ | Not started | |
 | T110 | SLI/SLO, incident response, runbooks, and alerting | Not started | |
 
-### Module 12 — Architecture and senior-engineer interview practice (10)
+### [Module 12 — Architecture and senior-engineer interview practice](learning/module-12-architecture.md) (10)
 
 | ID | Topic | Status | Evidence / notes |
 |---|---|---|---|
@@ -236,6 +242,6 @@ the learning guide as that key is worked.
 
 | Date | Release key | Topics updated | Notes |
 |---|---|---|---|
-| 2026-10-25 | Planning | 122 topics inventoried | Initial statuses are Not started; implementation has not begun. |
+| 2026-10-25 | Learning guide | 122 topics and workbook themes | Module lessons created; status remains Not started because reading/generated code alone does not demonstrate understanding. |
 | 2026-10-25 | key103-key104 planning | T061, T063-T070, T121-T122 lesson scope clarified | Added local-account/SSO UX, account recovery, session gating, approval status, role/permission, and admin audit requirements; no topics marked Done. |
 | 2026-10-25 | key104 status-policy refinement | T121-T122 | Pending and blocked accounts are limited to the public home/account-status page; conversation history is inaccessible. Permission overrides are planned for future per-user restrictions; no topics marked Done. |

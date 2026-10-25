@@ -1,88 +1,81 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
 using AIChatApplication.Responses;
 using Microsoft.AspNetCore.Http;
 
 namespace AIChatApplication.Services;
 
-public class ChatApiService : IChatApiService
+public sealed class ChatApiService : IChatApiService
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IConfiguration _configuration;
+    private const int MaxOutputTokens = 300;
+
+    private readonly IAICompletionProviderSelector _providerSelector;
     private readonly ILogger<ChatApiService> _logger;
 
     public ChatApiService(
-        IHttpClientFactory httpClientFactory,
-        IConfiguration configuration,
+        IAICompletionProviderSelector providerSelector,
         ILogger<ChatApiService> logger)
     {
-        _httpClientFactory = httpClientFactory;
-        _configuration = configuration;
+        _providerSelector = providerSelector;
         _logger = logger;
     }
 
-    public async Task<Result> GetExplanationAsync(string code, CancellationToken cancellationToken = default)
+    public async Task<Result> GetExplanationAsync(
+        string code,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(code))
         {
             return new Result(StatusCodes.Status400BadRequest, "Code is required.", null);
         }
 
+        var provider = _providerSelector.GetProvider();
+        var prompt = $"""
+            You are a senior .NET developer. Explain the following in simple words. Keep your explanation below 200 words.
+
+            C# Code:
+            {code}
+            """;
+
+        var request = new AICompletionRequest(
+            [new AIMessage("user", prompt)],
+            MaxOutputTokens);
+
         try
         {
-            var apiKey = _configuration["OpenAI:ApiKey"];
-            if (string.IsNullOrWhiteSpace(apiKey))
-                throw new InvalidOperationException("OpenAI API key is missing in configuration.");
-
-            var client = _httpClientFactory.CreateClient();
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-            var prompt = $"""
-                You are an senior .NET developer. Explain the following in simple words. Keep your explanation below 200 words.
-
-                C# Code:
-                {code}
-                """;
-
-            var requestBody = new
-            {
-                model = _configuration["OpenAI:Model"] ?? "gpt-4o-mini",
-                messages = new[]
-                {
-                    new { role = "user", content = prompt }
-                },
-                max_tokens = 300
-            };
-
-            var json = JsonSerializer.Serialize(requestBody);
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            using var response = await client.PostAsync("https://api.openai.com/v1/chat/completions", content, cancellationToken);
-            response.EnsureSuccessStatusCode();
-
-            var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
-
-            using var doc = JsonDocument.Parse(responseJson);
-            if (doc.RootElement.TryGetProperty("choices", out var choices) &&
-                choices.ValueKind == JsonValueKind.Array &&
-                choices.GetArrayLength() > 0 &&
-                choices[0].TryGetProperty("message", out var message) &&
-                message.TryGetProperty("content", out var contentElement) &&
-                contentElement.ValueKind == JsonValueKind.String)
-            {
-                return new Result(StatusCodes.Status200OK, null, contentElement.GetString());
-            }
-
-            throw new JsonException("OpenAI response did not contain a chat completion.");
+            var completion = await provider.CompleteAsync(request, cancellationToken);
+            return new Result(StatusCodes.Status200OK, null, completion.Text);
         }
-        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        catch (HttpRequestException exception)
         {
-            _logger.LogError(exception, "The request to OpenAI failed.");
+            _logger.LogError(exception, "The request to AI provider {Provider} failed.", provider.Name);
+            return ProviderFailure();
+        }
+        catch (System.Text.Json.JsonException exception)
+        {
+            _logger.LogError(exception, "AI provider {Provider} returned an invalid response.", provider.Name);
+            return ProviderFailure();
+        }
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogError(exception, "The request to AI provider {Provider} timed out.", provider.Name);
             return new Result(
-                StatusCodes.Status500InternalServerError,
-                "Unable to get an explanation. Please try again later.",
+                StatusCodes.Status504GatewayTimeout,
+                "The configured AI provider did not respond in time. Please try again.",
                 null);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An unexpected error occurred while requesting a completion from {Provider}.", provider.Name);
+            return ProviderFailure();
+        }
     }
+
+    private static Result ProviderFailure() =>
+        new(
+            StatusCodes.Status502BadGateway,
+            "The configured AI provider could not complete the request. Check provider availability and configuration, then try again.",
+            null);
 }

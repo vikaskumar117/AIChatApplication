@@ -140,7 +140,12 @@ For every key:
 2. Confirm the key's outcome, dependencies, scope, and acceptance criteria.
 3. Implement the smallest end-to-end slice that meets the outcome.
 4. Add/update tests before relying on manual testing alone.
-5. Update architecture/learning/tracker docs as the implementation changes.
+5. Update architecture, learning, and tracker docs as implementation changes.
+   The canonical teaching material is in `docs/learning/` (module-wise); keep
+   examples labeled implemented, planned, or practice-only. Map every workbook
+   topic to a justified project feature or a small learning exercise, but do
+   not add production code, packages, or infrastructure solely to demonstrate
+   a concept.
 6. Run the key's required checks; fix failures before opening a PR.
 7. Open a PR to `dev`; review code, security, tests, cost, and docs.
 8. Merge only after checks and review pass; demo the result and mark the tracker.
@@ -1142,8 +1147,10 @@ key trade-offs.
   and quick API usage.
 - `docs/architecture.md` — implemented component diagram, request/data flows,
   trust boundaries, and deployment view.
-- `docs/learning-guide.md` — concept explanations tied to actual files and
-  feature behavior.
+- `docs/learning/README.md` and its module files — canonical concept
+  explanations tied to actual or clearly labeled planned project examples.
+- `docs/learning-guide.md` — compatibility page pointing to the canonical
+  module-wise guide.
 - `docs/decisions/` — short architecture decision records for choices with
   meaningful alternatives, such as identity provider, database, AI selection,
   and RAG store.

@@ -9,8 +9,8 @@ Implementation status and work sequence live in
 Development is gated by release keys **key101-key110**; each key must pass its
 acceptance checks before the next begins. The
 [topic tracker](TOPIC_TRACKER.md) records learning progress, and the
-[learning guide](learning-guide.md) expands concepts in the order their feature
-is implemented.
+[module-wise learning guide](learning/README.md) is the canonical source for
+concept explanations, diagrams, project examples, and references.
 
 ## Product vision
 
@@ -27,8 +27,10 @@ deployment are introduced in separate feature phases.
 flowchart LR
     Client[HTTP client / Swagger UI] --> Controller[ChatController]
     Controller --> Contract[IChatApiService]
-    Contract --> Ollama[OllamaChatApiService]
-    Contract -. alternative implementation .-> OpenAI[ChatApiService]
+    Contract --> Application[ChatApiService]
+    Application --> Selector[Configured provider selector]
+    Selector --> Ollama[OllamaChatCompletionProvider]
+    Selector --> OpenAI[OpenAIChatCompletionProvider]
     Ollama --> HttpClient[IHttpClientFactory]
     OpenAI --> HttpClient
     HttpClient --> Model[Ollama or OpenAI-compatible endpoint]
@@ -41,12 +43,18 @@ flowchart LR
 - The backend is an ASP.NET Core Web API targeting .NET 10.
 - `ChatController` exposes the code-explanation endpoint and delegates to
   `IChatApiService`.
-- `OllamaChatApiService` and `ChatApiService` implement the current service
-  contract. `Program.cs` registers Ollama as the active implementation.
-- Provider requests are made with `HttpClient`; no provider SDK abstraction is
-  currently used.
+- `ChatApiService` builds provider-neutral completion requests. The configured
+  `AICompletionProviderSelector` resolves either the Ollama or OpenAI adapter.
+- `OllamaChatCompletionProvider` and `OpenAIChatCompletionProvider` implement
+  `IAICompletionProvider`; each uses a named `HttpClient` and typed options.
+- Provider name, endpoint, model, timeout, and OpenAI key come from server-side
+  configuration. Options validation runs at startup for the selected provider.
+- Both adapters currently use the OpenAI-compatible chat-completions HTTP
+  protocol. Other provider protocols would need their own adapter mapping.
 - The API has a shared `Result` envelope and an exception handler.
-- The active Ollama endpoint/model are configured in `appsettings.json`.
+- Ollama is the default provider. OpenAI credentials are not included in
+  `appsettings.json`; configure them with User Secrets or an environment
+  variable such as `OpenAI__ApiKey`.
 - There is no Angular project, authentication, database, EF Core, conversation
   history, RAG, or cloud deployment implemented yet.
 - The `main` branch is protected from this feature work by doing development on
@@ -59,13 +67,46 @@ Relevant implementation files:
   point.
 - [IChatApiService.cs](../Services/IChatApiService.cs) — current chat service
   contract.
-- [OllamaChatApiService.cs](../Services/OllamaChatApiService.cs) — Ollama HTTP
-  call and response parsing.
-- [ChatApiService.cs](../Services/ChatApiService.cs) — OpenAI-compatible
-  implementation.
+- [ChatApiService.cs](../Services/ChatApiService.cs) — prompt orchestration,
+  provider call, and API outcome mapping.
+- [IAICompletionProvider.cs](../Services/IAICompletionProvider.cs) — common
+  provider contract.
+- [AICompletionProviderSelector.cs](../Services/AICompletionProviderSelector.cs)
+  — server-side provider selection.
+- [OllamaChatCompletionProvider.cs](../Services/OllamaChatCompletionProvider.cs)
+  and [OpenAIChatCompletionProvider.cs](../Services/OpenAIChatCompletionProvider.cs)
+  — provider-specific HTTP adapters.
+- [AIProviderOptions.cs](../Options/AIProviderOptions.cs),
+  [OllamaOptions.cs](../Options/OllamaOptions.cs), and
+  [OpenAIOptions.cs](../Options/OpenAIOptions.cs) — typed provider settings.
 - [Result.cs](../Responses/Result.cs) — shared API response envelope.
 - [ApiExceptionHandler.cs](../Middleware/ApiExceptionHandler.cs) — unhandled
   exception response handling.
+
+### Running with a selected provider
+
+The default configuration uses local Ollama:
+
+```json
+{
+  "AIProvider": { "Name": "Ollama" }
+}
+```
+
+To select OpenAI, change the name to `OpenAI` and supply the key outside the
+tracked settings file. For local development, use .NET User Secrets:
+
+```powershell
+dotnet user-secrets init
+dotnet user-secrets set "OpenAI:ApiKey" "your-key"
+```
+
+Then run the API. Configuration follows ASP.NET Core's normal precedence, so
+environment variables can override JSON settings (for example,
+`AIProvider__Name=OpenAI` and `OpenAI__ApiKey`). Selecting OpenAI without a key,
+or using an unsupported provider name, fails during startup. No automatic
+fallback is performed because silently changing providers changes privacy,
+quality, and cost behavior.
 
 ## Target logical architecture
 

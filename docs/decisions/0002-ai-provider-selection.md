@@ -1,25 +1,25 @@
 # ADR 0002: AI provider selection
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-25
 - **Decision owners:** Project owner
 
 ## Context
 
 The application has an Ollama implementation and an OpenAI-compatible
-implementation. The active implementation is selected in dependency injection.
+implementation. Both use the OpenAI-compatible chat-completions HTTP shape.
+The active implementation is selected by server configuration.
 The learning goal is to support more than one model provider, with the active
 provider chosen by application configuration.
 
 ## Decision
 
-Define an application-owned provider contract for the chat-completion
-capabilities the product needs. Keep HTTP protocol, credentials, model-specific
-options, serialization, and response parsing in provider adapters. Bind and
-validate provider settings at startup, then use a small selector/factory or
-appropriate keyed DI registrations to resolve the configured implementation.
-Do not let arbitrary request data select a provider unless a later product
-requirement explicitly authorizes that behavior.
+Use the application-owned `IAICompletionProvider` contract for completion
+requests and results. Keep HTTP protocol, credentials, model settings,
+serialization, and response parsing in provider adapters. Bind and validate
+the selected provider's settings at startup, then use a small selector to
+resolve the configured implementation. Do not let client input select a
+provider.
 
 ## Alternatives considered
 
@@ -36,10 +36,15 @@ requirement explicitly authorizes that behavior.
 ## Consequences
 
 - Provider implementations can be substituted without controller changes.
+- Both current adapters use the same chat-completions request/response shape;
+  this is an intentional learning scope, not a claim that every provider has
+  identical capabilities.
 - The common contract must stay focused; provider-specific features may require
   capabilities or an explicitly provider-specific path.
 - Configuration errors should fail at startup; runtime failures should be
   mapped to safe, observable application outcomes.
+- OpenAI credentials must be supplied through User Secrets or an environment
+  secret, not checked into `appsettings.json`.
 - Retries and fallback may incur duplicate costs or change output semantics;
   they require explicit budgets and tests.
 

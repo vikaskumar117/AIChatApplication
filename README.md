@@ -11,10 +11,10 @@ features.
   small technical tasks, acceptance goals, tooling costs, and hosting options.
 - [Architecture overview](docs/architecture.md) — current implementation,
   target diagrams, request flows, security boundaries, and hosting topologies.
-- [Learning guide](docs/learning-guide.md) — concepts mapped to features and
-  code responsibilities, using definition/why/how/trade-off/project-example/
-  interview/check-understanding topic cards.
-- [Topic tracker](docs/TOPIC_TRACKER.md) — 120 trackable topics with status,
+- [Learning guide](docs/learning/README.md) — canonical module-wise lessons
+  mapped to the workbook, project features, simple diagrams, examples, and
+  official references.
+- [Topic tracker](docs/TOPIC_TRACKER.md) — 122 trackable topics with status,
   evidence, release-key mapping, and a manually maintained completion
   percentage.
 - [Architecture Decision Records](docs/decisions/README.md) — proposed choices,

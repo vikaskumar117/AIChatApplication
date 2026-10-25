@@ -1,6 +1,9 @@
 namespace AIChatApplication.Responses;
 
-/// <summary>Provides a consistent response envelope for API results and errors.</summary>
+/// <summary>
+/// API response envelope. A sealed record gives this data contract value equality
+/// without allowing behavior-changing subclasses.
+/// </summary>
 public sealed record Result(
     int StatusCode,
     string? ErrorMessage,
