@@ -14,6 +14,8 @@ features.
 - [Learning guide](docs/learning/README.md) — canonical module-wise lessons
   mapped to the workbook, project features, simple diagrams, examples, and
   official references.
+- [Angular frontend](frontend/README.md) — Node/npm requirements and local
+  commands for the public landing page and locked chat preview.
 - [Topic tracker](docs/TOPIC_TRACKER.md) — 122 trackable topics with status,
   evidence, release-key mapping, and a manually maintained completion
   percentage.

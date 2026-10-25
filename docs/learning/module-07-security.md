@@ -365,3 +365,108 @@ The current implementation protects its API key configuration and does not
 expose provider choice to callers. Authentication, browser boundaries,
 authorization, account status, audit, and rate limiting are future vertical
 slices. A learning example is not evidence of a deployed security control.
+
+## ASP.NET Core request security: how the pieces connect
+
+Authentication middleware validates a credential and creates a principal.
+Authorization evaluates that principal against an endpoint policy. The
+middleware order matters: authentication must run before authorization so
+policies can inspect the validated principal.
+
+```text
+HTTP bearer token
+      -> JWT validation (signature, issuer, audience, expiry)
+      -> ClaimsPrincipal
+      -> endpoint policy + current account state + resource ownership
+      -> allow or 401/403
+```
+
+**Future key104/key106 sketch (not registered in the current `Program.cs`):**
+
+```csharp
+builder.Services
+    .AddAuthentication()
+    .AddJwtBearer();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ChatAccess", policy =>
+        policy.RequireAuthenticatedUser()
+              .RequireClaim("permission", "chat:use"));
+});
+
+// In the pipeline:
+app.UseAuthentication();
+app.UseAuthorization();
+```
+
+Real configuration must set and validate the trusted authority/issuer and
+expected audience using the selected identity provider's documentation. Do
+not accept a token merely because it parses. The API must also look up current
+account status where immediate blocking is required; a previously issued
+role claim can become stale.
+
+### Authentication, permission, and ownership are separate checks
+
+```text
+Is this a valid identity?       Authentication
+May this identity use chat?     Authorization policy
+Does this identity own chat 42? Resource ownership check
+Is the account currently active? Current account-state check
+```
+
+An `[Authorize]` attribute can guard the endpoint, while a use case must
+verify that the conversation's `UserId` matches the validated subject. Never
+use a caller-supplied owner ID as the trusted identity.
+
+### CORS example and its boundary
+
+For local development, configure only the actual Angular origin; do not
+enable wildcard origins to make a browser error disappear.
+
+```csharp
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AngularDev", policy =>
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
+});
+```
+
+Apply the named policy deliberately in the middleware pipeline. This example
+is not current app configuration, and it does not authenticate callers.
+Production must use the exact deployed origin and credential policy selected
+for the eventual token or cookie architecture.
+
+### OIDC and SAML boundary
+
+```text
+Angular SPA --OIDC authorization code + PKCE--> trusted identity platform
+       ^                                        |
+       | access token                           | upstream SAML, if required
+       +---------- ASP.NET API <-----------------+
+```
+
+OIDC provides the app's identity/session protocol. An enterprise SAML identity
+provider can federate upstream through a trusted identity platform; the
+Angular application should not implement SAML assertion parsing itself. Use a
+maintained client/library and validate state, nonce, issuer, audience, and
+signatures as appropriate to the flow.
+
+### Rate limiting and credential handling
+
+Use separate controls for request bytes, request frequency, and provider
+spend. A rate-limit policy commonly returns `429`; a request-size limit
+commonly returns `413`. Choose a partition such as validated user identity
+once authentication exists, with an appropriate anonymous policy before
+that.
+
+```text
+request -> body-size limit -> identity/IP rate partition -> usage budget -> provider
+```
+
+Store provider credentials server-side. Locally, use the .NET user-secrets
+store; in deployment, use a managed secret store or workload identity where
+available. Logs and error responses must not include credentials, tokens, or
+submitted source code by default.

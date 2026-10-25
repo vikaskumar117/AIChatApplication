@@ -1,0 +1,311 @@
+<div class="page-shell">
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Syntax home">
+      <span class="brand-mark" aria-hidden="true">&lt;/&gt;</span>
+      <span>syntax<span class="brand-period">.</span></span>
+    </a>
+
+    <nav class="header-actions" aria-label="Account">
+      @let session = sessionState();
+      @if (session.status === 'active') {
+        <span class="account-email">{{ session.email }}</span>
+        <button class="button button-outline" type="button" (click)="logout()">Sign out</button>
+      } @else if (session.status === 'pending-approval'
+        || session.status === 'blocked'
+        || session.status === 'rejected') {
+        <span class="account-email">{{ session.email }}</span>
+        <button class="button button-outline" type="button" (click)="logout()">Sign out</button>
+      } @else {
+        <span class="prototype-label">
+          @if (session.status === 'loading') { Checking session… }
+          @else { Secure account access }
+        </span>
+        <button
+          class="button button-quiet"
+          type="button"
+          [disabled]="session.status === 'loading'"
+          (click)="openAuthDialog('login', authDialog)"
+        >
+          Sign in
+        </button>
+        <button
+          class="button button-outline"
+          type="button"
+          [disabled]="session.status === 'loading'"
+          (click)="openAuthDialog('register', authDialog)"
+        >
+          Create account
+        </button>
+      }
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR AI CODE COMPANION</p>
+        <h1 id="hero-title">Understand the code.<br /><span>Not just the output.</span></h1>
+        <p class="hero-description">
+          Get clear, practical explanations of the .NET code in front of you.
+          Build understanding one question at a time.
+        </p>
+
+        <div class="hero-actions">
+          <a class="button button-primary" href="#chat-preview">
+            Explore the workspace <span aria-hidden="true">↓</span>
+          </a>
+          <span class="hero-note">A calmer way to learn your codebase.</span>
+        </div>
+
+        <ul class="trust-list" aria-label="Product principles">
+          <li><span aria-hidden="true">✓</span> Explanations in plain language</li>
+          <li><span aria-hidden="true">✓</span> Provider credentials stay server-side</li>
+        </ul>
+      </div>
+
+      <aside class="preview-card" aria-label="Example code explanation">
+        <div class="preview-topbar">
+          <div class="window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+          <span>AIMessage.cs</span>
+          <span class="language-tag">C#</span>
+        </div>
+        <pre class="code-sample"><code>{{ codeSample }}</code></pre>
+        <div class="preview-divider"></div>
+        <div class="explanation-heading">
+          <span class="sparkle" aria-hidden="true">✳</span>
+          <span>In simple terms</span>
+          <span class="preview-status">EXAMPLE</span>
+        </div>
+        <p class="explanation-copy">
+          This record is the provider-neutral message shape used by the app.
+          It carries the speaker role and message content.
+        </p>
+        <div class="concept-chips" aria-label="Concepts in this example">
+          <span>record</span><span>Role</span><span>Content</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="workspace-section" id="chat-preview" aria-labelledby="workspace-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">THE WORKSPACE</p>
+          <h2 id="workspace-title">Your next question starts here.</h2>
+        </div>
+        <span class="workspace-badge"><span></span> Workspace preview</span>
+      </div>
+
+      <div class="workspace-card">
+        <div class="workspace-sidebar" aria-label="Conversation history preview">
+          <div class="sidebar-title">
+            <span>Conversations</span>
+            <button type="button" class="icon-button" disabled aria-label="New conversation unavailable">
+              <span aria-hidden="true">+</span>
+            </button>
+          </div>
+          <div class="conversation-placeholder" aria-hidden="true">
+            <span class="placeholder-icon">↗</span>
+            <span class="placeholder-line"></span>
+            <span class="placeholder-line short"></span>
+          </div>
+          <p class="sidebar-locked">Sign in to keep your conversations together.</p>
+        </div>
+
+        <div class="chat-panel">
+          <div class="chat-empty-state">
+            <div class="lock-illustration" aria-hidden="true">
+              <span class="lock-shackle"></span>
+              <span class="lock-body"><i></i></span>
+            </div>
+            <p class="eyebrow">A SPACE FOR YOUR CODE</p>
+            <h3>Your workspace is ready when you are.</h3>
+            <p class="empty-description">
+              Sign in with an approved account to ask questions and get a
+              thoughtful, step-by-step explanation.
+            </p>
+            <p class="access-status" role="status" aria-live="polite">
+              {{ statusNotice() || accountMessage() }}
+            </p>
+          </div>
+
+          @if (answer()) {
+            <section class="answer-card" aria-labelledby="answer-heading">
+              <h3 id="answer-heading">Explanation</h3>
+              <p>{{ answer() }}</p>
+            </section>
+          }
+          @if (chatError()) {
+            <p class="form-error chat-error" role="alert">{{ chatError() }}</p>
+          }
+
+          <form class="composer-wrap" (ngSubmit)="submitCode()">
+            <label class="sr-only" for="code-input">Code to explain</label>
+            <textarea
+              id="code-input"
+              rows="3"
+              placeholder="Paste a code snippet to explore..."
+              [formControl]="codeControl"
+              aria-describedby="composer-lock-note"
+              required
+            ></textarea>
+            <div class="composer-footer">
+              <span id="composer-lock-note" class="composer-hint">
+                @if (isChatLocked()) {
+                  Code input is available after an approved account signs in.
+                } @else {
+                  Your code is sent securely to the configured AI provider.
+                }
+              </span>
+              <button
+                class="send-button"
+                type="submit"
+                [disabled]="!canSubmitCode()"
+                [attr.aria-label]="isSubmittingCode() ? 'Waiting for explanation' : 'Send code for explanation'"
+              >
+                @if (isSubmittingCode()) { <span class="button-spinner" aria-hidden="true"></span> }
+                @else { <span aria-hidden="true">↑</span> }
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="steps-section" aria-labelledby="steps-title">
+      <div class="steps-intro">
+        <p class="eyebrow">MADE FOR THE MOMENT IT CLICKS</p>
+        <h2 id="steps-title">Less guessing.<br />More understanding.</h2>
+      </div>
+      <ol class="steps-list">
+        <li>
+          <span class="step-number">01</span>
+          <div><h3>Bring the code</h3><p>Start with the method or concept you want to understand.</p></div>
+        </li>
+        <li>
+          <span class="step-number">02</span>
+          <div><h3>Ask in your own words</h3><p>No special syntax or perfect question required.</p></div>
+        </li>
+        <li>
+          <span class="step-number">03</span>
+          <div><h3>Learn the why</h3><p>Get a clear explanation you can connect back to your code.</p></div>
+        </li>
+      </ol>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="brand footer-brand" href="/" aria-label="Syntax home">
+      <span class="brand-mark" aria-hidden="true">&lt;/&gt;</span>
+      <span>syntax<span class="brand-period">.</span></span>
+    </a>
+    <p>Built for curious developers.</p>
+    <span class="footer-status"><span></span> Account status is verified by the API</span>
+  </footer>
+</div>
+
+<dialog
+  #authDialog
+  class="auth-dialog"
+  aria-labelledby="auth-dialog-title"
+  (click)="onDialogClick($event, authDialog)"
+>
+  <div class="dialog-content">
+    <button
+      class="dialog-close"
+      type="button"
+      aria-label="Close account dialog"
+      (click)="closeAuthDialog(authDialog)"
+    >
+      ×
+    </button>
+    <p class="eyebrow">{{ authMode() === 'login' ? 'WELCOME BACK' : 'GET STARTED' }}</p>
+    <h2 id="auth-dialog-title">
+      {{ authMode() === 'login' ? 'Sign in to Syntax' : 'Create your account' }}
+    </h2>
+    <p class="dialog-description">
+      @if (authMode() === 'login') {
+        Sign in to continue to your code workspace.
+      } @else {
+        Register with your email. New accounts need administrator approval before chat access.
+      }
+    </p>
+
+    <form class="auth-form" [formGroup]="authForm" (ngSubmit)="submitAuth(authDialog)">
+      <label for="account-email">Email address</label>
+      <input
+        id="account-email"
+        type="email"
+        autocomplete="email"
+        formControlName="email"
+        [attr.aria-invalid]="isEmailInvalid()"
+        aria-describedby="email-error"
+        required
+      />
+      @if (isEmailInvalid()) {
+        <span id="email-error" class="field-error" role="alert">Enter a valid email address.</span>
+      }
+
+      <label for="account-password">Password</label>
+      <input
+        id="account-password"
+        type="password"
+        [autocomplete]="authMode() === 'login' ? 'current-password' : 'new-password'"
+        formControlName="password"
+        [attr.aria-invalid]="isPasswordInvalid()"
+        aria-describedby="password-help password-error"
+        required
+      />
+      @if (authMode() === 'register') {
+        <span id="password-help" class="field-hint">
+          Use at least 12 characters with uppercase, lowercase, a number, and a symbol.
+        </span>
+      }
+      @if (isPasswordInvalid()) {
+        <span id="password-error" class="field-error" role="alert">
+          @if (authMode() === 'register') {
+            Password must be at least 12 characters and no longer than 128.
+          } @else {
+            Enter your password.
+          }
+        </span>
+      }
+
+      @if (authMode() === 'register') {
+        <label for="confirm-password">Confirm password</label>
+        <input
+          id="confirm-password"
+          type="password"
+          autocomplete="new-password"
+          formControlName="confirmPassword"
+          [attr.aria-invalid]="isPasswordConfirmationInvalid()"
+          required
+        />
+        @if (isPasswordConfirmationInvalid()) {
+          <span class="field-error" role="alert">The passwords do not match.</span>
+        }
+      }
+
+      @if (authError()) {
+        <p class="form-error" role="alert">{{ authError() }}</p>
+      }
+
+      <button class="button button-primary submit-auth" type="submit" [disabled]="isSubmittingAuth()">
+        @if (isSubmittingAuth()) { Please wait… }
+        @else if (authMode() === 'login') { Sign in }
+        @else { Create account }
+      </button>
+    </form>
+
+    <p class="mode-switch">
+      @if (authMode() === 'login') {
+        New to Syntax?
+        <button type="button" (click)="changeAuthMode('register')">Create an account</button>
+      } @else {
+        Already registered?
+        <button type="button" (click)="changeAuthMode('login')">Sign in</button>
+      }
+    </p>
+  </div>
+</dialog>
+
+<router-outlet />

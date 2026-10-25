@@ -314,3 +314,125 @@ The provider interface, config selector, prompt, and output-token limit are
 implemented. Streaming, structured output, tool execution, and evaluations
 remain optional or later work; do not add them simply to demonstrate a
 technology.
+
+## Deeper concepts: prompts, completion, and answer quality
+
+### Prompt templates are structured inputs, not magic instructions
+
+A prompt template is reusable text with named values inserted at execution
+time. It keeps stable instructions separate from per-request data, makes
+prompt changes reviewable, and reduces hand-built string variation. The
+submitted code remains untrusted user content even if it is inserted into a
+template.
+
+```text
+template: "Explain this {language} code in simple terms:\n{code}"
+values:   language = "C#", code = user-submitted source
+result:   instruction + labeled data -> provider messages
+```
+
+The current project builds the prompt in
+[ChatApiService.cs](../../Services/ChatApiService.cs) using a raw string and
+adds it as a user message. The prompt says the response should be simple and
+under 200 words. It is not currently a separately stored template, and prompt
+text does not enforce a hard output-length or safety rule.
+
+### Chat completion is a request/response capability
+
+A chat-completion request typically contains role-tagged messages and
+generation settings; the provider returns generated text and sometimes
+metadata. The provider adapter handles the vendor's HTTP schema, while the
+application calls a provider-neutral interface.
+
+```text
+AICompletionRequest(messages, maxOutputTokens)
+    -> IAICompletionProvider
+    -> provider protocol
+    -> AICompletionResponse(text)
+```
+
+In this project,
+[AIMessage.cs](../../Services/AIMessage.cs) defines the shared role/content
+message and the provider contract is in
+[IAICompletionProvider.cs](../../Services/IAICompletionProvider.cs). This is a
+single completion path, not a multi-step agent or durable conversation
+history.
+
+### Hallucinations and calibrated answers
+
+A hallucination is a fluent statement that is unsupported or incorrect. A
+language model predicts likely text; it does not automatically verify each
+claim against the source code or documentation. Ask for uncertainty to be
+named, provide relevant evidence, and test representative inputs. A disclaimer
+alone does not make an answer reliable.
+
+```text
+submitted code + model knowledge -> proposed explanation
+                                 -> compare claims with actual code/docs
+                                 -> accept, correct, or reject
+```
+
+For the current code explainer, users must review explanations against their
+source. A later RAG feature can return citations, but retrieval and citations
+also need evaluation. **Interview check:** Does a lower temperature eliminate
+hallucinations? **Answer:** no; it changes sampling behavior, not factual
+grounding.
+
+### Structured output: parse, then validate meaning
+
+Structured output constrains response shape, often to JSON matching a schema.
+The application still validates meaning, authorization, and bounds before
+using fields. This project currently returns plain text; the following is a
+future design example, not its API contract:
+
+```json
+{
+  "summary": "The method filters inactive users.",
+  "concepts": ["LINQ", "predicate"],
+  "uncertainties": []
+}
+```
+
+```text
+model response -> parse JSON -> schema check -> domain checks -> display
+```
+
+Malformed JSON should be handled as a provider/protocol failure, and a
+schema-valid response can still contain false claims. Do not execute
+generated code or SQL just because the response parsed.
+
+### Semantic Kernel: an optional orchestration library
+
+Semantic Kernel provides abstractions for AI services, prompt functions,
+plugins, and orchestration. It may help when an application has several
+composed skills or tool workflows. It is not required for every app that calls
+a model; this project currently uses a small provider-neutral contract and
+direct adapters instead.
+
+```text
+simple use case: application -> completion interface -> provider adapter
+orchestrated flow: kernel -> prompt/functions/plugins -> AI service(s)
+```
+
+Adding Semantic Kernel would introduce another abstraction and dependency.
+Choose it only after identifying the workflow it simplifies; do not confuse
+library adoption with reliability, grounding, or safe tool authorization.
+
+### Evaluation rubric for this project
+
+For each fixed code sample, score whether the answer is correct, covers the
+important behavior, distinguishes fact from assumption, uses understandable
+language, and avoids unsupported claims. Record provider/model and prompt
+version so a comparison has context.
+
+| Criterion | Self-check |
+|---|---|
+| Correctness | Does each claim match the submitted code? |
+| Coverage | Are important branches or side effects explained? |
+| Clarity | Can a learner explain the idea back in their own words? |
+| Calibration | Does the answer say when context is missing? |
+| Safety | Does it avoid instructing the user to run unreviewed output? |
+
+Do not compare generated prose by exact string. Use a rubric and human review
+for quality; deterministic tests should focus on the provider contract and
+error behavior.

@@ -167,6 +167,111 @@ Strategy/Adapter boundaries. Persistence, operations, and incident scenarios
 will be added only when their feature keys require them. The capstone should
 demonstrate working user outcomes and explain what was intentionally left out.
 
+## SOLID, composition, and the project's provider boundary
+
+SOLID is a set of design principles, not five required interfaces. It helps
+answer whether a responsibility is in the right place and whether a change
+can be made locally.
+
+| Principle | Easy explanation | Project connection |
+|---|---|---|
+| Single Responsibility | One unit should have one cohesive reason to change. | Provider HTTP serialization belongs in adapters; chat orchestration belongs in `ChatApiService`. |
+| Open/Closed | Add a new variation behind a stable contract where that makes change safer. | A provider adapter can implement the shared completion contract. |
+| Liskov Substitution | An implementation must honor the behavior callers expect from its contract. | Each adapter should return a valid completion or documented failure. |
+| Interface Segregation | Keep contracts focused; clients should not depend on methods they do not use. | The completion contract has one `CompleteAsync` operation. |
+| Dependency Inversion | High-level policy should depend on an abstraction, not provider-specific details. | `ChatApiService` depends on a selector interface. |
+
+### Interface plus composition
+
+Composition builds an object by giving it collaborators; it does not require
+inheritance. The app wires the selector and provider implementations with DI.
+The selector owns provider choice, while each adapter owns its provider's
+protocol.
+
+```csharp
+public interface IAICompletionProvider
+{
+    string Name { get; }
+    Task<AICompletion> CompleteAsync(
+        AICompletionRequest request,
+        CancellationToken cancellationToken = default);
+}
+```
+
+```text
+ChatApiService -> selector interface -> configured provider
+                                      -> Ollama adapter -> Ollama HTTP
+                                      -> OpenAI adapter -> OpenAI HTTP
+```
+
+This contract is real code in
+[`IAICompletionProvider.cs`](../../Services/IAICompletionProvider.cs). The
+selector receives implementations through DI in
+[`Program.cs`](../../Program.cs); it does not let the browser choose a
+provider. The selector is factory-like, and the chosen adapter is a strategy
+and protocol adapter. No decorator or mediator framework is currently needed.
+
+### Encapsulation and `sealed`
+
+Encapsulation means an object controls its internal details and exposes a
+small public contract. `sealed` prevents inheritance; it does not make fields
+private, make mutable data immutable, or prevent composition. A `sealed`
+service can still receive interfaces in its constructor, as
+[`ChatApiService`](../../Services/ChatApiService.cs) does.
+
+```text
+caller -> public interface/methods -> hidden implementation details
+```
+
+Use `sealed` when subclassing is not an intended extension point. Prefer
+composition for substitutable collaborators such as providers. Avoid
+claiming that `sealed` itself provides thread safety or immutability.
+
+## Capstone: trace one complete product request
+
+The final system design joins the modules without claiming the future
+infrastructure exists. The public Angular page and API/provider path exist;
+authentication, SQL history, RAG, and Azure deployment are still planned.
+
+```mermaid
+flowchart LR
+    U["User"] --> A["Angular SPA<br/>public page + gated chat"]
+    A -->|after OIDC session| API["ASP.NET Core API"]
+    API --> AUTH["JWT validation<br/>planned"]
+    API --> C["Chat application service"]
+    C --> P["Configured AI provider"]
+    C -. "authorized history, planned" .-> SQL["Azure SQL"]
+    C -. "authorized retrieval, planned" .-> RAG["Document index / embeddings"]
+    API -. "deployment, planned" .-> AZ["Azure hosting"]
+```
+
+```text
+browser -> Angular -> authenticated API -> validate request + permission
+                                      -> AI provider -> explanation
+                                      -> SQL history (future, owner filtered)
+                                      -> authorized RAG (future, citations)
+```
+
+Before adding each box, define its owner, data boundary, failure response,
+cost, and measurable acceptance check. For example, the API must reject an
+unauthorized user before reading conversation data or calling a provider.
+RAG must filter to authorized documents before constructing model context.
+Azure deployment must have a tested rollback and restore plan.
+
+### Senior-engineer design review questions
+
+1. What user outcome justifies this component?
+2. What is the source of truth for identity and ownership?
+3. What happens when this dependency times out or returns invalid data?
+4. What data is sent to the model, stored, logged, or retained?
+5. What evidence demonstrates correctness, access isolation, and cost?
+6. Which simpler option was considered, and what evidence would trigger a
+   redesign?
+
+Use the answers to write acceptance criteria and an ADR when the decision has
+lasting consequences. Do not estimate capacity from intuition alone: state
+assumptions, measure a representative workload, and revise the estimate.
+
 ## Worked examples and practice
 
 ### T111 — Turn a request into measurable requirements
@@ -183,6 +288,24 @@ constraints -> privacy + size + latency + cost + supportability
 
 **Self-check:** Why is "use microservices" not a user requirement? **Answer:**
 it is an implementation choice that needs a concrete outcome to justify it.
+
+#### A small capacity estimate
+
+Assume a learning demo receives 1,000 explanation requests per day. Its average
+arrival rate is `1,000 / 86,400`, about `0.012 requests/second`. If a busy
+period is ten times the average, that is about `0.12 requests/second`. With a
+60-second average provider wait, Little's Law (`concurrency ≈ arrival rate ×
+time`) suggests roughly 7 concurrent provider requests at that peak.
+
+```text
+daily volume -> average/peak arrival rate -> average latency -> concurrency
+             -> provider quota + API capacity + cost estimate
+```
+
+This is an assumption-based illustration, not a sizing commitment. Real
+capacity depends on request duration distribution, user behavior, provider
+limits, retries, and payload size. Measure a representative workload and
+include a peak factor rather than sizing only for the daily average.
 
 ### T112 — Start with clear modules in one deployable
 
@@ -273,6 +396,19 @@ provider timeout -> safe error + trace ID; no credential in response
 
 **Self-check:** Does an architecture diagram prove behavior under failure?
 **Answer:** no; validate assumptions with implementation and targeted tests.
+
+| Dependency/failure | User-visible behavior | Engineering response |
+|---|---|---|
+| Invalid/oversized code | Clear client error before provider call | Validate request and cap bytes |
+| Provider timeout | Recoverable timeout message | Bound the call, propagate cancellation, log safe metadata |
+| SQL unavailable (future) | History may be unavailable; no cross-user fallback | Fail closed for private data; alert on dependency health |
+| Retrieval has no evidence (future) | Say evidence is insufficient | Do not invent a citation or silently broaden access |
+| Cache miss/stale entry (future) | Recompute or clearly report stale policy | Scope keys by access and version; avoid leaking private output |
+
+Scaling should target the measured bottleneck. More API instances do not
+increase a provider's quota; a larger SQL tier does not fix an unbounded
+history query. Add caching only when freshness, privacy, invalidation, and
+measured duplicate work justify it.
 
 ### T118 — Record decisions and revisit conditions
 

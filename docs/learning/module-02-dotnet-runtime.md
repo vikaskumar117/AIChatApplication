@@ -55,6 +55,10 @@ reason. Use `Task`/`Task<T>` for one eventual result; avoid `.Result` and
 carefully bounded parallelism for CPU-heavy jobs, not `Task.Run` around every
 web request.
 
+Avoid `async void` except for event handlers: a caller cannot await it or
+observe its exception in the normal task flow. Await a task before leaving the
+method so failures and completion propagate to the HTTP request.
+
 **Practice:** Why is `await` useful for a slow provider call? **Answer:** it
 does not tie up a thread while the network is waiting.
 
@@ -97,6 +101,9 @@ HTTP request.
 **Limitation:** Cancellation is not the same as a failure and may arrive after
 the remote provider has already started processing. Cleanup still matters.
 Do not swallow `OperationCanceledException` as an ordinary provider error.
+If multiple independent operations share one deadline, link cancellation
+tokens or use the framework's request-abort token; do not create unrelated
+timeouts that outlive the caller.
 
 **Practice:** If the caller disconnects during an awaited HTTP request, what
 should the token do? **Answer:** signal cancellation down the call chain so
@@ -267,6 +274,21 @@ try to manually free ordinary managed objects. It must still dispose resources
 that hold external handles, such as `HttpResponseMessage` or streams. In
 project code, `using` ensures such disposable resources are released.
 
+The **.NET SDK** is the developer toolset: it includes the CLI, compiler,
+build/test tools, and a .NET runtime. A **runtime** executes an already-built
+app. The **CLR** is the managed execution engine inside the runtime. These
+terms are related but not interchangeable.
+
+```text
+Developer machine: .NET SDK -> restore/build/test/publish
+Application host:  .NET runtime -> CLR executes app
+Source -> C# compiler -> IL -> JIT -> machine code
+```
+
+`dotnet --info` reports installed SDKs and runtimes; `dotnet --list-sdks` and
+`dotnet --list-runtimes` distinguish them. A target framework in a project
+file does not install the corresponding SDK on every developer machine.
+
 **Limitation:** GC is not immediate, does not manage every native resource,
 and does not eliminate memory leaks caused by objects that remain reachable.
 Finalizers are not a replacement for deterministic disposal.
@@ -285,6 +307,11 @@ normal, but avoidable allocation in a hot path can increase garbage-collection
 work. Boxing wraps a value type as an object; unboxing extracts it again.
 Large allocations may go to the Large Object Heap (LOH), which has different
 collection behavior.
+
+On current .NET implementations, objects around 85,000 bytes or larger are
+typically allocated on the LOH. Treat this as a runtime implementation
+detail, not a reason to split every large buffer; measure allocation rate and
+pause behavior under realistic traffic.
 
 ### Example
 
@@ -381,9 +408,42 @@ options and validates them on startup. Keep secrets out of committed settings;
 use environment-specific secret management. Typed options make configuration
 requirements visible to the compiler and reviewers.
 
+The actual provider selection code validates configuration before accepting
+requests:
+
+```csharp
+builder.Services.AddOptions<AIProviderOptions>()
+    .BindConfiguration("AIProvider")
+    .Validate(
+        options => ProviderOptionsValidation.IsSupportedProvider(options.Name),
+        "AIProvider:Name must be either 'Ollama' or 'OpenAI'.")
+    .ValidateOnStart();
+```
+
+See [`Program.cs`](../../Program.cs) and the typed
+[`AIProviderOptions`](../../Options/AIProviderOptions.cs). The options object
+is not itself a secret store. Avoid logging bound settings wholesale because
+they may contain credentials.
+
 **Limitation:** A default property value is not proof of valid configuration.
 Validation rules must match the provider and environment, and error messages
 must not expose secret values.
+
+The generic host combines configuration providers; later providers can
+override earlier values. In a typical ASP.NET Core deployment, environment
+variables can override JSON settings. This is convenient for deployment, but
+operators must know which source wins to avoid debugging stale values.
+
+Use the options interface that matches the lifetime:
+
+| Interface | Lifetime/use | Important distinction |
+|---|---|---|
+| `IOptions<T>` | Simple access to configured options | Does not provide per-request refresh behavior. |
+| `IOptionsSnapshot<T>` | Scoped, commonly request-scoped | Re-evaluates options for the scope when configuration supports reload. |
+| `IOptionsMonitor<T>` | Singleton-friendly | Can observe changes and named options. |
+
+Do not inject a scoped snapshot into a singleton. The current app uses
+`IOptions<T>` in provider selection and named `HttpClient` configuration.
 
 **Practice:** Why validate on startup? **Answer:** fail early with a clear
 configuration error, instead of failing unpredictably during a chat request.

@@ -179,6 +179,23 @@ requirements -> provider reachability + privacy + scale + budget -> host
 **Self-check:** Should hosting be picked before knowing where inference runs?
 **Answer:** not if inference connectivity and data policy constrain the host.
 
+#### App Service settings and deployment slots
+
+App Service **app settings** are environment-specific values exposed to the
+application as configuration; secret values should come from an approved
+secret store or managed identity path, not a committed file. A deployment
+slot is a separately addressable deployment target (for example, staging)
+that can be warmed and smoke-tested before a controlled swap.
+
+```text
+build once -> staging slot + staging settings -> smoke check
+          -> swap with production slot -> monitor / swap back if needed
+```
+
+A slot swap does not make a database migration backward-compatible. Keep
+schemas compatible with both old and new code during deployment, and
+understand which settings are slot-sticky.
+
 ### T092 — Keep static frontend and API responsibilities separate
 
 An Angular build is static assets; the API remains the trusted server-side
@@ -235,6 +252,11 @@ API workload identity -> minimum role -> only required secret/resource
 
 **Self-check:** Does managed identity mean no access control is required?
 **Answer:** no; its permissions must still be scoped and reviewed.
+
+For example, an API identity may need a specific secret-read permission and
+database connection permission; it does not need subscription-owner rights.
+Keep user identity (a person signing in) distinct from workload identity (the
+host authenticating to Azure resources).
 
 ### T096 — Make container configuration external
 

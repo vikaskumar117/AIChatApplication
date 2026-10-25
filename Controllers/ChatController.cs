@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using AIChatApplication.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AIChatApplication.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "ActiveAccount")]
 public class ChatController : ControllerBase
 {
     private readonly IChatApiService _chatApiService;

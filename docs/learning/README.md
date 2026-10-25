@@ -1,4 +1,4 @@
-# Project Learning Guide
+# AI Chat Application — Printable Learning Guide
 
 This folder is the **canonical learning source** for the project. Its scope is
 the concepts in the workbook *Ultimate_30_Day_Senior_DotNET_AI_Engineer_Roadmap.xlsx*
@@ -22,6 +22,35 @@ Explain the idea simply, trace its project example, and describe a limitation
 or alternative first. The
 [topic tracker](../TOPIC_TRACKER.md) records only study status; lesson content
 and project evidence belong here.
+
+## How to read and print this guide
+
+Read the modules in order, or print one module at a time from this index. Each
+module is a self-contained chapter; use the module links below as the table of
+contents. Mermaid diagrams have nearby text versions where a rendering might
+not print. Code examples are short teaching examples unless explicitly marked
+as extracted from a project file.
+
+For a paper/PDF copy, open this index in a Markdown-capable viewer and print
+the linked chapters individually. Use portrait orientation and fit-to-page;
+enable background graphics if you want the diagram colors. Printing chapter
+by chapter keeps code blocks and wide comparison tables readable.
+
+Each substantial lesson should answer the following in plain language:
+
+1. **Definition:** what the term means.
+2. **Easy explanation:** an everyday model before jargon.
+3. **Why and when:** the problem it solves and when it is appropriate.
+4. **Example:** a complete focused snippet with important lines explained.
+5. **Diagram:** the flow, relationship, or memory behavior.
+6. **Project connection:** current code, a clearly labeled proposal, or a
+   non-production exercise.
+7. **Limits and mistakes:** trade-offs and common interview traps.
+8. **Practice:** an answerable question, expected answer, or small task.
+
+The project is a teaching case study, not proof that every technology below
+is already shipped. The printed guide intentionally calls out future work so
+that an example cannot be mistaken for a production control.
 
 ## Modules
 
@@ -47,9 +76,32 @@ interview-practice and learning-resource sheets are used throughout the
 modules: use the official links first, then practice explaining the project
 example aloud.
 
+## Coverage cross-reference
+
+This cross-reference answers “where do I study this?” The topic ID is the
+stable lesson identifier; examples marked **planned** are not current
+application behavior.
+
+| Topic group | Guide location | Project evidence |
+|---|---|---|
+| Value/reference types, nullability, records/classes, collections, LINQ | [Module 1](module-01-csharp.md), T001–T010 | `Result`, `AIMessage`, provider selector |
+| Encapsulation, interfaces, composition, SOLID and patterns | [Module 12](module-12-architecture.md), T112–T116 | provider contract, selector, adapters |
+| Async, cancellation, concurrency, tasks and streaming | [Module 2](module-02-dotnet-runtime.md), T011–T015 | provider HTTP request path |
+| CLR/SDK, memory, DI, configuration, options, HTTP clients | [Module 2](module-02-dotnet-runtime.md), T016–T020 | `Program.cs`, Options classes, named clients |
+| Routing, DTOs, validation, middleware, filters, errors, OpenAPI | [Module 3](module-03-aspnet-core.md), T021–T030 | `ChatController`, `Program.cs`, `Result` |
+| Model requests, prompts, tokens, output, providers, evaluation | [Module 4](module-04-ai-engineering.md), T031–T040 | `ChatApiService`, provider adapters |
+| Relational design, SQL, EF Core, transactions, indexes, paging | [Module 5](module-05-sql-efcore.md), T041–T050 | planned for key105; not implemented |
+| Components, templates, binding, DI, HTTP, RxJS, forms, routing, access | [Module 6](module-06-angular.md), T051–T060 | public locked Angular page; API/auth flow pending |
+| OIDC/SAML, JWT, authorization, CORS, secrets and abuse controls | [Module 7](module-07-security.md), T061–T070, T121–T122 | identity and hardening planned |
+| Unit/integration/UI tests, contracts, CI and review | [Module 8](module-08-quality.md), T071–T080 | small Angular locked-state test; API fakes deferred |
+| Embeddings, ingestion, retrieval, citations and responsible AI | [Module 9](module-09-rag.md), T081–T090 | planned for key108 |
+| Azure hosting, SQL, storage, deployment, identity and recovery | [Module 10](module-10-hosting.md), T091–T100 | not provisioned |
+| Telemetry, health, retries, queues and incident practices | [Module 11](module-11-reliability.md), T101–T110 | logs/timeouts partly implemented; operations planned |
+| Requirements, system design, ADRs, mentoring and capstone | [Module 12](module-12-architecture.md), T111–T120 | roadmap and provider ADR |
+
 ## Lesson standard
 
-Every topic is taught, not just summarized. Use the expanded
+Use the expanded
 [value types vs. reference types lesson](module-01-csharp.md) as the depth
 example. Include:
 
@@ -65,6 +117,11 @@ example. Include:
    tied to a feature key.
 7. **Practice** — questions or a small task, with answers or a self-check.
 8. **References** — official documentation or primary technical sources.
+
+Related small concepts are sometimes taught together when they share one
+request, query, or architecture flow. The module's worked section supplies
+the example and practice for its grouped concepts; do not treat the table row
+alone as the lesson.
 
 Lessons describe what is implemented today separately from what is planned.
 Production use is added only when it helps the chat product; a project
@@ -82,9 +139,11 @@ useful vertical slice, update the lesson to link to actual code, and only then
 mark it as learned in the tracker.
 
 The project currently has a .NET API, configured Ollama/OpenAI-compatible
-adapters, exception handling, and development Swagger. Angular, authentication,
-SQL persistence, automated tests, RAG, hosting, and operations are future
-features. The presence of a lesson does not claim those features exist.
+adapters, exception handling, development Swagger, and a public Angular
+landing page with a visibly locked chat preview. Real authentication and
+authenticated chat, SQL persistence, provider/API fake tests, RAG, hosting,
+and production operations are future features. The presence of a lesson does
+not claim those features exist.
 
 ## Workbook and references
 

@@ -311,6 +311,13 @@ API access.
 24. Update architecture and learning docs with actual component and service
     paths.
 
+**Implementation status:** The Angular workspace and responsive public landing
+page are now in place. The anonymous page shows disabled chat controls and
+explicitly states that identity is not connected; selecting a sign-in entry
+does not create a session. Current tests cover that locked behavior. API
+integration, real session states, authenticated submission, mobile/browser
+accessibility checks, and the full key103 exit gate remain unfinished.
+
 **Exit gate:** signed-out, pending, and blocked chat remain unusable and visibly
 gated; only an active approved test session unlocks the client in tests;
 responsive states are tested; no secrets or provider endpoints appear in the

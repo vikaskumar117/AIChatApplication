@@ -180,6 +180,23 @@ been safely bounded and sanitized.
 traceId=... operation=ExplainCode provider=Ollama outcome=Timeout
 ```
 
+The current provider path uses structured logging rather than composing a
+single interpolated log string:
+
+```csharp
+_logger.LogError(
+    exception,
+    "The request to AI provider {Provider} failed.",
+    provider.Name);
+```
+
+This pattern is present in
+[`ChatApiService.cs`](../../Services/ChatApiService.cs). The named
+`{Provider}` value can be indexed by a log backend. The exception is recorded
+server-side; the public response is a separate safe `Result`. The current
+code still has a broad unexpected-exception catch, documented in Module 1;
+structured logging does not make that error classification ideal.
+
 **Self-check:** Should a log record include the full submitted code to aid
 debugging? **Answer:** not by default; it may be sensitive and is not needed
 to correlate the failure.
@@ -195,6 +212,13 @@ Redact prompts, tokens, and personal data from all telemetry.
 request trace -> API span -> provider HTTP span
 metrics: latency histogram + success/failure counts
 ```
+
+Application Insights is one Azure monitoring service that can collect
+application telemetry; OpenTelemetry is a vendor-neutral instrumentation
+approach and protocol. They are related but not synonyms. A useful chat API
+view would graph request success/latency and provider dependency latency,
+then let an operator drill into one trace by correlation ID. Do not attach
+raw prompt/code as span attributes.
 
 **Self-check:** Is a high-cardinality user ID a good metric label? **Answer:**
 usually no; it creates excessive time series and may expose personal data.

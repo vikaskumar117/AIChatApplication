@@ -341,3 +341,214 @@ provide a responsive public home, gated chat composer, typed API service,
 accessible form and response states. Authentication remains a separate key;
 the UI must not pretend that a decorative sign-in enables protected API
 access.
+
+## Angular fundamentals with the current page
+
+### Standalone component, template, and binding
+
+An Angular component combines a selector, a TypeScript class, a template, and
+styles. Modern Angular components are standalone by default; they import the
+directives/components they use instead of being declared in an NgModule. The
+template describes the view; interpolation reads values, while property
+binding sets DOM properties.
+
+The current root component is
+[App in `app.ts`](../../frontend/src/app/app.ts). Its `@Component` metadata
+uses `templateUrl` and `styleUrl`, and imports `RouterOutlet`. The landing
+page markup lives in [`app.html`](../../frontend/src/app/app.html), and its
+responsive rules live in [`app.css`](../../frontend/src/app/app.css).
+
+```html
+<!-- From the current page: the explanation is rendered as text. -->
+<p class="access-status" role="status" aria-live="polite">
+  {{ statusNotice() || statusMessage() }}
+</p>
+```
+
+```text
+component state (signals) -> template binding -> DOM -> browser renders page
+```
+
+Use semantic HTML first. Angular's template bindings update the view, but
+they do not replace accessible labels or server-side authorization.
+
+### Current access-state example (implemented)
+
+The landing page models account states instead of treating a clicked button
+as proof of authentication. `authenticationImplemented` is deliberately
+false; the composer stays disabled until key104 supplies real identity and
+the API validates it.
+
+```ts
+type AccessState =
+  | 'loading'
+  | 'anonymous'
+  | 'pending-approval'
+  | 'active'
+  | 'blocked'
+  | 'rejected'
+  | 'session-error';
+
+protected readonly accessState = signal<AccessState>('anonymous');
+protected readonly authenticationImplemented = false;
+protected readonly isChatLocked = computed(
+  () => !this.authenticationImplemented || this.accessState() !== 'active',
+);
+```
+
+This snippet is from
+[`frontend/src/app/app.ts`](../../frontend/src/app/app.ts). The UI can
+describe future states, but it currently initializes as anonymous and has no
+login or API call. A TypeScript union prevents misspelled state names; it
+does not prove the server agrees with the state.
+
+### Dependency injection, `HttpClient`, and interceptors (next integration)
+
+Angular DI creates and supplies services. `HttpClient` belongs in an
+application service rather than the template component; this isolates URL,
+serialization, and error handling. An interceptor is appropriate for
+cross-cutting behavior such as attaching an access token after key104, but it
+does not authenticate on its own.
+
+**Proposed after identity is available (not current code):**
+
+```ts
+import { HttpClient } from '@angular/common/http';
+import { inject, Injectable, InjectionToken } from '@angular/core';
+import { Observable } from 'rxjs';
+
+export interface ExplainRequest {
+  code: string;
+}
+
+export interface ExplainResponse {
+  statusCode: number;
+  errorMessage: string | null;
+  result: string | null;
+  detailErrorMessage?: string | null;
+}
+
+export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
+
+@Injectable({ providedIn: 'root' })
+export class ChatApiService {
+  private readonly http = inject(HttpClient);
+  private readonly apiBaseUrl = inject(API_BASE_URL);
+
+  explain(request: ExplainRequest): Observable<ExplainResponse> {
+    return this.http.post<ExplainResponse>(
+      `${this.apiBaseUrl}/api/chat/explain`,
+      request,
+    );
+  }
+}
+```
+
+The response fields mirror the current [`Result`](../../Responses/Result.cs)
+serialization, including the JSON alias `result`. `HttpClient`'s generic is a
+compile-time expectation; it does not validate untrusted JSON at runtime.
+Register `provideHttpClient()` and provide `API_BASE_URL` with the
+environment-specific public API URL. Never place provider keys or private
+credentials in an Angular bundle.
+
+An interceptor is a function in the HTTP chain: it can add a correlation
+header, centralize safe error handling, or attach an access token after
+key104. It must not invent authentication or log request bodies. The Angular
+registration point is `provideHttpClient(withInterceptors([interceptor]))`;
+the current app does not register an interceptor.
+
+### Observables, operators, and the `async` pipe
+
+An `Observable<T>` represents a stream over time; HTTP requests through
+`HttpClient` return observables. Operators compose transformations and
+subscription behavior. The `async` pipe subscribes in the template and
+unsubscribes when the view is destroyed.
+
+**Small form-value example (not the chat submit behavior):**
+
+```ts
+import { FormControl } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, map, startWith } from 'rxjs';
+
+readonly query = new FormControl('', { nonNullable: true });
+readonly query$ = this.query.valueChanges.pipe(
+  startWith(this.query.value),
+  map((value) => value.trim()),
+  debounceTime(250),
+  distinctUntilChanged(),
+);
+```
+
+```html
+<output>{{ query$ | async }}</output>
+```
+
+The component imports `AsyncPipe` to use this template. `debounceTime` waits
+for a pause in input, `map` transforms values, and `distinctUntilChanged`
+skips consecutive duplicates. `switchMap` is useful when a newer search
+replaces an older one; it should not silently discard an already-submitted
+chat answer. Unsubscribing on the client does not guarantee the server/provider
+stopped processing.
+
+### Reactive forms and validation
+
+Reactive forms keep controls and validators in TypeScript, making the form
+state explicit. Client validation improves feedback, but the API must repeat
+required/length checks because callers can bypass the browser.
+
+**Proposed after the API defines a maximum size (not current code):**
+
+```ts
+import { FormControl, Validators } from '@angular/forms';
+
+const MAX_CODE_LENGTH = 20_000; // Illustrative only; agree with the API first.
+
+readonly codeControl = new FormControl('', {
+  nonNullable: true,
+  validators: [Validators.required, Validators.maxLength(MAX_CODE_LENGTH)],
+});
+```
+
+The current API rejects blank code but has no agreed maximum-size contract,
+so the frontend must not invent a conflicting value. Show validation next to
+the field, prevent duplicate submissions while pending, and expose network or
+provider failures in a recoverable status area.
+
+### Router, guards, lazy loading, and change detection
+
+The router maps a URL to a view. A guard can improve navigation experience,
+but only server authorization can protect data. Lazy loading defers a
+substantial feature's code until its route is requested. Change detection
+keeps rendered bindings current; signals mark dependent views when values
+change. OnPush-style strategies can reduce unnecessary checks but should be
+introduced with measured need.
+
+```ts
+import { Routes } from '@angular/router';
+
+export const routes: Routes = [
+  {
+    path: 'learn',
+    loadComponent: () => import('./learn/learn')
+      .then((module) => module.LearnPage),
+  },
+];
+```
+
+This is a future example; the current public home is rendered by the root
+component. Do not add a route guard before authentication exists, and do not
+call a lazy route a security boundary.
+
+### Reading the live page
+
+```text
+App component -> template and styles -> public home
+                                      -> example uses AIMessage project contract
+                                      -> workspace preview remains locked
+Sign in button -> explanatory status message (no session is created)
+```
+
+The current test in [`app.spec.ts`](../../frontend/src/app/app.spec.ts)
+checks that the home renders and a sign-in click does not unlock the composer.
+It does not use a fake API, create a fake account, or imply that key103's
+authenticated submit-to-response path is finished.

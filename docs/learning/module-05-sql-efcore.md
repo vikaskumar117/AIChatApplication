@@ -354,3 +354,226 @@ Use a disposable SQL database when key105 lands. Practice `NULL` edge cases,
 `INNER` vs `LEFT JOIN`, `WHERE` vs `HAVING`, `EXISTS`/`NOT EXISTS`, CTEs,
 window ranking, parameterized filters, and stable paging. Compare a query plan
 and logical reads before claiming an index improved performance.
+
+## SQL Server worked lesson: filter, order, group, and inspect
+
+These queries use a small temporary table so results can be reasoned about
+before EF Core is added. Run them only in a disposable SQL Server session.
+`NULL` means unknown or absent; it is not the empty string or the number zero.
+
+```sql
+CREATE TABLE #ConversationSample
+(
+    Id int NOT NULL PRIMARY KEY,
+    UserId int NOT NULL,
+    Title nvarchar(40) NULL,
+    CreatedAt date NOT NULL,
+    MessageCount int NOT NULL
+);
+
+INSERT INTO #ConversationSample (Id, UserId, Title, CreatedAt, MessageCount)
+VALUES
+    (1, 10, N'LINQ basics', '2026-10-01', 4),
+    (2, 10, N'LINQ joins',  '2026-10-04', 0),
+    (3, 10, NULL,           '2026-10-08', 2),
+    (4, 20, N'LINQ notes',  '2026-10-09', 8);
+```
+
+### `SELECT`, `WHERE`, `ORDER BY`, and `TOP`
+
+`SELECT` chooses result columns. `WHERE` filters input rows. `ORDER BY` makes
+the output order explicit; without it, row order is not guaranteed. In SQL
+Server, `TOP` limits rows. Use it with a deterministic order when you mean
+"latest" or "first".
+
+```sql
+SELECT TOP (2) Id, Title, CreatedAt
+FROM #ConversationSample
+WHERE UserId = @userId
+ORDER BY CreatedAt DESC, Id DESC;
+```
+
+For `@userId = 10`, this returns IDs 3 then 2. `Id DESC` breaks timestamp
+ties. Bind `@userId` as a parameter; never paste user text into the SQL
+string.
+
+### `NULL`, `DISTINCT`, `LIKE`, and dates
+
+```sql
+-- NULL needs IS NULL, not = NULL.
+SELECT Id FROM #ConversationSample WHERE Title IS NULL;
+
+-- DISTINCT removes duplicate projected values.
+SELECT DISTINCT UserId FROM #ConversationSample ORDER BY UserId;
+
+-- % means zero or more characters; _ means exactly one character.
+SELECT Id, Title FROM #ConversationSample WHERE Title LIKE N'LINQ%';
+
+-- A half-open interval includes Oct 1 through Oct 7.
+SELECT Id, CreatedAt
+FROM #ConversationSample
+WHERE CreatedAt >= @fromDate AND CreatedAt < @toDate
+ORDER BY CreatedAt;
+```
+
+With dates `'2026-10-01'` and `'2026-10-08'`, the last query returns IDs 1
+and 2. Half-open ranges work well for timestamps too, where an inclusive
+`BETWEEN` upper bound can accidentally exclude times later in the last day.
+A leading wildcard such as `LIKE N'%joins'` often prevents an ordinary
+B-tree index seek; choose full-text search only for a real search requirement.
+
+### Aggregates, `GROUP BY`, `HAVING`, and subqueries
+
+`COUNT`, `SUM`, `MIN`, and `MAX` summarize rows. `GROUP BY` forms one output
+group per key. `WHERE` filters rows before grouping; `HAVING` filters the
+groups after aggregation.
+
+```sql
+SELECT UserId, COUNT(*) AS ConversationCount, SUM(MessageCount) AS Messages
+FROM #ConversationSample
+WHERE CreatedAt >= @fromDate
+GROUP BY UserId
+HAVING COUNT(*) >= 2;
+```
+
+Use `EXISTS` when the question is whether related data exists; it avoids
+producing duplicate parent rows from a one-to-many join.
+
+```sql
+SELECT c.Id, c.Title
+FROM #ConversationSample AS c
+WHERE c.UserId = @userId
+  AND EXISTS (
+      SELECT 1
+      FROM #ConversationSample AS later
+      WHERE later.UserId = c.UserId
+        AND later.CreatedAt > c.CreatedAt
+  );
+```
+
+The subquery is correlated because it refers to `c`. `NOT EXISTS` is often
+clearer than `NOT IN` when nullable values could affect the result.
+**Interview check:** Why does `WHERE COUNT(*) > 1` fail? **Answer:** row
+filtering happens before grouping; aggregate conditions belong in `HAVING`.
+
+### Indexes, execution plans, and sargability
+
+An index is a second ordered structure that may let SQL Server find or sort
+rows with less work. The optimizer chooses a plan (seek/scan, join method,
+sort) based on estimates. The **actual execution plan** includes runtime
+row counts; compare estimates with actuals and inspect logical reads before
+changing a query or index.
+
+```sql
+CREATE INDEX IX_ConversationSample_User_Created
+ON #ConversationSample (UserId, CreatedAt DESC, Id DESC)
+INCLUDE (Title, MessageCount);
+```
+
+This is a teaching candidate, not a production recommendation. A **sargable**
+predicate lets the optimizer search an indexed key effectively. Prefer a
+range on the original column:
+
+```sql
+WHERE CreatedAt >= @dayStart AND CreatedAt < @nextDay
+```
+
+to applying a function to every row:
+
+```sql
+WHERE CONVERT(date, CreatedAt) = @day
+```
+
+An index costs storage and adds work to inserts/updates; a table scan can be
+the best plan for a small table.
+
+### Transactions and stable pagination
+
+A transaction commits all its database changes together or rolls them back.
+Keep it short and do not hold locks while awaiting an AI provider. Offset
+pagination is easy to explain but gets costly at deep offsets and may shift
+as rows are inserted. Keyset pagination continues after the last seen
+ordering keys:
+
+```sql
+SELECT TOP (@pageSize) Id, CreatedAt, Title
+FROM #ConversationSample
+WHERE UserId = @userId
+  AND (CreatedAt < @lastCreatedAt
+       OR (CreatedAt = @lastCreatedAt AND Id < @lastId))
+ORDER BY CreatedAt DESC, Id DESC;
+```
+
+The sort must be stable and unique as a whole; otherwise items may repeat or
+be skipped between pages.
+
+### EF Core connection
+
+This proposed LINQ query has the same basic intent. The provider translates
+the expression; inspect its generated SQL and test against the selected
+relational database.
+
+```csharp
+var page = await db.Conversations
+    .AsNoTracking()
+    .Where(x => x.UserId == userId && x.CreatedAt >= fromDate)
+    .OrderByDescending(x => x.CreatedAt)
+    .ThenByDescending(x => x.Id)
+    .Take(pageSize)
+    .Select(x => new ConversationListItem(x.Id, x.Title, x.CreatedAt))
+    .ToListAsync(cancellationToken);
+```
+
+`AsNoTracking` suits a read-only view; `DbContext` is one short, non-thread-safe
+unit of work. Migrations must work for both new databases and upgrades to
+existing data. These are key105 design examples, not current persistence code.
+
+### Relationships and migration commands
+
+A one-to-many relationship means one conversation owns multiple messages. The
+database foreign key enforces that each message points to an existing
+conversation; it does not decide whether the current caller is allowed to
+read that conversation.
+
+```csharp
+public sealed class Conversation
+{
+    public int Id { get; set; }
+    public int UserId { get; set; }
+    public List<Message> Messages { get; } = [];
+}
+
+public sealed class Message
+{
+    public int Id { get; set; }
+    public int ConversationId { get; set; }
+    public Conversation Conversation { get; set; } = null!;
+}
+```
+
+**Proposed EF configuration:**
+
+```csharp
+modelBuilder.Entity<Conversation>()
+    .HasMany(conversation => conversation.Messages)
+    .WithOne(message => message.Conversation)
+    .HasForeignKey(message => message.ConversationId)
+    .OnDelete(DeleteBehavior.Cascade);
+```
+
+`null!` in this example tells the compiler EF will populate a required
+navigation; it is not a runtime null check. Configure delete behavior
+deliberately so removing an account or conversation cannot unexpectedly erase
+data.
+
+When EF Core is selected and installed, the usual development workflow is:
+
+```powershell
+dotnet ef migrations add CreateConversationSchema
+dotnet ef database update
+```
+
+Review the generated migration and SQL before applying it outside a
+disposable development database. Production deployment should use a reviewed
+migration process, least-privilege credentials, and a rollback/compatibility
+plan rather than an unreviewed developer command.

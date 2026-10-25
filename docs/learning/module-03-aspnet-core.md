@@ -331,3 +331,61 @@ Swagger, a request DTO, and a shared `Result`. Request length limits,
 consistent documented errors, versioning, filters, and rate limiting are
 tracked as remaining implementation work—not implied by adding services or
 packages.
+
+## Reading this project's `Program.cs`
+
+`Program.cs` is the composition root: it describes which services the host
+creates and in what order HTTP requests pass through middleware. It is not
+where the chat prompt or provider protocol should be implemented.
+
+### Service registration phase
+
+```text
+WebApplication.CreateBuilder
+  -> MVC controllers + error handling
+  -> OpenAPI/Swagger generation
+  -> bind and validate provider Options
+  -> named HTTP clients with provider-specific timeouts
+  -> scoped provider adapters, selector, and chat service
+  -> builder.Build()
+```
+
+The actual registrations are in [`Program.cs`](../../Program.cs):
+
+- `AddControllers()` enables controller discovery and MVC services.
+- `AddExceptionHandler<ApiExceptionHandler>()` registers the application's
+  central fallback handler; `AddProblemDetails()` registers ASP.NET Core's
+  Problem Details services. The handler currently returns the project's
+  [`Result`](../../Responses/Result.cs), so registration alone does not mean
+  every error is emitted as RFC Problem Details.
+- `AddEndpointsApiExplorer()` and `AddSwaggerGen()` let Swashbuckle discover
+  route/DTO metadata and generate OpenAPI JSON.
+- `AddOptions<T>().BindConfiguration(...).Validate(...).ValidateOnStart()`
+  binds and validates settings before the server accepts requests.
+- `AddHttpClient(name, ...)` configures factory-managed clients with different
+  provider timeouts.
+- `AddScoped(...)` wires the provider adapters, selector, and chat service for
+  each request scope. The controller receives its service through constructor
+  injection.
+
+### HTTP pipeline phase
+
+```text
+request
+  -> UseExceptionHandler
+  -> [Development only: UseSwagger -> UseSwaggerUI at /]
+  -> UseHttpsRedirection
+  -> UseAuthorization
+  -> MapControllers
+  -> response
+```
+
+Middleware order matters: exception handling surrounds downstream work. The
+Swagger browser UI is enabled only in Development. `MapControllers()` exposes
+attribute-routed actions such as `POST /api/chat/explain`.
+
+**Important current boundaries:** `UseAuthorization()` is present, but the
+application has no configured authentication scheme or protected controller
+policy yet. `Program.cs` does not currently add an Angular CORS policy, rate
+limiter, health checks, EF Core, telemetry exporter, or production hosting
+configuration. Do not infer those protections from adjacent registrations.
