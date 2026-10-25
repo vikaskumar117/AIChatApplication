@@ -18,6 +18,21 @@ tracker topics: T031–T040.
   [ChatApiService.cs](../../Services/ChatApiService.cs)
 - **Reference:** [OpenAI tokens guide](https://platform.openai.com/docs/concepts/tokens)
 
+### Walk-through and self-check
+
+The context budget is shared: instructions, submitted code, prior turns,
+retrieved passages, and the generated answer all consume it. If an app adds
+history without trimming it, an otherwise valid new request can exceed the
+model's limit. Count or estimate with the chosen model's tokenizer rather than
+using characters as a substitute.
+
+```text
+available input = context limit - reserved output - safety margin
+```
+
+**Think about it:** Does a 1,000-character snippet always have the same token
+count? **Answer:** no; tokenization depends on text and model.
+
 ## T032 — System/user messages and prompt construction
 
 - **What:** Chat APIs structure input as messages with roles; instructions and
@@ -33,6 +48,23 @@ tracker topics: T031–T040.
   creates the explanation prompt and a user message.
 - **Reference:** [OpenAI prompt engineering](https://platform.openai.com/docs/guides/prompt-engineering)
 
+### Walk-through and self-check
+
+Roles make the intended source of instructions explicit. Keep application
+instructions stable and put the submitted code in a user message. Delimiters
+help the model recognize the code region, but they do not make the region
+trusted or prevent prompt injection.
+
+```text
+system: Explain code accurately; distinguish facts from assumptions.
+user:   Explain this code:
+        <code> ... untrusted source text ... </code>
+```
+
+**Think about it:** Can user-provided comments override the application's
+rules? **Answer:** they should be treated as untrusted data; role separation
+helps but is not a security boundary.
+
 ## T033 — Temperature and generation parameters
 
 - **What:** Generation parameters influence how a model samples or limits its
@@ -47,6 +79,22 @@ tracker topics: T031–T040.
   includes `MaxOutputTokens`; temperature is intentionally not exposed.
   [AICompletionRequest.cs](../../Services/AICompletionRequest.cs)
 - **Reference:** [OpenAI API parameters](https://platform.openai.com/docs/api-reference/chat)
+
+### Walk-through and self-check
+
+Generation settings affect how an answer is produced, not whether it is true.
+A token limit caps output length; a temperature changes sampling behavior for
+providers that support it. Keep the cross-provider contract small and map
+provider-specific knobs only when their semantics are understood.
+
+```text
+same prompt + different model/settings -> answers may differ
+```
+
+The app currently sends a maximum output-token setting and does not expose a
+temperature knob. **Think about it:** Does temperature `0` guarantee a
+repeatable correct answer? **Answer:** no; model versions and provider
+execution can still vary, and correctness needs evaluation.
 
 ## T034 — Model/provider abstraction and adapter boundaries
 
@@ -68,6 +116,21 @@ tracker topics: T031–T040.
 - **Reference:** [Azure architecture: adapter pattern](https://learn.microsoft.com/azure/architecture/patterns/adapter)
   · [Semantic Kernel](https://learn.microsoft.com/semantic-kernel/overview/)
 
+### Walk-through and self-check
+
+The application contract should describe the capability the chat feature
+needs, not reproduce every provider's request schema. Each adapter translates
+the neutral request and translates the provider response back. This keeps
+provider-specific JSON out of controllers and application logic.
+
+```text
+AICompletionRequest -> IAICompletionProvider -> Ollama/OpenAI wire format
+```
+
+**Think about it:** Why not adopt an orchestration framework automatically?
+**Answer:** abstractions have a learning and maintenance cost; use one when
+its orchestration capabilities solve a real workflow need.
+
 ## T035 — Configuration-based provider selection
 
 - **What:** Server configuration chooses a provider without requiring a
@@ -81,6 +144,21 @@ tracker topics: T031–T040.
 - **Project example (implemented):** [AICompletionProviderSelector.cs](../../Services/AICompletionProviderSelector.cs)
   and [appsettings.json](../../appsettings.json).
 - **Reference:** [Options pattern](https://learn.microsoft.com/dotnet/core/extensions/options)
+
+### Walk-through and self-check
+
+Selection is a server deployment decision in this app, not a request field.
+That prevents a browser from choosing an unapproved endpoint or changing
+where code is sent. Fail startup for an invalid provider name instead of
+quietly falling back to another provider with different privacy and cost.
+
+```text
+validated configuration -> selector -> one provider adapter
+```
+
+**Think about it:** Why is silent fallback risky? **Answer:** it can change
+data handling, availability, cost, and behavior without an operator's
+knowledge.
 
 ## T036 — Structured output and schema validation
 
@@ -97,6 +175,20 @@ tracker topics: T031–T040.
   and strict allowlisting.
 - **Reference:** [Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs)
 
+### Walk-through and self-check
+
+When output is consumed by code, deserialize into a typed structure and then
+apply ordinary business validation. A model returning syntactically valid JSON
+does not establish that an operation is allowed or that a claim is true.
+
+```text
+model text -> JSON parse -> schema check -> business rule check -> use
+```
+
+Structured output is planned only if a concrete feature needs it. **Think
+about it:** Can a schema guarantee that a field's contents are safe?
+**Answer:** no; schemas constrain shape, not trustworthiness or authorization.
+
 ## T037 — Streaming completions and partial output
 
 - **What:** Streaming delivers response chunks as they become available.
@@ -110,6 +202,22 @@ tracker topics: T031–T040.
   `Result`; streaming is not necessary for this small code-explanation
   feature.
 - **Reference:** [Streaming responses](https://platform.openai.com/docs/guides/streaming-responses)
+
+### Walk-through and self-check
+
+Streaming changes the contract from one completed response to a sequence of
+events. The API must define event framing, completion, cancellation, and error
+behavior; the UI must render partial text safely and indicate that it is not
+final until completion.
+
+```text
+start -> chunk -> chunk -> completed
+                    \----> error/cancel may occur before completion
+```
+
+**Think about it:** Can a client safely assume a stream will always end with
+a complete answer? **Answer:** no; network failure or cancellation can leave
+partial output.
 
 ## T038 — Model quality, latency, privacy, and cost
 
@@ -125,6 +233,18 @@ tracker topics: T031–T040.
 - **Project example (implemented):** Ollama is the no-hosted-key default;
   OpenAI is opt-in. See [ADR 0002](../decisions/0002-ai-provider-selection.md).
 - **Reference:** [OpenAI pricing](https://openai.com/api/pricing/) · [Ollama](https://ollama.com/)
+
+### Walk-through and self-check
+
+Compare providers with the same representative prompts and rubric, and record
+the model/version, latency, output quality, and cost. Local inference may
+reduce external data transfer but still needs secure hosting, updates, and
+hardware capacity. Hosted inference shifts some operations to a vendor but
+requires a data-processing decision.
+
+**Think about it:** Is the cheapest model always the lowest-cost choice?
+**Answer:** not necessarily; retries, poor answers, latency, review work, and
+infrastructure all contribute to total cost.
 
 ## T039 — Evaluation datasets and repeatable quality checks
 
@@ -142,6 +262,22 @@ tracker topics: T031–T040.
   not exact prose.
 - **Reference:** [OpenAI evaluation best practices](https://platform.openai.com/docs/guides/evals)
 
+### Walk-through and self-check
+
+Use a fixed set of realistic snippets: common languages, short and long code,
+malformed input, and examples where the correct response should say "not
+enough information." Score observable qualities such as correctness,
+coverage, clarity, and unsupported assertions; do not require identical
+wording.
+
+```text
+prompt set + model/prompt version -> rubric scores -> reviewed comparison
+```
+
+**Think about it:** Why is one successful manual prompt not enough?
+**Answer:** it does not cover variation or show whether a later change
+regressed other inputs.
+
 ## T040 — Tool/function calling and safe capability design
 
 - **What:** Tool calling lets a model request a structured application
@@ -157,6 +293,20 @@ tracker topics: T031–T040.
   tools. Keep it that way unless a reviewed product requirement justifies a
   narrow, independently authorized capability.
 - **Reference:** [Function calling](https://platform.openai.com/docs/guides/function-calling)
+
+### Walk-through and self-check
+
+The model may propose a tool call, but only application code can grant
+authority. Validate the tool name and arguments, check the caller's permission,
+bound time and resource use, and record the result. Do not execute arbitrary
+source code or commands generated by a model.
+
+```text
+proposal -> allowlist -> validate args -> authorize user -> bounded execution
+```
+
+**Think about it:** Is a tool call safe because it is valid JSON? **Answer:**
+no; syntax does not establish permission or safe side effects.
 
 ## Workbook implementation connection
 

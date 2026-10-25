@@ -47,22 +47,31 @@ interview-practice and learning-resource sheets are used throughout the
 modules: use the official links first, then practice explaining the project
 example aloud.
 
-## Lesson format
+## Lesson standard
 
-Every topic includes:
+Every topic is taught, not just summarized. Use the expanded
+[value types vs. reference types lesson](module-01-csharp.md) as the depth
+example. Include:
 
-1. **What** — a plain-language definition.
-2. **Why** — the problem it solves in this application.
-3. **When** — when to use it, with a project scenario.
-4. **Limits** — trade-offs, misuse, or a reasonable alternative.
-5. **Diagram** — a small flow or relationship sketch.
-6. **Project example** — a code reference, short snippet, or explicitly labeled
-   proposed implementation tied to a feature key.
-7. **Reference** — official documentation or a primary technical reference.
+1. A simple-language introduction before detailed terminology.
+2. **What**, **why**, and **when** — with enough context to explain the idea
+   without requiring an outside search.
+3. **Limits** — trade-offs, common mistakes, and reasonable alternatives.
+4. **Examples** — complete focused snippets for code concepts, with a short
+   explanation of the important lines.
+5. **Diagrams** — rendered Mermaid diagrams and a plain-text fallback for
+   memory/request flows where useful.
+6. **Project connection** — actual code, or an explicitly labeled proposal
+   tied to a feature key.
+7. **Practice** — questions or a small task, with answers or a self-check.
+8. **References** — official documentation or primary technical sources.
 
 Lessons describe what is implemented today separately from what is planned.
 Production use is added only when it helps the chat product; a project
-exercise is not a reason to create a needless feature.
+exercise is not a reason to create a needless feature. The worked examples
+and self-checks throughout Modules 1–12 extend the topic summaries into
+practice material. Mermaid diagrams include text fallbacks where a visual
+flow is useful; not every concept needs a memory-layout illustration.
 
 ## Project sequence and evidence
 

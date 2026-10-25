@@ -159,3 +159,151 @@ The current feature sends submitted code to a configured model and does not
 claim to ground answers. RAG will be a separate authorized feature key with
 ingestion, retrieval, citations, evaluation, and deletion controls; it should
 not be added merely to demonstrate embeddings.
+
+## Worked examples and practice
+
+All examples below are design exercises for a future authorized knowledge
+feature. They do not imply that the app currently uploads, embeds, or retrieves
+documents.
+
+### T081 — Embeddings find candidates, not truth
+
+An embedding turns text into a vector. Similar vectors can indicate related
+meaning, but relevance depends on the model and domain. A nearby passage is
+only a candidate source; it is not proof that its claims are correct.
+
+```text
+"How do I configure provider?" -> embedding -> nearest approved passages
+```
+
+**Self-check:** Does a high similarity score prove the passage answers the
+question? **Answer:** no; inspect and evaluate retrieval.
+
+### T082 — Validate documents before parsing
+
+An ingestion pipeline should check authorization, supported media type, size,
+and safe parsing before indexing content. Preserve source and owner metadata
+so search can enforce access later.
+
+```text
+upload -> authorize -> size/type check -> safe parse -> inspect -> index
+```
+
+**Self-check:** Should an unsupported file be silently skipped? **Answer:**
+no; report a clear rejection and record a safe diagnostic.
+
+### T083 — Chunk around meaning
+
+Split on document structure where possible: headings, paragraphs, or code
+blocks. Add overlap only when context crosses boundaries; too much overlap
+creates duplicate results and wastes the model's context.
+
+```text
+document -> section chunks + source ID + owner + version + page/heading
+```
+
+**Self-check:** What is lost when a chunk is too small? **Answer:** relevant
+context and the relationship between a statement and its surrounding
+explanation.
+
+### T084 — Combine search signals and enforce access early
+
+Keyword search works well for exact identifiers; vector search helps with
+meaning-based questions. Hybrid search can combine both. Apply tenant or
+owner filtering as part of candidate retrieval, not after sending results to
+the model.
+
+```text
+authorized filter -> keyword + vector candidates -> merged result set
+```
+
+**Self-check:** Why is post-retrieval filtering too late? **Answer:** an
+unauthorized passage could already have reached logs or the model context.
+
+### T085 — Rank within a token budget
+
+Retrieve more candidates than will fit, remove unauthorized or duplicate
+items, rank the remainder, then pack only the best passages under a token
+budget that reserves room for the question and answer.
+
+```text
+top candidates -> authorize/deduplicate -> rank -> token budget -> prompt
+```
+
+**Self-check:** Should the prompt include every retrieved match? **Answer:**
+no; irrelevant context can reduce answer quality and consume the model limit.
+
+### T086 — Validate citations against retrieved sources
+
+Have the application attach stable source IDs to the retrieved passages. The
+answer may cite only those IDs, and the server should verify them before
+returning citations. If relevant evidence is absent, the product should allow
+an explicit "not enough evidence" response.
+
+```json
+{
+  "answer": "The configured provider is selected at startup.",
+  "citations": [{"sourceId": "doc-17", "section": "Provider setup"}]
+}
+```
+
+This is a proposed shape, not an existing API response.
+**Self-check:** Does a plausible citation text prove the source exists?
+**Answer:** no; validate it against the retrieved source set.
+
+### T087 — Evaluate retrieval and answer support separately
+
+Measure whether the expected passage appears among retrieved results, then
+measure whether the generated answer is supported by those passages. Include
+questions with no answer in the corpus so the system is tested on abstention,
+not only successful retrieval.
+
+```text
+query + expected source -> retrieval score
+retrieved evidence + answer -> groundedness review
+```
+
+**Self-check:** Can a fluent answer hide a retrieval failure? **Answer:**
+yes; evaluate evidence selection separately from prose quality.
+
+### T088 — Limit authority when retrieved text is hostile
+
+Retrieved documents are data, not policy. A document that contains
+instruction-like text must not grant permissions or cause an action. Any
+capability remains behind server-side allowlists and authorization.
+
+```text
+retrieved text -> model context (untrusted)
+tool proposal -> allowlist + authorization -> bounded operation
+```
+
+**Self-check:** Does placing hostile text between delimiters make it safe?
+**Answer:** no; delimiters help structure prompts but do not enforce authority.
+
+### T089 — Define deletion across derived stores
+
+Before indexing documents, map every copy: source file, extracted text,
+chunks, vectors, caches, logs, and backups. A deletion promise is meaningful
+only if the policy explains how each copy expires or is removed.
+
+```text
+delete request -> source + parsed text + chunks + vectors + cache
+              -> backup expiry policy
+```
+
+**Self-check:** Is deleting the original file enough? **Answer:** no; derived
+embeddings and indexed chunks may still contain recoverable content.
+
+### T090 — Keep a human accountable for consequential output
+
+Use the assistant to explain and suggest, not to silently alter or execute
+code. Show limitations and provide a way to review source evidence. The level
+of human oversight should increase with the impact of an action.
+
+```text
+AI explanation -> user verifies against code/docs -> user decides
+```
+
+**Self-check:** Does a disclaimer make a harmful automatic action acceptable?
+**Answer:** no; the system should limit capabilities and keep a human decision
+point where consequences warrant it.

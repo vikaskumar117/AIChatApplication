@@ -159,3 +159,152 @@ Storage, Key Vault, and managed identity). Related tracker topics: T091–T100.
 Cloud hosting is not added just to check off Azure topics. The learning
 sequence first produces a stable API, identity boundary, and database; then a
 hosting choice is justified by privacy, network, cost, and recovery needs.
+
+## Worked examples and practice
+
+These are decision exercises. They are not deployment instructions for
+resources that have not been selected or provisioned.
+
+### T091 — Choose a host from constraints
+
+Start with runtime and network requirements. In this project, a hosted API
+must reach the selected model endpoint securely; a managed host that cannot
+reach a locally running Ollama instance is not a valid fit merely because it
+is easy to deploy.
+
+```text
+requirements -> provider reachability + privacy + scale + budget -> host
+```
+
+**Self-check:** Should hosting be picked before knowing where inference runs?
+**Answer:** not if inference connectivity and data policy constrain the host.
+
+### T092 — Keep static frontend and API responsibilities separate
+
+An Angular build is static assets; the API remains the trusted server-side
+boundary. The frontend may know the API's public URL, but must not contain
+provider credentials or database secrets. If frontend and API have different
+origins, explicitly configure the allowed origin.
+
+```text
+browser -> static Angular files
+browser -> HTTPS API (public URL, authenticated request when implemented)
+```
+
+**Self-check:** Is a frontend build variable secret? **Answer:** no; users can
+inspect the delivered bundle.
+
+### T093 — Understand reverse proxy trust
+
+With IIS in front of Kestrel, the proxy terminates or forwards HTTPS and
+passes request metadata. The app must trust forwarded headers only from known
+proxies; otherwise a caller might spoof scheme or client-address information.
+Give the app-pool identity only the file and network permissions it needs.
+
+```text
+client HTTPS -> trusted IIS proxy -> Kestrel -> application
+```
+
+**Self-check:** Should an app trust forwarded headers from any source?
+**Answer:** no; trust only configured proxy boundaries.
+
+### T094 — Plan relational and object storage separately
+
+Relational data such as accounts and conversation metadata needs transactional
+queries and ownership constraints. Blob storage is appropriate for large
+objects only if a product feature actually needs them. Estimate backup,
+network, and egress cost in addition to the service's sticker price.
+
+```text
+API identity -> SQL for structured records
+             -> Blob store only for justified files
+```
+
+**Self-check:** Does a managed database remove the need for restore tests?
+**Answer:** no; backup configuration and recovery need verification.
+
+### T095 — Give managed identity minimum access
+
+The host's managed identity is a workload identity. Grant only the specific
+secret or resource actions the API needs; separate development and production
+identities so a local experiment does not receive production privileges.
+
+```text
+API workload identity -> minimum role -> only required secret/resource
+```
+
+**Self-check:** Does managed identity mean no access control is required?
+**Answer:** no; its permissions must still be scoped and reviewed.
+
+### T096 — Make container configuration external
+
+A container image should contain the app and runtime dependencies, not
+environment-specific secrets. Supply settings and credentials at runtime,
+and persist data in managed external services rather than the disposable
+container filesystem.
+
+```text
+same image + dev config -> dev instance
+same image + prod config -> prod instance
+```
+
+**Self-check:** Should a secret be baked into a Docker image layer?
+**Answer:** no; image layers can be copied and inspected.
+
+### T097 — Treat infrastructure as reviewed code
+
+Infrastructure as code describes resources declaratively so environments
+can be reviewed and recreated. Keep secrets out of templates, review the
+planned changes before applying them, and separate dev/test/prod state.
+
+```text
+template + environment parameters -> reviewed plan -> controlled apply
+```
+
+**Self-check:** Does a successful template deployment prove the service is
+secure? **Answer:** no; inspect permissions, network exposure, and runtime
+configuration.
+
+### T098 — Promote changes through environments
+
+Build an artifact once, then promote that same artifact through environments
+with different configuration. Require approvals for production changes, and
+plan a rollback that accounts for database schema compatibility.
+
+```text
+commit -> build artifact -> test environment -> approval -> production
+                                      \-> rollback plan
+```
+
+**Self-check:** Why build a separate binary for production? **Answer:** it
+creates uncertainty about whether the tested artifact is the deployed one.
+
+### T099 — Estimate total cost, not just compute price
+
+Include API hosting, database, storage, logging, network transfer, provider
+inference, and expected usage. A free tier can have quotas or sleep behavior
+that makes it unsuitable; establish alerts and a hard usage policy before
+public access.
+
+```text
+monthly total = hosting + database + storage + telemetry + network + inference
+```
+
+**Self-check:** Can an inexpensive API host guarantee a low bill if users can
+trigger paid model calls without limits? **Answer:** no; usage controls and
+provider costs dominate.
+
+### T100 — Prove recovery with a restore drill
+
+Define recovery point objective (acceptable data loss) and recovery time
+objective (acceptable downtime). Backups alone are not proof; restore into an
+isolated environment, validate data and access rules, and record the time and
+result.
+
+```text
+backup -> isolated restore -> integrity/access checks -> measured recovery
+```
+
+**Self-check:** What does a successful backup job prove? **Answer:** only
+that the backup process reported success, not that the data can be restored
+and used.

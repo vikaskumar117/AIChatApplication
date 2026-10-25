@@ -24,6 +24,25 @@ T041–T050.
   checks. See [key105](../../PROJECT_ROADMAP.md).
 - **Reference:** [Database normalization](https://learn.microsoft.com/office/troubleshoot/access/database-normalization-description)
 
+### Worked example and self-check
+
+Store each conversation once and each message once. A message's foreign key
+points to its conversation; the conversation's owner determines access. This
+avoids repeating owner and title data on every message while still making
+ownership enforceable.
+
+```text
+Conversations(Id, UserId, Title, CreatedAt)
+       1
+       |
+       many
+Messages(Id, ConversationId, Sequence, Content, CreatedAt)
+```
+
+**Try it:** What prevents a message from referring to a nonexistent
+conversation? **Answer:** a foreign-key constraint. The API must separately
+check that the current caller owns the parent conversation.
+
 ## T042 — `SELECT`, `WHERE`, sorting, `TOP`, `NULL`, `LIKE`, and dates
 
 - **What:** SQL selects columns/rows, filters and sorts them; `TOP` limits
@@ -45,6 +64,24 @@ T041–T050.
   ```
 - **Reference:** [SELECT (Transact-SQL)](https://learn.microsoft.com/sql/t-sql/queries/select-transact-sql)
 
+### Worked example and self-check
+
+This query returns only a user's latest ten conversations. `@userId` and
+`@fromUtc` are parameters, not string-concatenated SQL. The unique `Id`
+tie-breaker makes ordering stable when timestamps match.
+
+```sql
+SELECT TOP (10) Id, Title, CreatedAt
+FROM Conversations
+WHERE UserId = @userId
+  AND CreatedAt >= @fromUtc
+ORDER BY CreatedAt DESC, Id DESC;
+```
+
+`NULL` means unknown, so test it with `IS NULL`; ordinary equality comparisons
+with `NULL` do not behave like comparisons to a known value.
+**Try it:** How do you find rows without a title? **Answer:** `WHERE Title IS NULL`.
+
 ## T043 — `INNER JOIN` and `LEFT JOIN`
 
 - **What:** An inner join returns matching rows; a left join preserves every
@@ -58,6 +95,23 @@ T041–T050.
 - **Project example (planned — key105):** retrieve a user's conversations and
   only their messages, with ownership constraints in the query.
 - **Reference:** [Joins (Transact-SQL)](https://learn.microsoft.com/sql/relational-databases/performance/joins)
+
+### Worked example and self-check
+
+An inner join removes conversations with no matching message. A left join
+keeps them and fills message columns with `NULL`. Put filters carefully:
+filtering a right-side column in `WHERE` can remove the null-extended rows and
+make a left join behave like an inner join.
+
+```sql
+SELECT c.Id, m.Id AS MessageId
+FROM Conversations AS c
+LEFT JOIN Messages AS m ON m.ConversationId = c.Id
+WHERE c.UserId = @userId;
+```
+
+**Try it:** Which join lists empty conversations too? **Answer:** `LEFT JOIN`
+with conversations on the left.
 
 ## T044 — Aggregates, `GROUP BY`, `HAVING`, `EXISTS`, CTEs, and windows
 
@@ -87,6 +141,25 @@ T041–T050.
   ```
 - **Reference:** [OVER clause](https://learn.microsoft.com/sql/t-sql/queries/select-over-clause-transact-sql) · [CTE](https://learn.microsoft.com/sql/t-sql/queries/with-common-table-expression-transact-sql)
 
+### Worked example and self-check
+
+Use `EXISTS` when the question is whether at least one related row exists;
+the database need not return every match. Use `HAVING` to filter groups after
+aggregation, and a window function when each row should remain visible beside
+its group-level calculation.
+
+```sql
+SELECT c.Id
+FROM Conversations AS c
+WHERE c.UserId = @userId
+  AND EXISTS (
+      SELECT 1 FROM Messages AS m WHERE m.ConversationId = c.Id
+  );
+```
+
+**Try it:** Does a CTE automatically store results in a temporary table?
+**Answer:** no; it names a query expression and the optimizer chooses a plan.
+
 ## T045 — EF Core `DbContext`, entities, and configuration
 
 - **What:** EF Core maps .NET entity objects and LINQ queries to relational
@@ -100,6 +173,21 @@ T041–T050.
 - **Project example (planned — key105):** add a scoped context and persistence
   adapter only when conversation history is implemented.
 - **Reference:** [DbContext lifetime](https://learn.microsoft.com/ef/core/dbcontext-configuration/)
+
+### Worked example and self-check
+
+An EF Core context represents a short unit of work. A typical request obtains
+the scoped context through DI, runs a query or tracks edits, and calls
+`SaveChangesAsync`. Do not share one context across concurrent operations.
+
+```csharp
+var conversation = await db.Conversations
+    .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+```
+
+This is a proposed shape for key105, not existing project code.
+**Try it:** Why is a `DbContext` unsuitable as a singleton? **Answer:** it is
+not thread-safe and its change tracker belongs to one unit of work.
 
 ## T046 — EF Core migrations and schema deployment
 
@@ -115,6 +203,21 @@ T041–T050.
   production.
 - **Reference:** [EF Core migrations](https://learn.microsoft.com/ef/core/managing-schemas/migrations/)
 
+### Worked example and self-check
+
+A migration is a reviewable description of schema changes, not merely a
+command to run against production. Inspect generated SQL, test both a clean
+database and an upgrade from the previous schema, then decide how deployment
+will apply it. For a breaking column change, an expand/contract rollout can
+keep old and new application versions working during deployment.
+
+```text
+old schema -> add compatible column -> deploy app -> backfill -> remove old column
+```
+
+**Try it:** Why test an upgrade path as well as a fresh database? **Answer:**
+production data already exists and may expose migration assumptions.
+
 ## T047 — Tracking, no-tracking, and change detection
 
 - **What:** Tracking lets EF detect changes to loaded entities; no-tracking
@@ -128,6 +231,25 @@ T041–T050.
 - **Project example (planned — key105):** use no-tracking for conversation-list
   DTO projections; inspect generated SQL.
 - **Reference:** [Tracking vs. no-tracking](https://learn.microsoft.com/ef/core/querying/tracking)
+
+### Worked example and self-check
+
+For a read-only history page, project only the needed fields into a DTO and
+avoid tracking entity changes. For an update, load the entity with tracking,
+change the intended property, and save. A projection is often clearer and
+lighter than loading an entire aggregate.
+
+```csharp
+var items = await db.Conversations
+    .AsNoTracking()
+    .Where(x => x.UserId == userId)
+    .Select(x => new ConversationListItem(x.Id, x.Title, x.CreatedAt))
+    .ToListAsync(cancellationToken);
+```
+
+**Try it:** Should a no-tracking query be used before editing the loaded
+entity? **Answer:** usually not if the same context is expected to detect and
+save those edits.
 
 ## T048 — Transactions, isolation, and optimistic concurrency
 
@@ -145,6 +267,23 @@ T041–T050.
   behavior and a concurrency field before persistence ships.
 - **Reference:** [EF Core transactions](https://learn.microsoft.com/ef/core/saving/transactions)
 
+### Worked example and self-check
+
+Atomicity means either all writes in the unit succeed or none do. Keep the
+transaction around the database writes that must succeed together; do not hold
+it open while waiting on an AI provider. A provider call can take seconds and
+would unnecessarily hold database locks.
+
+```text
+call provider (outside DB transaction)
+begin transaction -> save message + update conversation -> commit
+                                      error -> rollback
+```
+
+**Try it:** Why avoid a transaction around a slow model request? **Answer:**
+it holds resources while waiting on an external system and increases
+contention.
+
 ## T049 — Indexes, execution plans, sargability, and parameterization
 
 - **What:** An index helps the database locate rows; an execution plan shows
@@ -159,6 +298,22 @@ T041–T050.
   and message `(ConversationId, CreatedAt)`; confirm against actual queries.
 - **Reference:** [SQL Server index design guide](https://learn.microsoft.com/sql/relational-databases/sql-server-index-design-guide)
 
+### Worked example and self-check
+
+If the query filters by `ConversationId` and orders by `CreatedAt`, an index
+beginning with those keys may help, but the correct order depends on real
+predicates and selectivity. Parameterization protects values from being
+interpreted as SQL and lets the database reuse query plans.
+
+```sql
+CREATE INDEX IX_Messages_Conversation_CreatedAt
+ON Messages (ConversationId, CreatedAt, Id);
+```
+
+This is a candidate, not a justified production index until the query plan and
+workload support it. **Try it:** Is every table scan a bug? **Answer:** no;
+scanning a small table can be cheaper than using an index.
+
 ## T050 — Pagination, N+1 queries, and query performance
 
 - **What:** Pagination limits result size; N+1 is repeated per-row database
@@ -172,6 +327,26 @@ T041–T050.
 - **Project example (planned — key105):** history endpoints have bounded
   pagination and owner filters before database materialization.
 - **Reference:** [EF Core efficient querying](https://learn.microsoft.com/ef/core/performance/efficient-querying)
+
+### Worked example and self-check
+
+Page using a stable order with a unique tie-breaker. Offset pages are easy to
+understand but can become slower for deep pages and may shift as rows are
+inserted. Keyset pagination uses the last seen sort key and is often a better
+fit for "load more" history.
+
+```sql
+SELECT TOP (@pageSize) Id, CreatedAt, Content
+FROM Messages
+WHERE ConversationId = @conversationId
+  AND (CreatedAt < @lastCreatedAt
+       OR (CreatedAt = @lastCreatedAt AND Id < @lastId))
+ORDER BY CreatedAt DESC, Id DESC;
+```
+
+**Try it:** What causes an N+1 query pattern? **Answer:** loading a list once,
+then issuing another query for each row instead of joining, projecting, or
+batch-loading appropriately.
 
 ## Workbook SQL practice
 

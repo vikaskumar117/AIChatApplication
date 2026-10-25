@@ -163,3 +163,158 @@ topics: T101–T110.
 Current code has structured provider error logs and finite HTTP timeouts.
 Health, traces, metrics, queues, caching, retries, and SLOs are not present;
 add only the operational pieces justified by the selected hosting and workload.
+
+## Worked examples and practice
+
+These examples explain operational choices; they do not add retries, queues,
+caching, or telemetry to the application.
+
+### T101 — Log a safe request correlation
+
+Log a trace identifier with a safe operation name and failure category. That
+lets an operator follow one request without copying source code or credentials
+into a log. Keep user-controlled text out of structured fields unless it has
+been safely bounded and sanitized.
+
+```text
+traceId=... operation=ExplainCode provider=Ollama outcome=Timeout
+```
+
+**Self-check:** Should a log record include the full submitted code to aid
+debugging? **Answer:** not by default; it may be sensitive and is not needed
+to correlate the failure.
+
+### T102 — Use logs, metrics, and traces for different questions
+
+Logs explain individual events, metrics show aggregated trends, and traces
+show how time and failures flow across dependencies. A provider span can
+explain latency while a metric tracks the percentage of successful calls.
+Redact prompts, tokens, and personal data from all telemetry.
+
+```text
+request trace -> API span -> provider HTTP span
+metrics: latency histogram + success/failure counts
+```
+
+**Self-check:** Is a high-cardinality user ID a good metric label? **Answer:**
+usually no; it creates excessive time series and may expose personal data.
+
+### T103 — Distinguish liveness from readiness
+
+Liveness should answer whether the process is stuck and needs restart;
+readiness asks whether it can currently serve traffic. A temporary provider
+outage may make generation unavailable without meaning the API process itself
+should be restarted.
+
+```text
+liveness: process can make progress?
+readiness: this instance should receive new work?
+```
+
+**Self-check:** Should every health probe call the external AI provider?
+**Answer:** not necessarily; frequent probes can add load or amplify an
+outage.
+
+### T104 — Budget one end-to-end request
+
+Timeouts should compose into a deadline. If the whole request budget is 90
+seconds, the provider call must leave time for API work and response delivery.
+Propagate cancellation so disconnected callers do not leave unnecessary work.
+
+```text
+overall request: 90s
+  provider call: <= 60s
+  validation/serialization/response: remaining budget
+```
+
+These values are illustrative. **Self-check:** Why should provider timeout
+not exceed the full request deadline? **Answer:** the caller would abandon the
+request before the provider operation times out.
+
+### T105 — Retry only when semantics allow it
+
+A transient network error may recover, but a generation request can be
+billable even if the response was lost. Before retrying, classify the failure,
+limit attempts and total delay, and decide how duplicate work is handled.
+
+```text
+transient? -> within deadline? -> retry allowed and affordable? -> retry
+```
+
+**Self-check:** Is every HTTP 5xx safe to retry automatically? **Answer:**
+no; provider semantics, idempotency, and cost matter.
+
+### T106 — Isolate saturation
+
+A bulkhead limits how many calls consume a resource; a circuit breaker avoids
+repeated calls to a dependency that is failing. Both require measured
+thresholds and clear user-facing failure behavior. Do not add a queue or
+fallback just to hide provider outages.
+
+```text
+incoming work -> concurrency bound -> breaker -> provider
+```
+
+**Self-check:** Does a circuit breaker repair a failed provider? **Answer:**
+no; it temporarily stops calls and gives the dependency time to recover.
+
+### T107 — Cache only when privacy and freshness allow it
+
+Caching can reduce repeated work but an AI answer may depend on user code,
+identity, provider version, and prompt settings. A cache key must include all
+relevant inputs, and the design must avoid serving one user's content to
+another. Often a small chat product does not need answer caching.
+
+```text
+cache key = normalized input + relevant settings + access scope + version
+```
+
+**Self-check:** Is caching an answer by prompt text alone safe for private
+content? **Answer:** not without a reviewed data-isolation and retention
+design.
+
+### T108 — Use a queue for deferred work, not ordinary request latency
+
+A queue decouples a producer from a worker and is useful for work that can
+finish later. It changes the user contract: the API may return a job ID and
+the client must poll or receive a completion event. For an interactive chat
+response, a queue adds complexity unless requests cannot reasonably remain
+synchronous.
+
+```text
+API -> durable queue -> competing worker -> result store/notification
+```
+
+**Self-check:** Does a queue make a long-running task synchronous to the
+user? **Answer:** no; it makes the work asynchronous and requires status/result
+handling.
+
+### T109 — Design for duplicate delivery
+
+Message brokers commonly provide at-least-once delivery, so a worker can see
+the same message more than once. An idempotency key or unique operation
+constraint prevents duplicate effects. An outbox can atomically save business
+data and an event record before a separate dispatcher publishes it.
+
+```text
+transaction: save conversation change + outbox event
+dispatcher: publish event -> mark delivered
+consumer: deduplicate by event/operation ID
+```
+
+**Self-check:** Should a consumer assume each event arrives exactly once?
+**Answer:** no; design for duplicates.
+
+### T110 — Make reliability measurable and actionable
+
+An SLI is a measured outcome, such as successful explanations; an SLO is a
+target over a time window. An alert should identify user impact and point to
+a runbook with diagnosis and mitigation steps. Do not promise a target the
+application cannot measure.
+
+```text
+measured SLI -> compare to SLO -> alert on actionable burn -> runbook
+```
+
+**Self-check:** Is "CPU under 80%" automatically a useful user SLO? **Answer:**
+no; infrastructure metrics should connect to outcomes users experience.

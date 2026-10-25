@@ -1,211 +1,432 @@
 # Module 02 — .NET Runtime, Async, and Dependency Injection
 
-**Workbook alignment:** Days 4–5 (async, concurrency, modern .NET, DI,
-configuration, logging). Related tracker topics: T011–T020.
+**Workbook alignment:** Days 4–5 — asynchronous I/O, runtime behavior, memory,
+dependency injection, configuration, and HTTP clients.
+**Topics:** T011–T020. Examples show the current project where possible; planned
+work is clearly labeled and does not imply the feature already exists.
 
 ## T011 — `async`/`await` and I/O-bound work
 
-- **What:** `await` lets a method yield while I/O is pending instead of
-  blocking a request thread.
-- **Why:** Model calls take time; blocking threads limits concurrent requests.
-- **When:** Use async APIs for network, disk, and database I/O.
-- **Limits:** Async does not make CPU work or the model itself faster.
-- **Diagram:** `request thread -> starts HTTP -> serves another request -> resumes on response`
-- **Project example (implemented):** the application and provider adapters use
-  async HTTP calls. [ChatApiService.cs](../../Services/ChatApiService.cs)
-- **Reference:** [Asynchronous programming](https://learn.microsoft.com/dotnet/csharp/asynchronous-programming/)
+### What, why, and when
+
+`async` and `await` let a method pause while I/O is pending without occupying a
+thread just to wait. The operating system or remote service is doing the work;
+when it completes, the method continues. This is especially useful for network
+calls such as asking an AI provider to generate a response. It is not a way to
+make CPU-heavy work faster.
+
+### Flow
+
+```mermaid
+sequenceDiagram
+    participant API
+    participant App as Application code
+    participant AI as AI provider
+    API->>App: request
+    App->>AI: await HTTP response
+    Note over App: returns control while I/O is pending
+    AI-->>App: response
+    App-->>API: result
+```
+
+```text
+request -> start network I/O -> free request thread to do other work
+                                  |
+                                  +-- response arrives -> continue after await
+```
+
+### Example and project connection
+
+```csharp
+public async Task<string> GetTextAsync(HttpClient client, CancellationToken token)
+{
+    using var response = await client.GetAsync("/health", token);
+    response.EnsureSuccessStatusCode();
+    return await response.Content.ReadAsStringAsync(token);
+}
+```
+
+The `await` expressions yield while the network or content read is pending.
+The app's provider adapter uses asynchronous `HttpClient` calls for the same
+reason. Use `Task`/`Task<T>` for one eventual result; avoid `.Result` and
+`.Wait()`, which block threads and can cause thread-pool starvation.
+
+**Limitation:** `async` does not make CPU work parallel. Use a worker or
+carefully bounded parallelism for CPU-heavy jobs, not `Task.Run` around every
+web request.
+
+**Practice:** Why is `await` useful for a slow provider call? **Answer:** it
+does not tie up a thread while the network is waiting.
+
+**Reference:** [Asynchronous programming with async and await](https://learn.microsoft.com/dotnet/csharp/asynchronous-programming/).
 
 ## T012 — `CancellationToken` propagation
 
-- **What:** A token lets a caller request that in-progress work stop.
-- **Why:** If a client disconnects, the API should avoid needless provider
-  work where possible.
-- **When:** Accept a token at each async boundary and pass it to the next
-  operation.
-- **Limits:** Cancellation is cooperative; it cannot always undo work already
-  accepted by a remote provider.
-- **Diagram:** `HTTP request token -> chat service -> adapter -> HTTP send/read`
-- **Project example (implemented):** provider calls receive the controller's
-  token. [IChatApiService.cs](../../Services/IChatApiService.cs)
-- **Reference:** [Cancellation in managed threads](https://learn.microsoft.com/dotnet/standard/threading/cancellation-in-managed-threads)
+### What, why, and when
+
+A `CancellationToken` is a cooperative signal that work is no longer needed.
+It does not forcibly kill code; each operation must receive and observe the
+token. For a chat request, cancellation can happen when the browser disconnects
+or the request times out. Passing the same token down the call chain avoids
+continuing a billable model request after its caller has gone away.
+
+### Flow
+
+```text
+HTTP request token -> controller -> chat service -> provider adapter -> HTTP I/O
+       cancel -------------------------------------------------------> stop
+```
+
+```csharp
+public async Task<string> FetchAsync(
+    HttpClient client,
+    CancellationToken cancellationToken)
+{
+    using var response = await client.GetAsync("/health", cancellationToken);
+    response.EnsureSuccessStatusCode();
+    return await response.Content.ReadAsStringAsync(cancellationToken);
+}
+```
+
+The token must be forwarded to every cancellable operation; accepting it but
+not passing it onward gives callers a false impression of cancellation.
+ASP.NET Core exposes a request-abort token to endpoints. The chat path should
+carry that token from controller through orchestration and into the provider
+HTTP request.
+
+**Limitation:** Cancellation is not the same as a failure and may arrive after
+the remote provider has already started processing. Cleanup still matters.
+Do not swallow `OperationCanceledException` as an ordinary provider error.
+
+**Practice:** If the caller disconnects during an awaited HTTP request, what
+should the token do? **Answer:** signal cancellation down the call chain so
+local work stops as soon as the underlying operation supports it.
+
+**Reference:** [Cancellation in managed threads](https://learn.microsoft.com/dotnet/standard/threading/cancellation-in-managed-threads).
 
 ## T013 — Concurrency, thread safety, locks, and races
 
-- **What:** Concurrency is overlapping work; a race occurs when results depend
-  on timing or shared mutable state.
-- **Why:** Web servers process many requests at once, so shared singleton state
-  must be safe.
-- **When:** Prefer immutable request data and scoped services; use locks only
-  for genuinely shared mutable state.
-- **Limits:** Locks can reduce throughput or deadlock. A lock in one process
-  does not coordinate multiple server instances.
-- **Diagram:** `request A + request B -> shared state? -> synchronize or remove sharing`
-- **Project example (implemented):** the provider selector stores only a
-  configured adapter reference; request-specific prompt data stays local to
-  each call. [AICompletionProviderSelector.cs](../../Services/AICompletionProviderSelector.cs)
-- **Reference:** [Managed threading best practices](https://learn.microsoft.com/dotnet/standard/threading/managed-threading-best-practices)
+### What, why, and when
+
+Concurrency means multiple operations make progress during overlapping time.
+A race occurs when the result depends on the timing of those operations.
+Thread-safe code protects shared mutable state so concurrent requests cannot
+corrupt it. Web APIs naturally handle many requests at once, so a service must
+not keep per-user or per-request mutable data in shared fields.
+
+### Example
+
+```csharp
+// Unsafe: two callers can both read the same value before either writes.
+int count = 0;
+Parallel.For(0, 1_000, _ => count++);
+
+// Safer for a simple shared counter:
+int safeCount = 0;
+Parallel.For(0, 1_000, _ => Interlocked.Increment(ref safeCount));
+```
+
+```text
+Unsafe: request A reads 4 ---+
+                             +--> both write 5 (one increment is lost)
+         request B reads 4 ---+
+```
+
+The project should keep request-specific prompt, code, and provider response
+in local variables. A singleton may serve concurrent requests, so its fields
+must be immutable, thread-safe, or protected with a correctly scoped
+synchronization mechanism.
+
+**Limitation:** A lock held across slow network I/O serializes callers and can
+hurt throughput. Prefer no shared mutable state; use a lock only for small,
+well-defined critical sections.
+
+**Practice:** Is a local variable shared by two separate HTTP requests?
+**Answer:** no; request-local state is a safer default than mutable service
+fields.
+
+**Reference:** [Managed threading best practices](https://learn.microsoft.com/dotnet/standard/threading/managed-threading-best-practices).
 
 ## T014 — `Task.WhenAll`, bounded concurrency, and `SemaphoreSlim`
 
-- **What:** `Task.WhenAll` waits for independent tasks; a semaphore can cap
-  how many operations run simultaneously.
-- **Why:** Parallel independent I/O can reduce total wait, while a concurrency
-  cap can protect limited model capacity.
-- **When:** Use `WhenAll` only for independent calls; add a queue/semaphore only
-  after a real capacity requirement is known.
-- **Limits:** Unbounded fan-out can overwhelm a provider and increase cost.
-  `WhenAll` is not a throttler.
-- **Diagram:** `N tasks -> semaphore(limit k) -> at most k active`
-- **Project exercise (non-production):** sketch a bounded concurrent worker
-  for multiple independent code explanations. The current endpoint makes one
-  provider call per request; public per-user limits belong in security
-  hardening, not speculative parallelism.
-- **Reference:** [Task-based asynchronous programming](https://learn.microsoft.com/dotnet/standard/parallel-programming/task-based-asynchronous-programming)
+### What, why, and when
+
+`Task.WhenAll` waits for several asynchronous tasks and completes when all of
+them complete. It is useful when independent I/O operations can run together.
+If a provider has a rate limit, however, launching an unbounded number of
+requests can overload it. `SemaphoreSlim` can cap how many operations enter a
+section at once.
+
+### Example
+
+```csharp
+using var limit = new SemaphoreSlim(3);
+
+async Task<string> FetchBoundedAsync(string url, CancellationToken token)
+{
+    await limit.WaitAsync(token);
+    try
+    {
+        return await client.GetStringAsync(url, token);
+    }
+    finally
+    {
+        limit.Release();
+    }
+}
+
+string[] results = await Task.WhenAll(
+    urls.Select(url => FetchBoundedAsync(url, cancellationToken)));
+```
+
+```text
+many tasks -> [semaphore: at most 3 active] -> remote service
+```
+
+`finally` ensures the permit is returned even when the request fails. This is
+a learning example, not a feature currently needed by the single-request chat
+flow.
+
+**Limitation:** `WhenAll` does not itself limit concurrency; it waits for all
+tasks and reports failures. A semaphore created per request only limits that
+request's tasks, not the whole application. Production limits need a shared,
+intentional scope and observability.
+
+**Practice:** Does `WhenAll` mean "run sequentially"? **Answer:** no; tasks
+started before it may proceed concurrently.
+
+**Reference:** [`Task.WhenAll`](https://learn.microsoft.com/dotnet/api/system.threading.tasks.task.whenall) · [`SemaphoreSlim`](https://learn.microsoft.com/dotnet/api/system.threading.semaphoreslim).
 
 ## T015 — `IAsyncEnumerable<T>` and streaming
 
-- **What:** An async enumerable yields results over time without waiting for a
-  full collection.
-- **Why:** Streaming can show generated text sooner and reduce perceived wait.
-- **When:** Use it when the provider and API/UI contract support incremental
-  output.
-- **Limits:** Streaming complicates cancellation, proxies, retries, and partial
-  failure semantics. The current API returns a complete response.
-- **Diagram:** `provider chunks -> async stream -> HTTP stream -> UI append`
-- **Project example (planned — key103/key102 follow-up):** chat currently
-  returns a complete completion; streaming is optional and should be added only
-  if it improves the learning product.
-- **Reference:** [Asynchronous streams](https://learn.microsoft.com/dotnet/csharp/asynchronous-programming/generate-consume-asynchronous-stream)
+### What, why, and when
 
-## T016 — CLR, JIT, and garbage collection
+`IAsyncEnumerable<T>` produces values over time, asynchronously. A consumer
+can process each item as soon as it arrives instead of waiting for a complete
+collection. This is useful for large data feeds and can support token-by-token
+AI responses if the provider and API contract are designed for streaming.
 
-- **What:** The CLR runs managed .NET code; the JIT compiles methods for the
-  current runtime; garbage collection reclaims unreachable managed objects.
-- **Why:** Runtime behavior explains startup, memory, and performance.
-- **When:** Use these concepts when diagnosing warm-up, CPU, or memory issues.
-- **Limits:** Knowing the model does not replace measurement; GC does not
-  manage every native resource such as HTTP response streams.
-- **Diagram:** `C# -> IL -> JIT machine code -> CLR execution -> GC managed heap`
-- **Project example (implemented):** the API targets .NET 10 in
-  [AIChatApplication.csproj](../../AIChatApplication.csproj). Low-level runtime
-  tuning is not justified before profiling.
-- **Reference:** [.NET fundamentals](https://learn.microsoft.com/dotnet/fundamentals/)
+### Example
 
-## T017 — Allocations, boxing, LOH, and profiling
+```csharp
+static async IAsyncEnumerable<int> CountAsync(
+    [System.Runtime.CompilerServices.EnumeratorCancellation]
+    CancellationToken cancellationToken = default)
+{
+    for (var value = 1; value <= 3; value++)
+    {
+        await Task.Delay(100, cancellationToken);
+        yield return value;
+    }
+}
 
-- **What:** Allocations create managed objects; boxing wraps a value type as an
-  object; large objects use a separate heap region.
-- **Why:** Excess allocations can increase GC work and latency.
-- **When:** Profile a real hot path before optimizing allocation-heavy code.
-- **Limits:** Premature micro-optimization can hurt readability and may not
-  affect the bottleneck, which is often remote inference latency.
-- **Diagram:** `request -> allocations -> GC work -> latency`
-- **Project exercise (non-production):** profile serialization of a
-  representative chat request only to learn the tools. Provider network
-  latency dominates likely response time; do not change object shapes without
-  a measured application bottleneck.
-- **Reference:** [Fundamentals of garbage collection](https://learn.microsoft.com/dotnet/standard/garbage-collection/fundamentals)
+await foreach (var value in CountAsync(cancellationToken))
+{
+    Console.WriteLine(value);
+}
+```
+
+```text
+producer: 1 ---- 2 ---- 3
+consumer:    read/process each item as it arrives
+```
+
+**Project connection (planned):** the current chat endpoint returns one
+completed response. Streaming should be a deliberate later feature with a
+streaming HTTP contract, disconnect cancellation, and frontend handling.
+
+**Limitation:** Streaming complicates errors after response headers are sent,
+reconnection, partial output, and moderation. Do not label a normal
+`Task<string>` response as streaming.
+
+**Practice:** What does `await foreach` avoid? **Answer:** collecting and
+waiting for the entire asynchronous sequence before processing its first item.
+
+**Reference:** [Asynchronous streams](https://learn.microsoft.com/dotnet/csharp/asynchronous-programming/).
+
+## T016 — CLR, JIT, and garbage collection fundamentals
+
+### What, why, and when
+
+The CLR (Common Language Runtime) executes .NET programs and provides services
+such as type safety, exceptions, and garbage collection. C# is compiled to
+intermediate language; the JIT compiler turns methods into machine code when
+needed. The garbage collector reclaims managed objects that are no longer
+reachable.
+
+### Conceptual execution
+
+```text
+C# source -> compiler -> IL + metadata -> CLR/JIT -> machine instructions
+                                         |
+                                         +-> GC tracks managed object reachability
+```
+
+The GC generally reclaims memory automatically; application code should not
+try to manually free ordinary managed objects. It must still dispose resources
+that hold external handles, such as `HttpResponseMessage` or streams. In
+project code, `using` ensures such disposable resources are released.
+
+**Limitation:** GC is not immediate, does not manage every native resource,
+and does not eliminate memory leaks caused by objects that remain reachable.
+Finalizers are not a replacement for deterministic disposal.
+
+**Practice:** Does an object become collectible just because a method ended?
+**Answer:** only if no live reference can still reach it.
+
+**Reference:** [Garbage collection fundamentals](https://learn.microsoft.com/dotnet/standard/garbage-collection/fundamentals).
+
+## T017 — Allocations, boxing, LOH, and memory profiling
+
+### What, why, and when
+
+Allocating an object uses managed memory. Many short-lived allocations are
+normal, but avoidable allocation in a hot path can increase garbage-collection
+work. Boxing wraps a value type as an object; unboxing extracts it again.
+Large allocations may go to the Large Object Heap (LOH), which has different
+collection behavior.
+
+### Example
+
+```csharp
+int answer = 42;
+object boxed = answer;        // boxing: value copied into an object
+int unboxed = (int)boxed;     // unboxing: explicit extraction
+
+Console.WriteLine(unboxed);
+```
+
+```text
+int value 42 --box--> object containing copied value 42
+```
+
+For this chat app, request body size and response size are more practical
+memory risks than premature micro-optimization. Measure with a profiler and
+representative workloads before changing code.
+
+**Limitation:** A value type is not always allocation-free; boxing and
+capturing it can allocate. The LOH is not simply "bad memory." Optimize based
+on measurements, not guesses about stack versus heap.
+
+**Practice:** Does assigning an `int` to `object` share the original storage?
+**Answer:** no, boxing creates an object containing a copy of the value.
+
+**Reference:** [Fundamentals of garbage collection](https://learn.microsoft.com/dotnet/standard/garbage-collection/fundamentals) · [Large Object Heap](https://learn.microsoft.com/dotnet/standard/garbage-collection/large-object-heap).
 
 ## T018 — DI scopes and service lifetimes
 
-- **What:** Transient creates per resolution, scoped creates per request scope,
-  and singleton lives for the application lifetime.
-- **Why:** Correct lifetimes prevent shared-state bugs and manage resources.
-- **When:** Use scoped for request orchestration and scoped collaborators;
-  singleton only for thread-safe state that is safe to share.
-- **Limits:** A singleton must not capture a scoped dependency. Longer-lived
-  services can accidentally retain user/request data.
-- **Diagram:** `HTTP request scope -> chat service + selector + provider`
-- **Project example (implemented):** the provider, selector, and chat service
-  are scoped in [Program.cs](../../Program.cs).
-- **Reference:** [Dependency injection service lifetimes](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection/service-lifetimes)
+### What, why, and when
+
+Dependency injection (DI) creates objects and supplies their dependencies.
+**Transient** creates an instance when requested; **scoped** uses one instance
+per scope (in a web app, typically one request); **singleton** uses one
+instance for the application's lifetime. Choosing a lifetime controls sharing
+and disposal.
+
+### Request lifetime diagram
+
+```mermaid
+flowchart LR
+    A["Request A"] --> SA["Scoped service A"]
+    B["Request B"] --> SB["Scoped service B"]
+    SA --> S["Singleton shared by both"]
+    SB --> S
+```
+
+```text
+Request A -> its scoped instance      Request B -> another scoped instance
+                  \                         /
+                   +---- shared singleton -+
+```
+
+The application registers provider services and options in
+[Program.cs](../../Program.cs). Provider selection is fixed at startup, while
+each request uses the registered services through constructor injection.
+
+**Limitation:** A singleton must be safe for concurrent callers and must not
+capture a scoped service. That lifetime mismatch can make request data leak
+across users or fail at runtime. Choose the shortest lifetime consistent with
+the service's state and dependencies.
+
+**Practice:** Should a service storing one user's current prompt be singleton?
+**Answer:** no; request-specific mutable state must not be shared globally.
+
+**Reference:** [Dependency injection in .NET](https://learn.microsoft.com/dotnet/core/extensions/dependency-injection).
 
 ## T019 — Configuration, Options pattern, and validation
 
-- **What:** Configuration combines sources; Options bind related values to
-  typed classes and support validation.
-- **Why:** Endpoint/model choice differs by environment; invalid settings
-  should fail early.
-- **When:** Bind related provider configuration to typed options and keep
-  credentials in secret stores.
-- **Limits:** A valid URI does not prove a remote service is reachable. Do not
-  include a real key in tracked JSON.
-- **Diagram:** `JSON -> environment/User Secrets override -> typed Options -> validate -> use`
-- **Project example (implemented):** provider settings are validated at
-  startup. [Program.cs](../../Program.cs) · [OpenAIOptions.cs](../../Options/OpenAIOptions.cs)
-- **Reference:** [Options pattern](https://learn.microsoft.com/dotnet/core/extensions/options)
+### What, why, and when
 
-## T020 — `IHttpClientFactory`, named clients, and timeouts
+Configuration collects settings from sources such as JSON files, environment
+variables, and secret providers. The Options pattern binds related settings to
+a typed class. Validation catches missing or invalid settings at startup
+rather than during a user's first request.
 
-- **What:** `IHttpClientFactory` creates clients with managed handler reuse;
-  named clients allow configuration per external service.
-- **Why:** Ollama and OpenAI need separate endpoints, auth, and timeout budgets.
-- **When:** Use a named or typed client for each external API boundary.
-- **Limits:** A timeout does not guarantee the remote provider stops work.
-  Retries need a budget and idempotency/cost review.
-- **Diagram:** `adapter -> named client -> handler pool -> provider endpoint`
-- **Project example (implemented):** `Program.cs` registers distinct clients
-  with provider-specific timeout settings.
-  [OllamaChatCompletionProvider.cs](../../Services/OllamaChatCompletionProvider.cs)
-- **Reference:** [HttpClient factory](https://learn.microsoft.com/dotnet/core/extensions/httpclient-factory)
-
-## Workbook implementation connection
-
-The project demonstrates async I/O, cancellation, typed options, logging,
-lifetimes, and named clients. Parallel fan-out, async streaming, runtime tuning,
-and allocation optimization remain practice or later-feature topics until
-requirements or measurements justify them.
-
-## Reading `Program.cs` — the composition root
-
-`Program.cs` is where ASP.NET Core assembles the application. It wires services
-and middleware together; it should not contain chat business logic.
+### Flow
 
 ```text
-configuration -> service registrations -> Build()
-               -> middleware pipeline -> mapped controllers -> Run()
+appsettings / environment / secret store
+                 -> bind typed options -> validate -> inject into service
 ```
 
-1. **Create the builder.** `WebApplication.CreateBuilder(args)` loads the
-   standard configuration providers and creates the DI service collection.
-   `selectedProviderName` reads the provider setting so startup validation can
-   check the selected adapter.
-2. **Register API and error services.** `AddControllers()` enables MVC
-   controllers. `AddExceptionHandler<ApiExceptionHandler>()` registers the
-   application's fallback handler; `AddProblemDetails()` registers framework
-   error support, although the custom handler currently writes the project's
-   `Result` envelope.
-3. **Register Swagger/OpenAPI.** `AddEndpointsApiExplorer()` supplies endpoint
-   metadata and `AddSwaggerGen()` from Swashbuckle generates the OpenAPI JSON.
-   Later, `UseSwagger()` exposes that JSON and `UseSwaggerUI()` serves the
-   interactive browser UI. Here it is Development-only and `RoutePrefix = ""`
-   puts the UI at the app root; the document URL is `/swagger/v1/swagger.json`.
-4. **Bind and validate options.** `AddOptions<T>().BindConfiguration(...)`
-   maps `appsettings.json`, environment variables, and other providers into
-   typed classes. `Validate(...)` checks the selected provider's endpoint,
-   model, timeout, and (for OpenAI) key. `ValidateOnStart()` fails early rather
-   than waiting for a chat request.
-5. **Register named HTTP clients.** Ollama and OpenAI each get a named client
-   and independent timeout. `IHttpClientFactory` reuses handlers while the
-   adapters keep their endpoint/protocol behavior separate.
-6. **Register application composition.** Both adapters implement
-   `IAICompletionProvider`. The selector returns the server-selected adapter;
-   `ChatApiService` orchestrates the prompt and response. Scoped lifetime gives
-   each HTTP request its own service instances.
-7. **Build and order middleware.** `builder.Build()` creates the app.
-   `UseExceptionHandler()` is early so it can handle exceptions from downstream
-   middleware and endpoints. The development check adds Swagger UI only when
-   the host environment is Development.
-8. **Configure request handling.** `UseHttpsRedirection()` redirects HTTP to
-   HTTPS. `UseAuthorization()` enables authorization middleware, but no
-   authentication scheme or authorization policies are configured yet.
-   `MapControllers()` maps attribute-routed controllers. `Run()` starts the
-   host.
+```csharp
+public sealed class ProviderOptions
+{
+    public string BaseUrl { get; init; } = "";
+}
+```
 
-**Project references:** [Program.cs](../../Program.cs),
-[AIChatApplication.csproj](../../AIChatApplication.csproj), and
-[ChatController.cs](../../Controllers/ChatController.cs).
+**Project connection (implemented):** `Program.cs` binds provider-specific
+options and validates them on startup. Keep secrets out of committed settings;
+use environment-specific secret management. Typed options make configuration
+requirements visible to the compiler and reviewers.
 
-Swagger is a development aid and OpenAPI contract view—not an authorization
-mechanism, a test suite, or proof that a provider is reachable. The app root
-may redirect to Swagger's `index.html` before rendering the UI.
+**Limitation:** A default property value is not proof of valid configuration.
+Validation rules must match the provider and environment, and error messages
+must not expose secret values.
+
+**Practice:** Why validate on startup? **Answer:** fail early with a clear
+configuration error, instead of failing unpredictably during a chat request.
+
+**Reference:** [Options pattern in .NET](https://learn.microsoft.com/dotnet/core/extensions/options).
+
+## T020 — `IHttpClientFactory`, typed clients, and HTTP timeouts
+
+### What, why, and when
+
+`IHttpClientFactory` creates configured `HttpClient` instances while managing
+underlying handler reuse. A named client is selected by a string; a typed
+client packages an HTTP client with a domain-specific service. Configure
+timeouts and base addresses close to the provider integration so outbound
+calls have explicit boundaries.
+
+### Flow
+
+```text
+chat service -> provider adapter -> configured HttpClient -> provider endpoint
+                                      timeout + handler reuse
+```
+
+```csharp
+services.AddHttpClient("ExampleProvider", client =>
+{
+    client.BaseAddress = new Uri("https://example.invalid/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+```
+
+**Project connection (implemented):** `Program.cs` configures separate named
+clients for the supported AI providers, with independent timeout settings.
+The adapter uses the client associated with its provider; settings should be
+environment-configurable where needed.
+
+**Limitation:** `HttpClient.Timeout` applies to the request and can conflict
+with a separate cancellation/deadline policy. Do not create and dispose a new
+`HttpClient` for every request; do not retry non-idempotent generation calls
+without considering duplicate cost and provider semantics.
+
+**Practice:** Why use independent provider clients? **Answer:** each provider
+can have its own base address and timeout policy without leaking settings into
+the other adapter.
+
+**Reference:** [Use IHttpClientFactory to implement resilient HTTP requests](https://learn.microsoft.com/dotnet/core/extensions/httpclient-factory).

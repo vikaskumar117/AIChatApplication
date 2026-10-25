@@ -150,3 +150,150 @@ Automated tests are intentionally not being implemented in this documentation
 step. Provider/API fakes are explicitly deferred by the user; the guide marks
 them deferred rather than treating the successful build or Swagger check as
 test coverage.
+
+## Worked examples and practice
+
+These are learning examples, not newly added tests. Provider/API mocking stays
+deferred as requested.
+
+### T071 — Assert behavior, not private implementation
+
+Test the observable outcome of a pure rule. The test name should say what
+behavior matters; avoid asserting private helper calls or local variable
+names.
+
+```csharp
+[Fact]
+public void Blank_code_is_rejected()
+{
+    var result = ValidateCode("  ");
+
+    Assert.False(result.IsValid);
+}
+```
+
+**Self-check:** If the implementation is refactored but the behavior stays
+correct, should this test fail? **Answer:** no.
+
+### T072 — Integration tests trace the real HTTP boundary
+
+An integration test starts a test host and sends an HTTP request through
+routing, serialization, middleware, and application services. It answers
+questions a unit test cannot, such as whether the route and JSON contract
+actually work together. This project's API integration tests remain deferred.
+
+```text
+HTTP request -> ASP.NET test host -> endpoint -> controlled dependency -> HTTP response
+```
+
+**Self-check:** Does calling a controller method directly test JSON binding?
+**Answer:** no; that bypasses the HTTP boundary.
+
+### T073 — Understand a test double without adding one yet
+
+A fake is a controlled implementation; a stub returns predetermined answers;
+a mock typically verifies interactions. They isolate nondeterministic external
+systems, but can model them incorrectly. For this project, do not add provider
+fakes until the deferred testing key is resumed.
+
+```text
+production: adapter -> HTTP transport -> provider
+test idea:   adapter -> controlled transport -> canned HTTP response
+```
+
+**Self-check:** Does a canned response prove the live provider is available?
+**Answer:** no; it tests the adapter's behavior against a known response.
+
+### T074 — Test the selected relational engine
+
+A database integration test should apply migrations to a disposable instance
+of the actual selected provider, then check constraints and queries. An
+in-memory collection cannot prove SQL translation or relational constraint
+behavior.
+
+```text
+empty SQL instance -> apply migrations -> insert fixture -> query/assert -> dispose
+```
+
+**Self-check:** Why verify migrations against an empty database? **Answer:**
+it confirms a fresh environment can be created reproducibly.
+
+### T075 — Pin the serialized contract
+
+Contract tests check the JSON that consumers actually receive, including
+property names and relevant status codes. This is important when the Angular
+client and API might be deployed at different times.
+
+```json
+{"success":true,"message":"OK","result":{}}
+```
+
+This is a schematic `Result` shape; verify the actual serializer output
+before treating it as a contract. **Self-check:** Can valid JSON still break a
+client? **Answer:** yes; a renamed or semantically changed field can be
+breaking.
+
+### T076 — Separate adapter correctness from model quality
+
+Tests should assert stable behavior such as prompt role mapping, error
+translation, cancellation, and output limits. Model quality belongs in a
+versioned evaluation set with a rubric because prose can vary.
+
+```text
+adapter test -> stable protocol behavior
+quality eval -> correctness / clarity / unsupported-claim rubric
+```
+
+**Self-check:** Should a unit test compare an AI answer to one exact sentence?
+**Answer:** generally no; exact prose is probabilistic and brittle.
+
+### T077 — Test one important browser journey
+
+An E2E test should exercise what a user sees: open the page, enter code,
+submit, observe loading, then see a result or error. Use a controlled API so
+the test is repeatable and does not spend money on live inference.
+
+```text
+browser action -> UI state -> API response -> visible assertion
+```
+
+**Self-check:** Why keep E2E coverage selective? **Answer:** browser tests are
+slower and more environment-sensitive than focused tests.
+
+### T078 — CI provides repeatable gates
+
+CI should run the same restore/build/test/format commands documented for
+developers. A green status means those configured checks passed for that
+revision; it does not mean every behavior is tested.
+
+```text
+pull request -> restore -> build -> tests -> report -> review/merge decision
+```
+
+**Self-check:** Can CI prove that an untested authorization rule is correct?
+**Answer:** no.
+
+### T079 — Treat scan findings as evidence to triage
+
+Dependency scanning compares packages with known advisories; secret scanning
+looks for credential-like material. Confirm findings, update or mitigate
+packages, and rotate any credential that may have been exposed. A scanner
+cannot guarantee a repository is safe.
+
+**Self-check:** If a secret was removed in a later commit, is the leaked
+credential safe? **Answer:** no; it may remain in history or external copies,
+so revoke/rotate it.
+
+### T080 — Review against acceptance criteria
+
+Review a feature by tracing the user outcome, error behavior, security
+boundary, maintainability, docs, and validation. Keep an ADR for a decision
+with meaningful alternatives or long-term consequences; avoid a document for
+every small implementation detail.
+
+```text
+requirement -> diff -> evidence (build/test/manual check) -> docs -> decision
+```
+
+**Self-check:** Does a clean diff alone prove a feature works? **Answer:**
+no; run the relevant build and behavior checks.
