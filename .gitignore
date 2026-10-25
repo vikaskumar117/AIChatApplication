@@ -27,4 +27,3 @@ node_modules/
 
 # Empty local SQL scratch query
 /SQL/SQLQuery1.sql
-frontend/package-lock.json
