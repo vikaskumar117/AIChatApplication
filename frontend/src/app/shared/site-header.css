@@ -1,0 +1,278 @@
+:host {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.site-header {
+  position: relative;
+  display: flex;
+  min-height: 68px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #e6ebe7;
+}
+
+.brand {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  color: #17241f;
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -.5px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.brand-mark {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 5px;
+  border-radius: 11px;
+  background: #d9f4e8;
+  color: #11794f;
+}
+
+.header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 9px;
+}
+
+.learning-link {
+  margin-right: 8px;
+  color: #53645a;
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.learning-link:hover,
+.learning-link.active {
+  color: #147d54;
+}
+
+.button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: .65;
+}
+
+.button-quiet {
+  background: transparent;
+  color: #33433b;
+}
+
+.button-quiet:hover {
+  background: #f0f5f1;
+}
+
+.button-outline {
+  border-color: #dce5df;
+  background: #fff;
+  color: #24342b;
+}
+
+.button-outline:hover {
+  border-color: #9ecab2;
+  background: #f7fbf8;
+}
+
+.account-email {
+  max-width: 220px;
+  overflow: hidden;
+  color: #58685f;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-notice {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 3;
+  max-width: min(100%, 440px);
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  border: 1px solid #dcece2;
+  border-radius: 8px;
+  background: #f7fbf8;
+  color: #386b50;
+  font-size: 11px;
+}
+
+.auth-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(100% - 32px, 430px);
+  max-width: 430px;
+  max-height: min(90dvh, 760px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid #e2e9e4;
+  border-radius: 17px;
+  background: #fff;
+  color: #17241f;
+  box-shadow: 0 28px 90px rgb(18 38 27 / 25%);
+}
+
+.auth-dialog::backdrop {
+  background: rgb(16 30 22 / 56%);
+  backdrop-filter: blur(3px);
+}
+
+.dialog-content {
+  position: relative;
+  padding: 34px;
+}
+
+.dialog-close {
+  position: absolute;
+  top: 17px;
+  right: 17px;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: #f2f6f3;
+  color: #526158;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.dialog-eyebrow {
+  margin: 0 0 10px;
+  color: #168257;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .14em;
+}
+
+.dialog-content h2 {
+  margin: 0;
+  padding-right: 25px;
+  font-size: 26px;
+  letter-spacing: -.04em;
+}
+
+.dialog-description {
+  margin: 10px 0 23px;
+  color: #748178;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.auth-form label {
+  margin-top: 4px;
+  color: #33443a;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.auth-form input {
+  width: 100%;
+  min-height: 43px;
+  padding: 0 12px;
+  border: 1px solid #dce5df;
+  border-radius: 8px;
+  background: #fff;
+  color: #17241f;
+  font: inherit;
+  font-size: 12px;
+}
+
+.auth-form input:focus-visible {
+  outline: 3px solid #c5ecd6;
+  outline-offset: 1px;
+  border-color: #62b98b;
+}
+
+.auth-form input[aria-invalid="true"] {
+  border-color: #c94d42;
+}
+
+.field-hint,
+.field-error {
+  margin-top: -3px;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.field-hint { color: #7a867f; }
+.field-error,
+.form-error { color: #a63e35; }
+.form-error { margin: 5px 0; font-size: 11px; line-height: 1.55; }
+
+.button-primary {
+  background: #147d54;
+  color: #fff;
+}
+
+.button-primary:hover {
+  background: #0e6845;
+}
+
+.submit-auth {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.mode-switch {
+  margin: 20px 0 0;
+  color: #718077;
+  font-size: 11px;
+  text-align: center;
+}
+
+.mode-switch button {
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: #147d54;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mode-switch button:focus-visible,
+.dialog-close:focus-visible {
+  outline: 3px solid #6ccba0;
+  outline-offset: 3px;
+}
+
+@media (max-width: 560px) {
+  .site-header { min-height: 62px; gap: 6px; }
+  .brand { gap: 6px; font-size: 12px; letter-spacing: -.3px; }
+  .brand-mark { width: 28px; height: 28px; padding: 4px; border-radius: 8px; }
+  .header-actions { gap: 3px; }
+  .learning-link { margin-right: 3px; font-size: 10px; }
+  .button { min-height: 32px; padding: 0 7px; font-size: 10px; }
+  .account-email { max-width: 75px; font-size: 9px; }
+  .dialog-content { padding: 28px 22px; }
+}

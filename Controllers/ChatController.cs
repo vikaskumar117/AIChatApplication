@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using AIChatApplication.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AIChatApplication.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Policy = "ActiveAccount")]
 public class ChatController : ControllerBase
 {
     private readonly IChatApiService _chatApiService;
@@ -17,16 +19,9 @@ public class ChatController : ControllerBase
     [HttpPost("explain")]
     public async Task<IActionResult> Explain([FromBody] CodeRequest request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Code))
-        {
-            return BadRequest(new { error = "Code is required." });
-        }
-
         var result = await _chatApiService.GetExplanationAsync(request.Code, cancellationToken);
-        return Ok(new CodeExplanationResponse(result));
+        return StatusCode(result.StatusCode, result);
     }
 }
 
-// Request and Response DTOs
 public record CodeRequest(string Code);
-public record CodeExplanationResponse(string Explanation);

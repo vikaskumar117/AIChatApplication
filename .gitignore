@@ -1,0 +1,29 @@
+# .NET build output
+bin/
+obj/
+
+# Visual Studio local state
+.vs/
+*.user
+*.suo
+
+# Local VS Code workspace settings
+.vscode/
+
+# Postman workspace metadata and local globals
+.postman/
+postman/globals/workspace.globals.yaml
+
+# Local SQL/database and generated .NET CLI state
+*.mdf
+*.ldf
+.local/
+
+# Generated frontend dependencies and output
+node_modules/
+/frontend/dist/
+/frontend/.angular/
+/frontend/coverage/
+
+# Empty local SQL scratch query
+/SQL/SQLQuery1.sql

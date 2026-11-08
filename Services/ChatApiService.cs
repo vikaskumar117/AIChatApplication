@@ -1,70 +1,81 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
+using AIChatApplication.Responses;
+using Microsoft.AspNetCore.Http;
 
 namespace AIChatApplication.Services;
 
-public class ChatApiService : IChatApiService
+public sealed class ChatApiService : IChatApiService
 {
-    private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IConfiguration _configuration;
+    private const int MaxOutputTokens = 300;
 
-    public ChatApiService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+    private readonly IAICompletionProviderSelector _providerSelector;
+    private readonly ILogger<ChatApiService> _logger;
+
+    public ChatApiService(
+        IAICompletionProviderSelector providerSelector,
+        ILogger<ChatApiService> logger)
     {
-        _httpClientFactory = httpClientFactory;
-        _configuration = configuration;
+        _providerSelector = providerSelector;
+        _logger = logger;
     }
 
-    public async Task<string> GetExplanationAsync(string code, CancellationToken cancellationToken = default)
+    public async Task<Result> GetExplanationAsync(
+        string code,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(code))
-            return "No code provided.";
+        {
+            return new Result(StatusCodes.Status400BadRequest, "Code is required.", null);
+        }
 
-        var apiKey = _configuration["OpenAI:ApiKey"];
-        if (string.IsNullOrWhiteSpace(apiKey))
-            throw new InvalidOperationException("OpenAI API key is missing in configuration.");
-
-        var client = _httpClientFactory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-
-        // Build the prompt
+        var provider = _providerSelector.GetProvider();
         var prompt = $"""
-            You are an senior .NET developer. Explain the following in simple words. Keep your explanation below 200 words.
+            You are a senior .NET developer. Explain the following in simple words. Keep your explanation below 200 words.
 
             C# Code:
             {code}
             """;
 
-        // OpenAI Chat Completions request body (compatible with OpenAI v1/chat/completions)
-        var requestBody = new
+        var request = new AICompletionRequest(
+            [new AIMessage("user", prompt)],
+            MaxOutputTokens);
+
+        try
         {
-            model = _configuration["OpenAI:Model"] ?? "gpt-4o-mini",
-            messages = new[]
-            {
-                new { role = "user", content = prompt }
-            },
-            max_tokens = 300
-        };
-
-        var json = JsonSerializer.Serialize(requestBody);
-        using var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        using var response = await client.PostAsync("https://api.openai.com/v1/chat/completions", content, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        using var doc = JsonDocument.Parse(responseJson);
-        // Navigate response to choices[0].message.content
-        if (doc.RootElement.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
-        {
-            var first = choices[0];
-            if (first.TryGetProperty("message", out var message) && message.TryGetProperty("content", out var contentElem))
-            {
-                return contentElem.GetString() ?? string.Empty;
-            }
+            var completion = await provider.CompleteAsync(request, cancellationToken);
+            return new Result(StatusCodes.Status200OK, null, completion.Text);
         }
-
-        return string.Empty;
+        catch (HttpRequestException exception)
+        {
+            _logger.LogError(exception, "The request to AI provider {Provider} failed.", provider.Name);
+            return ProviderFailure();
+        }
+        catch (System.Text.Json.JsonException exception)
+        {
+            _logger.LogError(exception, "AI provider {Provider} returned an invalid response.", provider.Name);
+            return ProviderFailure();
+        }
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogError(exception, "The request to AI provider {Provider} timed out.", provider.Name);
+            return new Result(
+                StatusCodes.Status504GatewayTimeout,
+                "The configured AI provider did not respond in time. Please try again.",
+                null);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "An unexpected error occurred while requesting a completion from {Provider}.", provider.Name);
+            return ProviderFailure();
+        }
     }
+
+    private static Result ProviderFailure() =>
+        new(
+            StatusCodes.Status502BadGateway,
+            "The configured AI provider could not complete the request. Check provider availability and configuration, then try again.",
+            null);
 }
