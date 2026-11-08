@@ -1,0 +1,153 @@
+<header class="site-header">
+  <a class="brand" routerLink="/home" aria-label="Concepts of Engineering home">
+    <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+      <path d="M12 12h16v16H12z" fill="none" stroke="currentColor" stroke-width="2" />
+      <path d="M8 20h8m8 0h8M20 8v8m0 8v8" stroke="currentColor" stroke-linecap="round" stroke-width="2" />
+      <circle cx="8" cy="20" r="2" fill="currentColor" />
+      <circle cx="32" cy="20" r="2" fill="currentColor" />
+      <circle cx="20" cy="8" r="2" fill="currentColor" />
+      <circle cx="20" cy="32" r="2" fill="currentColor" />
+    </svg>
+    <span>Concepts of Engineering</span>
+  </a>
+
+  <nav class="header-actions" aria-label="Main navigation and account">
+    <a class="learning-link" routerLink="/learning" routerLinkActive="active" ariaCurrentWhenActive="page">
+      Learning
+    </a>
+    @let session = sessionState();
+    @if (session.status === 'active'
+      || session.status === 'pending-approval'
+      || session.status === 'blocked'
+      || session.status === 'rejected') {
+      <span class="account-email">{{ session.email }}</span>
+      <button class="button button-outline" type="button" (click)="logout()">Sign out</button>
+    } @else {
+      <button
+        class="button button-quiet"
+        type="button"
+        [disabled]="session.status === 'loading'"
+        (click)="openAuthDialog('login', authDialog)"
+      >
+        Sign in
+      </button>
+      <button
+        class="button button-outline"
+        type="button"
+        [disabled]="session.status === 'loading'"
+        (click)="openAuthDialog('register', authDialog)"
+      >
+        Create account
+      </button>
+    }
+  </nav>
+
+  @if (accountNotice()) {
+    <p class="account-notice" role="status">{{ accountNotice() }}</p>
+  }
+</header>
+
+<dialog
+  #authDialog
+  class="auth-dialog"
+  aria-labelledby="auth-dialog-title"
+  (click)="onDialogClick($event, authDialog)"
+>
+  <div class="dialog-content">
+    <button
+      class="dialog-close"
+      type="button"
+      aria-label="Close account dialog"
+      (click)="closeAuthDialog(authDialog)"
+    >
+      ×
+    </button>
+    <p class="dialog-eyebrow">{{ authMode() === 'login' ? 'WELCOME BACK' : 'GET STARTED' }}</p>
+    <h2 id="auth-dialog-title">
+      {{ authMode() === 'login' ? 'Sign in to Concepts of Engineering' : 'Create your account' }}
+    </h2>
+    <p class="dialog-description">
+      @if (authMode() === 'login') {
+        Sign in to continue to your code workspace.
+      } @else {
+        Register with your email. New accounts need administrator approval before chat access.
+      }
+    </p>
+
+    <form class="auth-form" [formGroup]="authForm" (ngSubmit)="submitAuth(authDialog)">
+      <label for="account-email">Email address</label>
+      <input
+        id="account-email"
+        type="email"
+        autocomplete="email"
+        formControlName="email"
+        [attr.aria-invalid]="isEmailInvalid()"
+        aria-describedby="email-error"
+        required
+      />
+      @if (isEmailInvalid()) {
+        <span id="email-error" class="field-error" role="alert">Enter a valid email address.</span>
+      }
+
+      <label for="account-password">Password</label>
+      <input
+        id="account-password"
+        type="password"
+        [autocomplete]="authMode() === 'login' ? 'current-password' : 'new-password'"
+        formControlName="password"
+        [attr.aria-invalid]="isPasswordInvalid()"
+        aria-describedby="password-help password-error"
+        required
+      />
+      @if (authMode() === 'register') {
+        <span id="password-help" class="field-hint">
+          Use at least 12 characters with uppercase, lowercase, a number, and a symbol.
+        </span>
+      }
+      @if (isPasswordInvalid()) {
+        <span id="password-error" class="field-error" role="alert">
+          @if (authMode() === 'register') {
+            Password must be at least 12 characters and no longer than 128.
+          } @else {
+            Enter your password.
+          }
+        </span>
+      }
+
+      @if (authMode() === 'register') {
+        <label for="confirm-password">Confirm password</label>
+        <input
+          id="confirm-password"
+          type="password"
+          autocomplete="new-password"
+          formControlName="confirmPassword"
+          [attr.aria-invalid]="isPasswordConfirmationInvalid()"
+          required
+        />
+        @if (isPasswordConfirmationInvalid()) {
+          <span class="field-error" role="alert">The passwords do not match.</span>
+        }
+      }
+
+      @if (authError()) {
+        <p class="form-error" role="alert">{{ authError() }}</p>
+      }
+
+      <button class="button button-primary submit-auth" type="submit" [disabled]="isSubmittingAuth()">
+        @if (isSubmittingAuth()) { Please wait… }
+        @else if (authMode() === 'login') { Sign in }
+        @else { Create account }
+      </button>
+    </form>
+
+    <p class="mode-switch">
+      @if (authMode() === 'login') {
+        New here?
+        <button type="button" (click)="changeAuthMode('register')">Create an account</button>
+      } @else {
+        Already registered?
+        <button type="button" (click)="changeAuthMode('login')">Sign in</button>
+      }
+    </p>
+  </div>
+</dialog>

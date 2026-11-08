@@ -1,0 +1,183 @@
+.learning-shell {
+  min-height: 0;
+  flex-direction: column;
+}
+
+.learning-hero,
+.learning-footnote,
+.topic-stack,
+.concept-chip,
+.section-heading,
+.module-count,
+.card-topline,
+.card-meta {
+  display: flex;
+  align-items: center;
+}
+
+.learning-hero {
+  padding: 14px 10px 24px;
+}
+
+.learning-copy { padding-top: 5px; }
+.learning-eyebrow { color: #168257; font-size: 9px; font-weight: 800; letter-spacing: 1.15px; }
+.learning-copy > .learning-eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; }
+.status-dot, .module-count > span { width: 7px; height: 7px; border-radius: 50%; background: #54b89a; }
+
+h1 {
+  margin-bottom: 12px;
+  color: #1d2746;
+  font-size: clamp(40px, 4.7vw, 58px);
+  font-weight: 750;
+  letter-spacing: -3px;
+  line-height: 1.08;
+}
+
+h1 span { color: #148052; }
+.learning-description { max-width: 430px; margin: 0 0 18px; color: #737d92; font-size: 12px; line-height: 1.7; }
+
+.learning-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+  padding: 11px 15px;
+  border-radius: 8px;
+  background: #147d54;
+  box-shadow: 0 7px 16px #147d5422;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.learning-primary:hover { background: #0e6845; }
+.learning-primary span { font-size: 14px; }
+.learning-footnote { gap: 10px; margin-top: 16px; color: #9299a8; font-size: 9px; }
+.topic-stack { padding-left: 1px; }
+
+.topic-stack i {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  margin-left: -3px;
+  border: 2px solid #f8f9fc;
+  border-radius: 50%;
+  background: #e8eaf8;
+  color: #6975b8;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.topic-stack i:nth-child(2) { background: #e3f2ed; color: #4c9e80; }
+.topic-stack i:nth-child(3) { background: #faeddf; color: #bd8a4d; }
+
+.learning-art { position: relative; display: grid; min-height: 280px; place-items: center; overflow: hidden; }
+.learning-art::before { position: absolute; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, #f0f5f1 0, #f8fbf8 53%, transparent 72%); content: ""; }
+.art-orbit { position: absolute; border: 1px solid #e3eae5; border-radius: 50%; transform: rotate(-24deg); }
+.orbit-outer { width: 270px; height: 158px; }
+.orbit-inner { width: 210px; height: 122px; transform: rotate(38deg); }
+
+.art-center {
+  z-index: 1;
+  display: flex;
+  width: 108px;
+  height: 108px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid #e7ece8;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 14px 40px #363d6914;
+  color: #273253;
+  text-align: center;
+}
+
+.art-center > span { color: #148052; font-size: 22px; line-height: 1; }
+.art-center strong { font-size: 10px; line-height: 1.35; }
+
+.concept-chip {
+  position: absolute;
+  z-index: 2;
+  gap: 8px;
+  padding: 8px 10px 8px 8px;
+  border: 1px solid #ececf3;
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 8px 25px #31395b0c;
+  color: #303a58;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.concept-chip small { display: block; margin-top: 3px; color: #98a0af; font-size: 7px; font-weight: 500; }
+.chip-icon { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 7px; background: #f0effb; color: #7985cd; font-size: 12px; }
+.chip-data .chip-icon { background: #eaf5f0; color: #54a587; }
+.chip-scale .chip-icon { background: #fff3e7; color: #d29a5d; }
+.chip-api { top: 42px; left: 36px; }
+.chip-data { top: 104px; right: 4px; }
+.chip-scale { bottom: 38px; left: 62px; }
+.art-caption { position: absolute; right: 14px; bottom: 1px; display: flex; align-items: center; gap: 7px; color: #a0a5b1; font-size: 7px; }
+.art-caption span { width: 18px; height: 1px; background: #bfc4d1; }
+
+.modules-section { flex: 0 0 auto; padding: 0 10px 16px; scroll-margin-top: 16px; }
+.section-heading { align-items: end; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.section-eyebrow { margin: 0 0 5px; font-size: 8px; letter-spacing: 1.2px; }
+h2 { margin-bottom: 0; color: #1f2947; font-size: 21px; letter-spacing: -.7px; }
+.section-description { margin: 5px 0 0; color: #828b9d; font-size: 10px; }
+.module-count { flex: 0 0 auto; gap: 7px; padding-bottom: 2px; color: #959dad; font-size: 8px; font-weight: 800; letter-spacing: 1px; }
+.module-count > span { width: 6px; height: 6px; }
+.module-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+
+.module-card {
+  min-height: 164px;
+  padding: 10px 13px 0;
+  overflow: hidden;
+  border: 1px solid #e6ebe7;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.card-topline { justify-content: space-between; }
+.card-icon { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; font-size: 11px; font-weight: 800; }
+.violet-icon { background: #f0effb; color: #7985cd; }
+.green-icon { background: #eaf5f0; color: #54a587; font-size: 18px; }
+.card-arrow { color: #a0a7b6; font-size: 14px; }
+.card-category { margin: 8px 0 4px; color: #8d95a6; font-size: 7px; font-weight: 800; letter-spacing: .9px; }
+.module-card h3 { margin: 0; color: #26304e; font-size: 15px; letter-spacing: -.3px; }
+.card-description { max-width: 385px; margin: 5px 0 8px; color: #828b9d; font-size: 9px; line-height: 1.45; }
+.card-meta { flex-wrap: wrap; gap: 6px 14px; color: #8992a2; font-size: 8px; }
+.card-meta > span { display: inline-flex; align-items: center; gap: 5px; }
+.meta-dot { width: 6px; height: 6px; border-radius: 50%; }
+.violet-dot { background: #8b92d9; }
+.green-dot { background: #63b091; }
+.card-footer { margin: 8px -13px 0; padding: 7px 13px; border-top: 1px solid #f0f0f4; color: #606b8b; font-size: 8px; font-weight: 700; }
+
+@media (max-width: 700px) {
+  .learning-hero { min-height: 0; flex: 0 0 auto; grid-template-columns: 1fr; gap: 0; padding: 16px 6px 18px; }
+  .learning-art { display: none; }
+  h1 { margin-bottom: 8px; font-size: clamp(32px, 8vw, 42px); letter-spacing: -2px; }
+  .learning-copy > .learning-eyebrow { margin-bottom: 8px; font-size: 8px; }
+  .learning-description { margin-bottom: 10px; font-size: 10px; }
+  .learning-footnote { margin-top: 9px; }
+  .modules-section { padding: 0 4px 10px; }
+  .section-heading { margin-bottom: 8px; }
+  h2 { font-size: 17px; }
+  .section-description { max-width: 280px; font-size: 9px; }
+  .module-grid { gap: 8px; }
+  .module-card { min-height: 150px; padding: 8px 9px 0; }
+  .card-category { font-size: 6px; letter-spacing: .6px; }
+  .module-card h3 { font-size: 12px; }
+  .card-description { margin: 4px 0 6px; font-size: 8px; }
+  .card-meta { gap: 4px 8px; font-size: 7px; }
+  .card-footer { margin: 7px -9px 0; padding: 6px 9px; }
+}
+
+@media (max-height: 650px) {
+  .learning-hero { min-height: 210px; }
+  .learning-art { min-height: 230px; }
+  .module-card { min-height: 150px; }
+}

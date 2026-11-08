@@ -1,0 +1,93 @@
+<div class="page-shell">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <h1 id="hero-title">Understand the code. <span>Not just the output.</span></h1>
+      <p class="hero-description">
+        Get clear, practical explanations of the .NET code in front of you.
+        Build understanding one question at a time.
+      </p>
+    </div>
+  </section>
+
+  <section class="workspace-section" id="chat-preview" aria-labelledby="workspace-title">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">THE WORKSPACE</p>
+        <h2 id="workspace-title">Your next question starts here.</h2>
+      </div>
+    </div>
+
+    <div class="workspace-card">
+      <div class="workspace-sidebar" aria-label="Conversation history preview">
+        <div class="sidebar-title">
+          <span>Conversations</span>
+          <button type="button" class="icon-button" disabled aria-label="New conversation unavailable">
+            <span aria-hidden="true">+</span>
+          </button>
+        </div>
+        <div class="conversation-placeholder" aria-hidden="true">
+          <span class="placeholder-icon">↗</span>
+          <span class="placeholder-line"></span>
+          <span class="placeholder-line short"></span>
+        </div>
+        <p class="sidebar-locked">Sign in to keep your conversations together.</p>
+      </div>
+
+      <div class="chat-panel">
+        <div class="chat-empty-state">
+          <div class="lock-illustration" aria-hidden="true">
+            <span class="lock-shackle"></span>
+            <span class="lock-body"><i></i></span>
+          </div>
+          <p class="eyebrow">A SPACE FOR YOUR CODE</p>
+          <h3>Your workspace is ready when you are.</h3>
+          <p class="empty-description">
+            Sign in with an approved account to ask questions and get a
+            thoughtful, step-by-step explanation.
+          </p>
+          <p class="access-status" role="status" aria-live="polite">{{ accountMessage() }}</p>
+        </div>
+
+        @if (answer()) {
+          <section class="answer-card" aria-labelledby="answer-heading">
+            <h3 id="answer-heading">Explanation</h3>
+            <p>{{ answer() }}</p>
+          </section>
+        }
+        @if (chatError()) {
+          <p class="form-error chat-error" role="alert">{{ chatError() }}</p>
+        }
+
+        <form class="composer-wrap" (ngSubmit)="submitCode()">
+          <label class="sr-only" for="code-input">Code to explain</label>
+          <textarea
+            id="code-input"
+            rows="2"
+            placeholder="Paste a code snippet to explore..."
+            [formControl]="codeControl"
+            aria-describedby="composer-lock-note"
+            required
+          ></textarea>
+          <div class="composer-footer">
+            <span id="composer-lock-note" class="composer-hint">
+              @if (isChatLocked()) {
+                Code input is available after an approved account signs in.
+              } @else {
+                Your code is sent securely to the configured AI provider.
+              }
+            </span>
+            <button
+              class="send-button"
+              type="submit"
+              [disabled]="!canSubmitCode()"
+              [attr.aria-label]="isSubmittingCode() ? 'Waiting for explanation' : 'Send code for explanation'"
+            >
+              @if (isSubmittingCode()) { <span class="button-spinner" aria-hidden="true"></span> }
+              @else { <span aria-hidden="true">↑</span> }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
