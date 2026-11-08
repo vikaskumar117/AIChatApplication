@@ -101,34 +101,36 @@ application behavior.
 
 ## Lesson standard
 
-Use the expanded
-[value types vs. reference types lesson](module-01-csharp.md) as the depth
-example. Include:
+Each topic is a focused, self-contained lesson. Use the
+[16-part topic lesson template](TOPIC_LESSON_TEMPLATE.md) as the required
+format. It includes an interview-ready answer; plain-language explanation;
+why and analogy; enterprise example; code, query, or steps; internal flow;
+mandatory topic-specific diagram; trade-offs and decision guidance;
+comparisons; 8–10 answered counter questions; senior scenario; mistakes;
+best practices; a 60-second answer; and five revision points.
 
-1. A simple-language introduction before detailed terminology.
-2. **What**, **why**, and **when** — with enough context to explain the idea
-   without requiring an outside search.
-3. **Limits** — trade-offs, common mistakes, and reasonable alternatives.
-4. **Examples** — complete focused snippets for code concepts, with a short
-   explanation of the important lines.
-5. **Diagrams** — rendered Mermaid diagrams and a plain-text fallback for
-   memory/request flows where useful.
-6. **Project connection** — actual code, or an explicitly labeled proposal
-   tied to a feature key.
-7. **Practice** — questions or a small task, with answers or a self-check.
-8. **References** — official documentation or primary technical sources.
+Do not combine independent concepts into one shallow lesson. Teach related
+ideas together only when their boundaries and interaction are themselves the
+topic; otherwise create separate lessons and link between them. For example,
+JWT, OAuth 2.0, and OIDC require separate explanations even though they are
+used together in many systems.
 
-Related small concepts are sometimes taught together when they share one
-request, query, or architecture flow. The module's worked section supplies
-the example and practice for its grouped concepts; do not treat the table row
-alone as the lesson.
+The [curriculum coverage audit](CURRICULUM_COVERAGE_AUDIT.md) compares the
+new 36-phase roadmap and topic inventory, identifies missing phases and
+interview-bank gaps, and gives a recommended sequencing approach.
+
+Older lessons in Modules 1–12 do not all yet follow the 16-part format. Treat
+the template as the publication standard for new or revised lessons; update
+legacy lessons as they are reviewed rather than assuming this index means all
+content has already been rewritten.
 
 Lessons describe what is implemented today separately from what is planned.
 Production use is added only when it helps the chat product; a project
 exercise is not a reason to create a needless feature. The worked examples
 and self-checks throughout Modules 1–12 extend the topic summaries into
-practice material. Mermaid diagrams include text fallbacks where a visual
-flow is useful; not every concept needs a memory-layout illustration.
+practice material. Every revised lesson must include a diagram suited to its
+concept (for example a sequence, decision, memory/reference map, query
+pipeline, or architecture boundary) and explain what the diagram represents.
 
 ## Project sequence and evidence
 

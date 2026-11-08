@@ -1,41 +1,89 @@
-<div class="learning-shell">
-  <section class="learning-hero" aria-labelledby="learning-title">
-    <div class="learning-copy">
-      <h1 id="learning-title">Better concepts, <span>better software.</span></h1>
-      <p class="learning-description">
-        Focused lessons for the ideas behind reliable software. Understand the why,
-        then put the how into practice.
-      </p>
-    </div>
-  </section>
+<div class="learning-layout">
+  <aside class="learning-sidebar" aria-label="Learning modules">
+    <p class="sidebar-heading">LEARNING PATH</p>
+    <nav>
+      @for (module of modules; track module.id) {
+        <details>
+          <summary>
+            {{ module.title }}
+            <span class="module-count">{{ module.topics.length }}</span>
+          </summary>
+          <div class="sidebar-topics">
+            @for (topic of module.topics; track topic.id) {
+              <button
+                class="topic-link"
+                [class.active]="selectedTopicId() === topic.id"
+                [attr.aria-current]="selectedTopicId() === topic.id ? 'page' : null"
+                type="button"
+                (click)="selectTopic(module.id, topic.id)"
+              >
+                <span class="topic-indicator" aria-hidden="true"></span>
+                {{ topic.title }}
+              </button>
+            }
+          </div>
+        </details>
+      }
+    </nav>
+  </aside>
 
-  <section class="modules-section" id="modules" aria-labelledby="modules-title">
-    <div class="section-heading">
-      <div>
-        <h2 id="modules-title">Explore the modules</h2>
-        <p class="section-description">Choose a topic and build your understanding, one concept at a time.</p>
+  <section class="learning-main" aria-live="polite">
+    @if (currentTopic(); as topic) {
+      <app-topic-lesson [topic]="topic" (back)="showModule(currentModule()?.id ?? null)" />
+    } @else if (currentModule(); as module) {
+      <header class="learning-heading">
+        <button class="back-link" type="button" (click)="showHome()">← All modules</button>
+        <p class="topic-kicker">LEARNING MODULE</p>
+        <h1>{{ module.title }}</h1>
+        <p class="learning-intro">{{ module.description }}</p>
+      </header>
+      <div class="module-topic-grid">
+        @for (topic of module.topics; track topic.id; let index = $index) {
+          <button class="module-topic-card" type="button" (click)="selectTopic(module.id, topic.id)">
+            <span class="topic-number">{{ (index + 1).toString().padStart(2, '0') }}</span>
+            <span class="topic-card-copy">
+              <strong>{{ topic.title }}</strong>
+              <small>{{ topic.summary }}</small>
+            </span>
+            <span class="priority-pill" [class.priority-high]="topic.priority === 'Very High'">
+              {{ topic.priority }}
+            </span>
+          </button>
+        }
       </div>
-      <span class="module-count"><span></span> 2 MODULES</span>
-    </div>
+    } @else {
+      <header class="learning-heading">
+        <p class="topic-kicker">CONCEPTS OF ENGINEERING · ROADMAP</p>
+        <h1>Learn the concepts behind the code.</h1>
+        <p class="learning-intro">
+          Choose a module to explore concise explanations, visual flows, practical examples, and interview practice.
+        </p>
+      </header>
 
-    <div class="module-grid">
-      <article class="module-card advanced-card">
-        <div class="card-topline"><span class="card-icon violet-icon">&lt;/&gt;</span><span class="card-arrow" aria-hidden="true">↗</span></div>
-        <p class="card-category">BACKEND ENGINEERING</p>
-        <h3>Advanced .NET</h3>
-        <p class="card-description">Explore the runtime, async patterns, API architecture, and performance.</p>
-        <div class="card-meta"><span><i class="meta-dot violet-dot"></i> Advanced</span><span>4 learning paths</span></div>
-        <div class="card-footer">Coming soon</div>
-      </article>
+      <div class="roadmap-visual" aria-label="Learning path from fundamentals to production systems">
+        <span>Fundamentals</span><i aria-hidden="true">→</i>
+        <span>Application design</span><i aria-hidden="true">→</i>
+        <span>Production systems</span>
+      </div>
 
-      <article class="module-card security-card">
-        <div class="card-topline"><span class="card-icon green-icon">◇</span><span class="card-arrow" aria-hidden="true">↗</span></div>
-        <p class="card-category">SECURE APPLICATIONS</p>
-        <h3>.NET Core Security</h3>
-        <p class="card-description">Build safer APIs with identity, authorization, and defense in depth.</p>
-        <div class="card-meta"><span><i class="meta-dot green-dot"></i> Intermediate</span><span>4 learning paths</span></div>
-        <div class="card-footer">Coming soon</div>
-      </article>
-    </div>
+      <div class="module-grid">
+        @for (module of modules; track module.id; let index = $index) {
+          <button class="module-card" type="button" (click)="selectModule(module.id)">
+            <span class="module-card-top">
+              <span class="module-symbol" aria-hidden="true">
+                <svg viewBox="0 0 40 40">
+                  <path d="M8 11h24M8 20h15M8 29h19" />
+                  <circle [attr.cx]="index % 2 === 0 ? 29 : 27" [attr.cy]="index % 3 === 0 ? 20 : 29" r="4" />
+                </svg>
+              </span>
+              <span class="module-card-count">{{ module.topics.length }} topics</span>
+            </span>
+            <strong>{{ module.title }}</strong>
+            <span class="module-card-description">{{ module.description }}</span>
+            <span class="module-card-action">Explore module <span aria-hidden="true">→</span></span>
+          </button>
+        }
+      </div>
+    }
   </section>
 </div>

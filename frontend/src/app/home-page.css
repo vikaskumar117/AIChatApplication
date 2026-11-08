@@ -48,9 +48,8 @@
 
 h1 {
   margin-bottom: 12px;
-  font-size: clamp(12px, 3.6vw, 42px);
+  font-size: 40px;
   font-weight: 650;
-  letter-spacing: -.065em;
   line-height: 1.06;
   white-space: nowrap;
 }

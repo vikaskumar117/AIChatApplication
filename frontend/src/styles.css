@@ -25,12 +25,22 @@ app-root {
 .app-shell {
   display: flex;
   width: min(100% - 64px, 1180px);
+  height: 100svh;
   min-height: 100svh;
   flex-direction: column;
   margin: 0 auto;
+  overflow: hidden;
 }
 
 .route-content {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.route-content > router-outlet {
+  display: none;
 }
 
 .route-content > * {
