@@ -1,0 +1,111 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Use PersonClass for an identity-bearing person, PersonStruct for a small value snapshot, and PersonRecord for concise value equality. The same Person data reveals different assignment behavior.</p><ol>
+<li>Construct classA and alias it as classB; mutate through classB.</li>
+<li>Copy structA into structB; mutate only the copy.</li>
+<li>Compare two records with the same Name and Age, then create a modified with-copy.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>using System;
+
+public sealed class PersonClass
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public PersonClass(string name, int age) { Name = name; Age = age; }
+}
+
+public struct PersonStruct
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public PersonStruct(string name, int age) { Name = name; Age = age; }
+}
+
+public sealed record PersonRecord(string Name, int Age);
+
+public static class Program
+{
+    public static void Main()
+    {
+        var classA = new PersonClass(&quot;Mira&quot;, 30);
+        var classB = classA;
+        classB.Age = 31;
+        Console.WriteLine(classA.Age); // 31: both references point to one object
+
+        var structA = new PersonStruct(&quot;Mira&quot;, 30);
+        var structB = structA;
+        structB.Age = 31;
+        Console.WriteLine(structA.Age); // 30: assignment copied the fields
+
+        var recordA = new PersonRecord(&quot;Mira&quot;, 30);
+        var recordB = recordA with { Age = 31 };
+        Console.WriteLine(recordA == new PersonRecord(&quot;Mira&quot;, 30)); // True
+        Console.WriteLine(recordB.Age); // 31; recordA is unchanged
+    }
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Explicit identity and object sharing</li>
+<li>Value equality for record data</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Aliasing can make mutation surprising</li>
+<li>Large or mutable structs can copy expensively and behave unexpectedly</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Choose class for identity/lifecycle, record for value-shaped data, and struct for a small value with clear copy semantics.</p><p><strong>Avoid:</strong> Do not choose struct to force stack allocation or assume record immutability is deep.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming every struct is stack allocated.</li>
+<li>Treating record with as a deep clone.</li>
+<li>Using records for entities whose identity is independent of their fields.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Document equality and identity expectations in domain types.</li>
+<li>Keep structs small, preferably immutable, and benchmark performance claims.</li>
+<li>Use class for shared mutable entity identity.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is copied when assigning a class variable?</li>
+<li>Are structs always stored on the stack?</li>
+<li>Is a record with-copy deep or shallow?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A service sees allocation pressure in order processing. Keep Order as an identity-bearing class; profile first, then benchmark a small immutable Money struct if value semantics fit.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Class variables share object identity; struct assignment copies a value; records compare data and support shallow non-destructive copies.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

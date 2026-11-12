@@ -1,0 +1,39 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A deterministic keeper rule selects exactly one surviving row per duplicate business key; other rows become deletion candidates.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>A cleanup query without an explicit retention policy can delete the valuable or referenced record. Large unbounded deletes also create locks, log growth, and replication or availability impact.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Preview ROW_NUMBER() candidates in a transaction, order by a documented preference plus a unique ID, check references and row counts, take a verified backup, then delete reviewed batches. The sample DELETE is intentionally commented out until preview, authorization, and rollback steps are complete.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Policy</strong><span>Choose duplicate key, survivor, and dependent-record merge rules.</span></div></div>
+<div><span>2</span><div><strong>Rank</strong><span>ROW_NUMBER selects one keeper with a unique deterministic order.</span></div></div>
+<div><span>3</span><div><strong>Preview</strong><span>Inspect rn &gt; 1 IDs and references; confirm counts and backup.</span></div></div>
+<div><span>4</span><div><strong>Controlled change</strong><span>Delete approved batches inside explicit transaction boundaries and verify results.</span></div></div>
+<div><span>5</span><div><strong>Prevent recurrence</strong><span>Add a suitable unique constraint/index after conflicts are resolved.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Never delete until the business key and keeper policy are explicit.</li>
+<li>Use a deterministic unique tie-breaker in ROW_NUMBER ordering.</li>
+<li>Preview, back up, account for references, and plan transaction-log impact.</li>
+<li>Enforce uniqueness after cleanup to stop the source of duplicates.</li>
+</ul>
+</section>
+</div>

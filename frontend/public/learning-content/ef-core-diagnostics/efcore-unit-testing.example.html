@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Unit-test a discount calculation without mocking the calculator itself or involving EF Core.</p><ol>
+<li>Choose one behavior and its boundary.</li>
+<li>Create ordinary inputs and minimal fake collaborators.</li>
+<li>Call the public unit behavior once.</li>
+<li>Assert result, state transition, and only meaningful interactions.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>[Fact]
+public void Discount_is_applied_to_eligible_total()
+{
+    var total = PriceCalculator.Total(100m, 10m);
+
+    Assert.Equal(90m, total);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Fast, deterministic feedback for business rules.</li>
+<li>Failures identify a narrow behavior and are inexpensive to run.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Mocks can become coupled to implementation and do not validate infrastructure behavior.</li>
+<li>Excessive isolation can miss wiring and database translation defects.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use unit tests for pure logic, validation, state transitions, and orchestration decisions.</p><p><strong>Avoid:</strong> Avoid testing EF query translation or relational behavior solely with mocked DbSet or EF InMemory.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Mocking every value object and pure function.</li>
+<li>Asserting internal call order without a behavioral reason.</li>
+<li>Using EF InMemory as evidence of relational correctness.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep tests small, deterministic, and independently runnable.</li>
+<li>Use parameterized tests for rule boundaries.</li>
+<li>Name tests around behavior and expected outcome.</li>
+<li>Run relational integration tests for SQL-dependent behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What should a unit test isolate?</li>
+<li>Which behavior belongs in an integration test?</li>
+<li>How can over-mocking make tests brittle?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A pricing change has many boundary rules. Extract deterministic calculation logic, test thresholds and rounding, then add a small set of integration tests for persistence and API behavior.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A unit test verifies a focused unit of behavior with controlled inputs and collaborators, typically without booting the web host or connecting to a production-like database. Fast isolated tests support frequent feedback and precise business-rule coverage, but they do not prove EF translation, SQL constraints, provider behavior, or deployment wiring.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices" target="_blank" rel="noopener noreferrer">Microsoft Learn: Unit testing best practices</a></li></ul>
+</section>
+</div>

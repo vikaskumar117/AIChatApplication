@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WhenAll is a join over a set of operations: its task completes when every input task reaches a terminal state. WhenAny returns the first completed Task, not its result value.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Parallelizing independent I/O can reduce aggregate latency, while racing alternatives can reduce time to first result. Both patterns require explicit cancellation and cleanup for work that continues.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Await WhenAll to retrieve results in input order and observe failures. After WhenAny, await the returned task to observe its result; cancel or drain losing operations when appropriate.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Start independent tasks</strong><span>Both operations begin before awaiting, enabling overlap.</span></div></div>
+<div><span>2</span><div><strong>WhenAll join</strong><span>Completion waits for every input task and preserves input order for results.</span></div></div>
+<div><span>3</span><div><strong>WhenAny race</strong><span>Completion identifies the first finished Task, not its result.</span></div></div>
+<div><span>4</span><div><strong>Cleanup remaining work</strong><span>Cancel, observe, or intentionally allow other tasks to finish.</span></div></div>
+</figure>
+<figcaption>Follow each labeled stage to see the concrete scheduling, ownership, or memory effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>WhenAll joins every task.</li>
+<li>WhenAny returns a completed Task.</li>
+<li>Concurrency requires bounded fan-out and explicit loser policy.</li>
+</ul>
+</section>
+</div>

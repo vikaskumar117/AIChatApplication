@@ -1,0 +1,90 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Keep the earliest customer record per normalized email; use CustomerId to break timestamp ties.</p><ol>
+<li>Preview the ranked result and verify each rn = 1 keeper.</li>
+<li>Check every duplicate candidate for foreign-key references and domain history.</li>
+<li>Back up, test rollback, estimate log impact, and get approval.</li>
+<li>Delete in controlled batches or a reviewed transaction, verify row counts, then enforce uniqueness.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>-- PREVIEW ONLY: review the candidate IDs and dependent references first.
+WITH ranked AS (
+  SELECT CustomerId, NormalizedEmail, CreatedAt,
+         ROW_NUMBER() OVER (
+           PARTITION BY NormalizedEmail
+           ORDER BY CreatedAt, CustomerId
+         ) AS rn
+  FROM dbo.Customer
+  WHERE NormalizedEmail IS NOT NULL
+)
+SELECT CustomerId, NormalizedEmail, CreatedAt
+FROM ranked
+WHERE rn &gt; 1
+ORDER BY NormalizedEmail, CreatedAt, CustomerId;
+
+-- After backup, approval, dependency handling, and a tested rollback plan:
+-- BEGIN TRANSACTION;
+-- WITH ranked AS (...)
+-- DELETE FROM ranked WHERE rn &gt; 1;
+-- Verify @@ROWCOUNT and invariants before COMMIT; otherwise ROLLBACK.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>A unique ordering makes survivor selection repeatable.</li>
+<li>A preview allows reconciliation and rollback planning before data changes.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Large deletes can block, fill the transaction log, and cascade or orphan business data.</li>
+<li>Batching introduces operational complexity and needs a stable candidate strategy.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use only after defining the true business key and approved retention/merge behavior.</p><p><strong>Avoid:</strong> Do not execute the delete on production as an unreviewed script or rely on a non-unique ordering.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Running a DELETE before reviewing candidate IDs and foreign-key relationships.</li>
+<li>Using CreatedAt alone when timestamps can tie.</li>
+<li>Putting an enormous delete in one transaction without checking log and blocking capacity.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Run the preview and deletion against the same controlled candidate definition.</li>
+<li>Use a tested restore/rollback procedure and capture affected IDs.</li>
+<li>Consider batches, lock timeout, monitoring, and resumability for large tables.</li>
+<li>Create the unique constraint or unique filtered index only after validating its semantics.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why must the ROW_NUMBER ordering end with a unique key?</li>
+<li>What must be checked before deleting a duplicate with foreign-key references?</li>
+<li>How do batching and transactions trade off atomicity and operational impact?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An online customer table contains millions of duplicate imports. Export and review candidate IDs, resolve foreign-key references to the keeper, rehearse a logged batch process on a restored copy, monitor log and blocking, then add a unique constraint after cleanup.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A deterministic keeper rule selects exactly one surviving row per duplicate business key; other rows become deletion candidates. A cleanup query without an explicit retention policy can delete the valuable or referenced record. Large unbounded deletes also create locks, log growth, and replication or availability impact.</p>
+</section>
+</div>

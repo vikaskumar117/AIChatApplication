@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A reusable library can await internal I/O with ConfigureAwait(false); a UI event handler should normally capture context before changing controls.</p><ol>
+<li>Await a library operation that does not use caller context.</li>
+<li>Opt out of context capture for that await.</li>
+<li>Return result without touching UI-bound state.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public static async Task&lt;string&gt; ReadAsync(Stream stream)
+{
+    using var reader = new StreamReader(stream);
+    return await reader.ReadToEndAsync().ConfigureAwait(false);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Libraries avoid unnecessary caller-context dependency</li>
+<li>Can reduce context switching in applicable environments</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Does not move work to a new thread</li>
+<li>Incorrect use can break UI affinity assumptions</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use ConfigureAwait(false) in context-agnostic library code when resuming on caller context is unnecessary.</p><p><strong>Avoid:</strong> Avoid mechanical blanket rules in UI code or treating it as a deadlock cure while sync-over-async remains.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming false means background thread.</li>
+<li>Using it before updating UI controls.</li>
+<li>Applying it blindly as a substitute for removing .Result.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep context-independent library internals independent.</li>
+<li>Preserve context around UI state updates.</li>
+<li>Use asynchronous callers and test relevant environments.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does false opt out of?</li>
+<li>Does ConfigureAwait(false) schedule a worker thread?</li>
+<li>Why is it typically unnecessary in ASP.NET Core app code?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A library deadlocks when a UI caller blocks on its Task. Fix the caller to await asynchronously, then use ConfigureAwait(false) for library internals that do not access UI state.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>ConfigureAwait(false) removes a continuation’s requirement to resume on a captured context; it does not select a new thread.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

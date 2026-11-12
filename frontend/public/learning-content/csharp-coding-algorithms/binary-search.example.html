@@ -1,0 +1,90 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A catalog service looks up a product ID in an immutable sorted snapshot. If the collection changes frequently or is not sorted, choose a data structure whose update and lookup costs fit the workload.</p><ol>
+<li>Start low = 0, high = 6.</li>
+<li>Middle index 3 has value 12; move low to 4.</li>
+<li>Middle index 5 has value 23; move high to 4.</li>
+<li>Index 4 has value 16; return 4.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>int BinarySearch(int[] sorted, int target)
+{
+    int low = 0;
+    int high = sorted.Length - 1;
+
+    while (low &lt;= high)
+    {
+        int middle = low + (high - low) / 2;
+        if (sorted[middle] == target) return middle;
+        if (sorted[middle] &lt; target) low = middle + 1;
+        else high = middle - 1;
+    }
+
+    return -1;
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>O(log n) comparisons</li>
+<li>O(1) auxiliary space in the iterative form</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Requires sorted data and a consistent ordering</li>
+<li>Frequent inserts may make maintaining sorted arrays expensive</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for repeated lookup in data that is already sorted and changes infrequently.</p><p><strong>Avoid:</strong> Avoid on unsorted data or when a hash-based lookup or database index better matches the update and query workload.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using the wrong loop condition can skip a one-element range.</li>
+<li>Updating low/high without excluding the midpoint can create an infinite loop.</li>
+<li>Applying binary search to data whose ordering is not guaranteed.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Test empty, singleton, first, last, missing, and duplicate values.</li>
+<li>Use a safe midpoint expression.</li>
+<li>For duplicate values, define whether any, first, or last match is required.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is sorted input required?</li>
+<li>Why use `low + (high - low) / 2`?</li>
+<li>What does low &gt; high mean?</li>
+<li>How do you find the first occurrence of duplicates?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A service binary-searches a large in-memory configuration snapshot but production data occasionally arrives unsorted. Validate the sort invariant when building the snapshot and test duplicate keys and boundary values before relying on logarithmic lookup.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Binary search achieves logarithmic lookup by preserving a sorted-range invariant and discarding half the candidates each step.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/api/system.array.binarysearch" target="_blank" rel="noopener noreferrer">Microsoft: Array.BinarySearch</a></li></ul>
+</section>
+</div>

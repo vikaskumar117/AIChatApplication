@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>SQL injection is a vulnerability where attacker-controlled input is interpreted as part of a SQL command.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>An injected query can bypass filters, expose or alter records, or damage data using the application’s database privileges.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use EF Core LINQ or parameterized commands for values, allow-list any dynamic identifiers or sort expressions that cannot be parameters, minimize database privileges, and test authorization and query behavior.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Untrusted input enters data query</strong><span>Concatenating a user value into SQL can transform a value into query syntax.</span></div></div>
+<div><span>2</span><div><strong>Parameterized query preserves SQL structure</strong><span>A parameter binds a value separately so SQL parsing does not treat its contents as SQL operators.</span></div></div>
+<div><span>3</span><div><strong>Database executes bounded command under least privilege</strong><span>Database permissions and application authorization limit damage but do not replace safe query construction.</span></div></div>
+</figure>
+<figcaption>Parameterization protects query syntax; it does not by itself prevent an authorized query from returning another tenant’s rows.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Treat all external input as data, never trusted SQL syntax.</li>
+<li>Parameters represent values, not identifiers.</li>
+<li>Database least privilege and authorization provide separate layers.</li>
+</ul>
+</section>
+</div>

@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Data concurrency describes multiple requests, users, or workers accessing and changing the same logical data during overlapping time.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Without an explicit consistency strategy, later writes can silently overwrite earlier work, invariants can be violated, and retries can duplicate effects.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Identify shared invariants, select isolation and concurrency controls appropriate to the workflow, and make conflict detection or atomic updates part of the persistence boundary.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Actors read shared state</strong><span>An initial read is only a snapshot of the state at that time; it does not reserve the row for the reader.</span></div></div>
+<div><span>2</span><div><strong>Operations overlap in time</strong><span>Concurrent work may interleave or commit in an order different from the order users saw.</span></div></div>
+<div><span>3</span><div><strong>Persistence policy preserves invariant or detects conflict</strong><span>Transactions, optimistic tokens, locks, constraints, or atomic conditional updates determine whether invariants hold.</span></div></div>
+</figure>
+<figcaption>Concurrency correctness is defined by the business invariant and database isolation behavior, not by whether requests execute on separate threads.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Overlapping work is normal in distributed APIs.</li>
+<li>A read alone does not reserve state.</li>
+<li>Protect invariants at the persistence boundary.</li>
+</ul>
+</section>
+</div>

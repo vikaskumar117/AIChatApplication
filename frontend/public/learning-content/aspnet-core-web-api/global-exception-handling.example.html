@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A concurrency exception maps to 409 only when it represents a known client-resolvable conflict; an unexpected database outage remains 500.</p><ol>
+<li>Exception escapes endpoint</li>
+<li>Boundary logs and maps known failure</li>
+<li>Client receives safe error response</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler&lt;ApiExceptionHandler&gt;();
+app.UseExceptionHandler();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Consistent error contract and telemetry</li>
+<li>Avoids duplicated try/catch and unsafe error construction</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Incorrect exception mapping can misstate system health</li>
+<li>A handler may suppress framework diagnostics if logging is incomplete</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use centralized handling for unexpected exceptions and explicitly recognized domain failures.</p><p><strong>Avoid:</strong> Avoid translating every exception to 400 or including stack traces, SQL, tokens, or exception messages in public details.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Returning exception.Message or stack traces to callers.</li>
+<li>Catching exceptions and returning success-shaped fallbacks.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use Problem Details and a trace ID for supportable errors.</li>
+<li>Test status, content type, disclosure, and logging behavior for every mapping.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Where must exception middleware be placed?</li>
+<li>Which failures should map to 409?</li>
+<li>What belongs in the client response versus logs?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Production clients receive inconsistent errors and logs lack correlation; add centralized Problem Details with a trace identifier, preserve safe 500 output, and test known and unknown exceptions.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A global exception boundary logs unexpected failures and returns a stable, safe error contract rather than leaking implementation details.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/web-api/handle-errors" target="_blank" rel="noopener noreferrer">Handle errors in ASP.NET Core APIs</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9457" target="_blank" rel="noopener noreferrer">RFC 9457 Problem Details</a></li></ul>
+</section>
+</div>

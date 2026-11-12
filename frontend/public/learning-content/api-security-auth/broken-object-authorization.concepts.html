@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Object-level authorization verifies that the authenticated caller may perform this operation on this particular resource.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>An endpoint-level role check does not stop one authorized user from reading or changing another tenant’s order, invoice, or profile.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Scope the data lookup by the caller’s trusted tenant or ownership context, then enforce the operation policy. Return a consistent not-found or forbidden response according to the API’s disclosure policy.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Authenticate caller</strong><span>A valid token establishes identity and claims; it does not prove access to every object ID.</span></div></div>
+<div><span>2</span><div><strong>Resolve resource within authorized scope</strong><span>Prefer querying by both resource ID and trusted tenant/owner ID so unauthorized records are not loaded accidentally.</span></div></div>
+<div><span>3</span><div><strong>Authorize operation</strong><span>Apply the same rule to reads, updates, deletes, exports, nested resources, and background jobs.</span></div></div>
+<div><span>4</span><div><strong>Return only permitted data</strong></div></div>
+</figure>
+<figcaption>BOLA is an authorization failure, not a token-format problem. Random IDs can reduce guessing but never replace access checks.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Authorize the object and action, not just the endpoint.</li>
+<li>Derive tenant scope from validated server-side identity.</li>
+<li>Test both allowed and denied cross-tenant cases.</li>
+</ul>
+</section>
+</div>

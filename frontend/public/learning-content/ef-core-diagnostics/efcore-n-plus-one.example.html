@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Return order number and line count with a single aggregate projection instead of enumerating each order’s Lines.</p><ol>
+<li>Record database command count per request and correlate with parent count.</li>
+<li>Identify navigation accesses that issue SQL.</li>
+<li>Express the response as projection or a bounded graph.</li>
+<li>Test SQL command count and compare rows transferred and p95 latency.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var summaries = await db.Orders
+    .Where(o =&gt; o.CreatedAt &gt;= start)
+    .Select(o =&gt; new OrderSummaryDto(
+        o.Id, o.Number, o.Lines.Count))
+    .ToListAsync(ct);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Projection/grouping can reduce round trips and avoid loading unused entity graphs.</li>
+<li>Command-count instrumentation makes the issue measurable.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>A large Include can replace many round trips with a huge duplicated join result.</li>
+<li>Provider translation and split-query choices need verification.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use projection for read models and bounded Includes when entity relationships are required.</p><p><strong>Avoid:</strong> Avoid navigation access inside loops and lazy-loading during serialization.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Relying on endpoint duration without observing database command count.</li>
+<li>Replacing N+1 with a massive multi-collection join.</li>
+<li>Allowing JSON serialization to trigger lazy loads.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Instrument EF command counts and durations.</li>
+<li>Write list endpoints as explicit DTO projections.</li>
+<li>Add regression tests for query count on representative data.</li>
+<li>Use Include only when the entity graph is truly required.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does query count grow in an N+1 pattern?</li>
+<li>How can projection avoid over-fetching?</li>
+<li>Why is Include not automatically the best fix?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An orders endpoint is fast for one record and slow for a full page. Trace shows one orders query and 50 line queries. Replace with aggregate projection, assert command count in an integration test, and compare rows and response latency.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>N+1 is a query pattern where one query loads N parent records and subsequent navigation access issues roughly one additional query per parent. Round-trip latency and database work can dominate endpoint time and grow linearly with page size, even when each individual SQL statement is quick.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/ef/core/performance/efficient-querying" target="_blank" rel="noopener noreferrer">Microsoft Learn: Efficient querying</a></li></ul>
+</section>
+</div>

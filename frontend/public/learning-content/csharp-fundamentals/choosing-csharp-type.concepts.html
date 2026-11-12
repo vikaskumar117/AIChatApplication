@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A domain entity has identity over time; a value object is defined by its contents; a struct is a value type with copy semantics. A record can model either record class or record struct data.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Matching the type to the concept makes equality, collection behavior, change tracking, and API expectations predictable. A wrong type can produce accidental shared mutation or expensive copies.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Ask whether two equal-looking instances represent the same entity, whether callers should share mutation, whether values are small and immutable, and whether inheritance is needed. Measure allocation and throughput only after semantics are sound.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Entity test</strong><span>Does identity persist when fields change? If yes, model lifecycle and identity explicitly.</span></div></div>
+<div><span>2</span><div><strong>Value test</strong><span>Are two instances interchangeable when their contents match? Consider record equality.</span></div></div>
+<div><span>3</span><div><strong>Copy-cost test</strong><span>Is the value small and immutable enough that copying is simple and cheap?</span></div></div>
+</figure>
+<figcaption>Follow the labeled stages; each node names a concrete decision or runtime effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Domain meaning chooses the semantics.</li>
+<li>Records are not only classes; record structs also exist.</li>
+<li>Performance claims require representative measurement.</li>
+</ul>
+</section>
+</div>

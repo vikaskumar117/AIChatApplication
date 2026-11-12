@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A provider publishes a new signing key; API instances load it from trusted metadata while still validating unexpired tokens signed by the retiring key.</p><ol>
+<li>Issuer signs with current key</li>
+<li>API validates time and trusted key set</li>
+<li>Rotation overlaps keys and retires old key</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>options.TokenValidationParameters.ClockSkew = TimeSpan.FromMinutes(2);
+// Configure trusted Authority/MetadataAddress and test key rollover;
+// do not disable lifetime validation to work around clock drift.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Bounds credential lifetime and reduces impact window</li>
+<li>Rotation supports cryptographic hygiene and incident recovery</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Very short validity can cause outages under clock or provider failures</li>
+<li>Revocation and distributed key propagation are operationally complex</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Choose token lifetimes based on threat, client, and usability needs; automate monitored key rollover and emergency response.</p><p><strong>Avoid:</strong> Avoid infinite-lived tokens, unbounded clock skew, and ad hoc key changes without overlap or incident plans.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Disabling lifetime validation to fix an environment clock issue.</li>
+<li>Assuming a rotated signing key instantly invalidates all previously issued JWTs.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Synchronize clocks and use small documented skew.</li>
+<li>Exercise key rollover and emergency revocation in operational tests.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How is expiration different from revocation?</li>
+<li>Why can APIs accept old and new keys during rollover?</li>
+<li>What is the risk of excessive clock skew?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An old signing key is compromised; distinguish routine rollover from emergency compromise, remove trust promptly, invalidate affected sessions as appropriate, and monitor validation failures.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Expiration bounds how long a credential is accepted; rotation replaces credentials or signing keys while preserving controlled continuity.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/entra/identity-platform/signing-key-rollover" target="_blank" rel="noopener noreferrer">Microsoft identity platform signing key rollover</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc7519" target="_blank" rel="noopener noreferrer">RFC 7519: exp and nbf claims</a></li></ul>
+</section>
+</div>

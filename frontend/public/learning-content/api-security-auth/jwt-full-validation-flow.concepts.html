@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A JSON Web Token (JWT) is a compact claims format; a typical signed JWT encodes header and payload in readable Base64URL form and adds a signature.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>A signature protects integrity but does not encrypt claims, establish trust in an arbitrary issuer, or grant access to every resource.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>The API obtains signing keys from a configured trusted authority, validates signature and allowed algorithm, issuer, API audience, lifetime including exp and nbf with bounded clock skew, then applies scope/role policy and resource-level checks.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Receive bearer access token</strong><span>The bearer token is a credential; receive it over TLS and use a supported token handler with trusted discovery and keys.</span></div></div>
+<div><span>2</span><div><strong>Validate trust, signature, audience, and time</strong><span>Validation must bind the token to the expected issuer and this API as audience, enforce lifetime, and handle key rollover safely.</span></div></div>
+<div><span>3</span><div><strong>Authorize permission and target resource</strong><span>Claims become inputs to authorization only after validation; route policies and record ownership checks remain separate.</span></div></div>
+</figure>
+<figcaption>Opaque access tokens are also valid: the resource server validates them through an appropriate introspection or provider mechanism rather than parsing JWT claims.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>A JWT is a format, not a complete authentication protocol.</li>
+<li>Validate signature, issuer, audience, lifetime, and allowed algorithm.</li>
+<li>Authentication precedes scope, role, and resource authorization.</li>
+</ul>
+</section>
+</div>

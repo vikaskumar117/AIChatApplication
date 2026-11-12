@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Open/Closed Principle (OCP) says a component should support anticipated extension without requiring changes to stable existing code.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>It can reduce regression risk when variation is known, but no design can be open to every future change; extension points themselves have cost.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Isolate demonstrated variation behind a stable abstraction, such as a discount policy strategy, while keeping ordinary domain changes direct rather than forcing every rule into plugins.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Stable caller</strong><span>Checkout asks for a discount policy without enumerating every algorithm.</span></div></div>
+<div><span>2</span><div><strong>Extension contract</strong><span>Policy contract captures meaningful inputs and output semantics.</span></div></div>
+<div><span>3</span><div><strong>New policy</strong><span>A new implementation adds a known variation behind the contract.</span></div></div>
+<div><span>4</span><div><strong>Selection</strong><span>Application resolves eligibility and conflicts deterministically.</span></div></div>
+</figure>
+<figcaption>OCP is a targeted change-risk technique, not a promise that existing code will never change.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Making every conditional a strategy.</li>
+<li>Assuming a new implementation can never require a contract change.</li>
+<li>Adding extension hooks without a known consumer.</li>
+</ul>
+</section>
+</div>

@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Concurrent writes to one row contend for locks or encounter optimistic concurrency conflicts. A later write may wait, overwrite earlier values, or fail based on transaction and application design.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>A read-modify-write sequence can lose updates if application code calculates from stale data. Correctness requires atomic SQL operations, concurrency tokens, or an explicit serialization strategy.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Prefer atomic conditional updates such as Balance = Balance - @amount WHERE Balance &gt;= @amount and check affected rows. In EF use a concurrency token/rowversion and handle DbUpdateConcurrencyException by reloading, merging, or rejecting. Keep transactions short.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Read / intent</strong><span>Requests may observe the same initial value.</span></div></div>
+<div><span>2</span><div><strong>Atomic write</strong><span>Predicate and mutation execute together under database concurrency control.</span></div></div>
+<div><span>3</span><div><strong>Conflict signal</strong><span>Affected-row count or rowversion mismatch reveals stale/invalid state.</span></div></div>
+<div><span>4</span><div><strong>Domain response</strong><span>Reload, merge, reject, or bounded-retry only according to business rules.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Read-modify-write in application memory can lose updates.</li>
+<li>Atomic conditional SQL is effective for simple invariants.</li>
+<li>Rowversion detects stale writes; it does not automatically resolve conflicts.</li>
+<li>Check affected rows and make retry/merge semantics explicit.</li>
+</ul>
+</section>
+</div>

@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>LoadAsync begins the request immediately, returns its Task when the HTTP operation is pending, then completes with the response after resumption.</p><ol>
+<li>Invoke LoadAsync and note that its prefix starts immediately.</li>
+<li>When the HTTP task is incomplete, the method returns its Task.</li>
+<li>After response completion, read the result and complete LoadAsync.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>static async Task&lt;string&gt; LoadAsync(HttpClient client, CancellationToken token)
+{
+    var response = await client.GetStringAsync(&quot;/status&quot;, token);
+    return response;
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Threads are not tied up for asynchronous waits</li>
+<li>Tasks compose completion and failure</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Continuation scheduling adds complexity</li>
+<li>Blocking can consume the scalability benefit</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Think of await as registering remaining work, not starting a thread.</p><p><strong>Avoid:</strong> Avoid blocking the Task in request or UI paths.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming calling an async method queues all its code.</li>
+<li>Assuming every continuation runs on a dedicated thread.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Observe and await returned tasks.</li>
+<li>Use true async I/O.</li>
+<li>Trace queueing and continuation latency under load.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is a continuation?</li>
+<li>Does an incomplete await always suspend?</li>
+<li>Does every asynchronous operation use a thread?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An endpoint performs multiple slow I/O calls. Await the actual asynchronous provider operations and observe continuation delays separately from dependency latency.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Async execution runs until an incomplete await, returns a Task, and resumes its continuation when the awaited operation completes.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

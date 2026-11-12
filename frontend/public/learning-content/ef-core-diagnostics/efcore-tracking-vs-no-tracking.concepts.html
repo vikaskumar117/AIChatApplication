@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A tracking query registers materialized entities in DbContext’s change tracker, which records state and original values for SaveChanges. A no-tracking query materializes results without registering them for normal updates; identity resolution controls whether repeated keys share an instance.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Tracking supports convenient updates and identity consistency but consumes CPU and memory. Read-only endpoints often benefit from projection or no-tracking materialization.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use tracked entities for update workflows. Use Select projections for read models, or AsNoTracking for read-only entity results. AsNoTrackingWithIdentityResolution deduplicates entity instances within one result without retaining them in the context tracker.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Tracking query</strong><span>Entities are registered with state/original values in the DbContext change tracker.</span></div></div>
+<div><span>2</span><div><strong>No-tracking query</strong><span>Entities or DTOs are materialized without normal change tracking.</span></div></div>
+<div><span>3</span><div><strong>Identity resolution</strong><span>Repeated entity keys may reuse one object; no-tracking variant can resolve without context tracking.</span></div></div>
+<div><span>4</span><div><strong>Persist or return</strong><span>Tracked edits are detected by SaveChanges; read-only projections are returned directly.</span></div></div>
+</figure>
+<figcaption>Validate the behavior against the deployed EF Core/provider version, generated SQL, database schema, and production configuration.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Tracking stores entity state for change detection and unit-of-work persistence.</li>
+<li>No-tracking is appropriate for many read-only paths.</li>
+<li>Projection avoids materializing unused columns and entity state.</li>
+<li>Identity resolution and tracking are related but distinct choices.</li>
+</ul>
+</section>
+</div>

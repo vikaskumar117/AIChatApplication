@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An administrator role may access a general diagnostics endpoint, while a policy for editing an invoice also requires matching tenant ownership.</p><ol>
+<li>Principal carries validated claims</li>
+<li>Policy evaluates requirements</li>
+<li>Handler grants or denies operation</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>builder.Services.AddAuthorization(options =&gt;
+{
+    options.AddPolicy(&quot;Invoices.Read&quot;,
+        p =&gt; p.RequireClaim(&quot;permission&quot;, &quot;invoice.read&quot;));
+});
+[Authorize(Policy = &quot;Invoices.Read&quot;)]</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Named policies centralize and test rules</li>
+<li>Custom requirements scale beyond role-only checks</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Overly broad role claims can grant excess access</li>
+<li>Custom handlers need clear failure behavior and observability</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use policies for application capabilities and resource handlers for ownership, tenant, or workflow state.</p><p><strong>Avoid:</strong> Avoid trusting client-supplied roles or scattering magic-string role checks through business logic.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using broad administrator roles for ordinary user capabilities.</li>
+<li>Assuming a policy that checks a role also checks record ownership.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Centralize capability names and policy registration.</li>
+<li>Unit-test handlers and integration-test endpoint policy behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does a role differ from a policy?</li>
+<li>When does a requirement need a resource handler?</li>
+<li>Do policy requirements combine with AND or OR semantics by default?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A permission model evolves from admin/user roles to tenant-scoped features; introduce named policies and resource handlers with migration tests before removing legacy role checks.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Roles provide coarse identity groupings; policies express named requirements and can combine claims, roles, and custom handlers.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/security/authorization/policies" target="_blank" rel="noopener noreferrer">Policy-based authorization in ASP.NET Core</a></li></ul>
+</section>
+</div>

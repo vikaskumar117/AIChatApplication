@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>The expression count++ is a read-modify-write sequence; two threads can read the same old value and overwrite one increment.</p><ol>
+<li>Run concurrent increments against shared state.</li>
+<li>Replace non-atomic read/modify/write with Interlocked.Increment.</li>
+<li>Verify the final count under repeated concurrent execution.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>int count = 0;
+Parallel.For(0, 1000, _ =&gt; Interlocked.Increment(ref count));
+Console.WriteLine(count); // 1000</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Correct shared invariants</li>
+<li>Atomic and immutable designs reduce coordination</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Locks can limit throughput</li>
+<li>Incorrect lock scope can deadlock</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Identify shared mutable state and protect the entire invariant-preserving operation.</p><p><strong>Avoid:</strong> Avoid assuming async code is single-threaded or that one statement is automatically atomic.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using a lock around only part of a compound invariant.</li>
+<li>Assuming ConcurrentDictionary makes mutable values thread-safe.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Prefer immutability or atomic APIs where suitable.</li>
+<li>Use one consistent synchronization strategy per state.</li>
+<li>Stress-test and analyze lock contention.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is a race condition?</li>
+<li>Why can count++ lose updates?</li>
+<li>Can async code race without multiple simultaneous instructions?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A singleton cache has occasional corrupted entries under load. Define the entry invariant, use ConcurrentDictionary atomic APIs or a narrow lock, and add stress tests.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Thread safety means preserving invariants under concurrent access; identify races and make updates atomic or synchronized.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

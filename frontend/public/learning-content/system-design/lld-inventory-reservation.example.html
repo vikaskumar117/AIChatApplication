@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Two shoppers request the last unit. The inventory update must atomically succeed for at most one request; a later payment failure releases the reservation through an idempotent state transition rather than incrementing stock blindly.</p><ol>
+<li>Two transactions request the final unit.</li>
+<li>The database serializes conditional updates; only one affects a row.</li>
+<li>The winner creates a reservation with a stable ID and expiry.</li>
+<li>Payment success confirms it; failure releases it only if the expected state/version still matches.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>UPDATE Inventory
+SET Available = Available - @quantity
+WHERE Sku = @sku
+  AND Available &gt;= @quantity;
+
+-- Require exactly one affected row; zero means unavailable.
+-- Persist a unique ReservationId and state transition in the same transaction.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Explicit invariants and transitions make behavior testable</li>
+<li>Atomic conditional writes protect against concurrent oversell</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Concurrency and retry behavior add implementation complexity</li>
+<li>Incorrect compensations can corrupt stock or release another reservation</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use explicit domain operations and atomic persistence when concurrent requests can compete for scarce inventory.</p><p><strong>Avoid:</strong> Avoid read-then-write checks without a transaction/condition or a compensating update with no reservation identity.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Reading stock and later decrementing without a conditional update.</li>
+<li>Incrementing inventory on every retry of a release event.</li>
+<li>Holding a database transaction open while calling a payment provider.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use unique constraints and conditional state/version updates.</li>
+<li>Test concurrent last-item reservations and duplicate confirm/release commands.</li>
+<li>Track reservation age and reconcile stuck or ambiguous states.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is checking Available before updating unsafe?</li>
+<li>How does a unique reservation ID help with retries?</li>
+<li>Which states and transitions should a reservation have?</li>
+<li>How do you release stock after payment failure without double-incrementing?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A worker retries a reservation-expiry event after a timeout, while a payment event arrives concurrently. Use conditional, versioned state transitions keyed by reservation ID, serialize or detect conflicting updates, and reconcile ambiguous payment outcomes before releasing stock.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>LLD makes invariants executable: conditional updates, state transitions, idempotency, and reconciliation protect inventory under concurrency.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/ef/core/saving/concurrency" target="_blank" rel="noopener noreferrer">EF Core concurrency handling</a></li><li><a href="https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-locking-and-row-versioning-guide" target="_blank" rel="noopener noreferrer">SQL Server transaction locking and row versioning</a></li></ul>
+</section>
+</div>

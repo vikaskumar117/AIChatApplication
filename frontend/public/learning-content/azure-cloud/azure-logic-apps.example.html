@@ -1,0 +1,84 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>When a new vendor invoice arrives, a workflow validates metadata, stores the document, requests approval, and publishes an approved-invoice message to Service Bus. The accounting service owns financial rules and idempotent posting.</p><ol>
+<li>A blob event starts the workflow with a document reference.</li>
+<li>The workflow validates metadata and stores an approval request.</li>
+<li>On approval, it sends a stable command ID to Service Bus.</li>
+<li>The accounting consumer deduplicates the command before posting.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Workflow shape (not a complete deployment template):
+Trigger: Blob created
+  -&gt; Validate metadata and size
+  -&gt; Store document reference
+  -&gt; Request approval
+  -&gt; If approved: send Service Bus command
+  -&gt; If rejected/failed: record reason and alert
+
+// Use managed identity where supported; keep connector credentials out of workflow inputs.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Managed connectors and run history speed up integration delivery</li>
+<li>Workflow steps and failures are visible to operators</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Connector limits, retries, and per-action cost can surprise at scale</li>
+<li>Complex domain logic and long-running high-throughput compute can become difficult to maintain in a visual workflow</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for integration orchestration, approvals, scheduled jobs, and low-code workflows with clear ownership and bounded throughput.</p><p><strong>Avoid:</strong> Avoid placing core domain invariants, latency-critical request logic, or unbounded high-volume processing solely in a connector workflow.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Enabling retries on a non-idempotent action and creating duplicate side effects.</li>
+<li>Putting secrets in workflow definitions, inputs, or run-history outputs.</li>
+<li>Treating a visual workflow as unlimited compute or a distributed transaction.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use managed identity, secure inputs/outputs, and least-privilege connector permissions.</li>
+<li>Set retry, timeout, concurrency, retention, and dead-letter/remediation behavior deliberately.</li>
+<li>Monitor failed runs, action latency, throttles, and cost; test replay and duplicate delivery.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is the difference between a trigger and an action?</li>
+<li>How do Consumption and Standard affect hosting and networking decisions?</li>
+<li>Why must actions be idempotent if retries are enabled?</li>
+<li>When should a workflow call a service instead of containing business logic?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An approval workflow times out after a downstream system processes an action but before the workflow records success. Use a stable business operation ID, make the receiving API idempotent, inspect run history, and design a replay/compensation path before enabling automatic retries.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Logic Apps is effective integration orchestration when authentication, retries, idempotency, ownership, and operations are designed explicitly.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/logic-apps-overview" target="_blank" rel="noopener noreferrer">Azure Logic Apps overview</a></li><li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/single-tenant-overview-compare" target="_blank" rel="noopener noreferrer">Logic Apps Standard and Consumption</a></li><li><a href="https://learn.microsoft.com/en-us/azure/logic-apps/logic-apps-securing-a-logic-app" target="_blank" rel="noopener noreferrer">Logic Apps security and authentication</a></li></ul>
+</section>
+</div>

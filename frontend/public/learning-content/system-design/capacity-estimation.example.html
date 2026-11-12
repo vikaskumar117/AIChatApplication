@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Illustration: 1 million daily users making 20 actions/day yields 20 million actions/day, about 231 average actions/second. A 5x peak factor gives roughly 1,155 peak actions/second before retries, fan-out, or background work.</p><ol>
+<li>Convert 20 million daily actions to about 231 average requests/second.</li>
+<li>Apply a stated 5x peak to estimate about 1,155 requests/second.</li>
+<li>Include retries, fan-out, and uneven tenant/key distribution.</li>
+<li>Load-test the limiting database and external dependency, then set bounded autoscaling.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Illustrative sizing
+actionsPerDay = 1_000_000 users * 20 actions = 20,000,000
+averageRps = actionsPerDay / 86,400 ≈ 231
+peakRps = averageRps * 5 ≈ 1,155
+
+// If each durable event is 2 KB and retained for 30 days:
+rawStorage ≈ actionsPerDay * 2 KB * 30
+           ≈ 1.2 TB decimal, before indexes, replicas, and compression.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Makes hidden load and retention assumptions visible</li>
+<li>Helps compare architectural options before implementation</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Averages hide bursts, skew, retries, and hot keys</li>
+<li>Storage and throughput estimates omit overhead unless explicitly modeled</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use as a first-pass sizing and interview reasoning tool; validate with benchmark and telemetry.</p><p><strong>Avoid:</strong> Avoid using rough calculations as a production quota or omitting replication, indexes, backups, retries, and growth.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using a daily total as if requests arrive evenly.</li>
+<li>Ignoring retries and fan-out.</li>
+<li>Treating raw payload storage as total provisioned storage.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Estimate orders of magnitude before choosing components.</li>
+<li>Use realistic peak, skew, retention, and growth assumptions.</li>
+<li>Validate estimates with load tests and actual production metrics.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why calculate both average and peak throughput?</li>
+<li>How do fan-out and retries change request volume?</li>
+<li>What storage overhead is missing from raw payload estimates?</li>
+<li>How would you validate an estimate?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A queue-backed workflow appears to support 1,000 requests/second on average, but a flash sale creates a 10x burst and a downstream vendor accepts only 100/second. Bound ingress, queue safely, pace consumers, define overload responses, and alert on oldest-message age rather than scaling the API without limit.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Capacity math is a hypothesis generator: quantify assumptions, identify bottlenecks, then validate with representative tests.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/azure/well-architected/performance-efficiency/" target="_blank" rel="noopener noreferrer">Azure Well-Architected performance efficiency</a></li></ul>
+</section>
+</div>

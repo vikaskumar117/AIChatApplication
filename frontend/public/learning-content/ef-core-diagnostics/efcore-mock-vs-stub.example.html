@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Stub a payment gateway response to test orchestration; use a mock only when verifying that an authorization call is required is itself the behavior.</p><ol>
+<li>Ask whether the dependency behavior or the interaction is the contract.</li>
+<li>Use a real deterministic object when practical.</li>
+<li>Stub nondeterministic answers; mock only meaningful interactions; use fakes for useful lightweight behavior.</li>
+<li>Test provider-specific behavior against a relational database separately.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Stub: deterministic response, no interaction assertion.
+var gateway = new StubPaymentGateway(PaymentResult.Approved);
+var service = new CheckoutService(gateway);
+
+var result = await service.CheckoutAsync(order, ct);
+
+Assert.Equal(CheckoutStatus.Confirmed, result.Status);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Doubles isolate external nondeterminism and make failure paths testable.</li>
+<li>A fake can exercise more realistic behavior than a long list of mock setups.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Mocks can couple tests to call choreography.</li>
+<li>Fakes may diverge from production implementation; stubs validate only configured cases.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use the simplest double that exposes the behavior under test; reserve interaction mocks for meaningful contracts.</p><p><strong>Avoid:</strong> Avoid mocking EF Core internals or using a fake repository as proof of SQL translation and constraints.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Calling every test double a mock and obscuring its purpose.</li>
+<li>Verifying incidental call order rather than observable contract.</li>
+<li>Treating an in-memory fake repository as equivalent to SQL Server.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep doubles at application-owned interfaces.</li>
+<li>Use strict interaction expectations only when the interaction is contractual.</li>
+<li>Make fakes explicit about behaviors they do not emulate.</li>
+<li>Pair unit tests with provider-realistic integration tests.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does a stub differ from a mock?</li>
+<li>When is a fake preferable?</li>
+<li>What can a test double not prove about a database provider?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A service test verifies six repository calls in exact order and breaks during a harmless refactor. Replace interaction-heavy assertions with a stubbed collaborator and assert the resulting business outcome; retain integration coverage for persistence.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A stub supplies predefined answers; a mock records or verifies expected interactions; a fake is a working simplified implementation (for example, an in-memory repository) that preserves a useful contract. Choosing the least complex test double keeps tests readable and avoids mistaking a mock’s configured behavior for production correctness.</p>
+</section>
+</div>

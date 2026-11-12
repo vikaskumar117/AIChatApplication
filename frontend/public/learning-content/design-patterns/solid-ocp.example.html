@@ -1,0 +1,72 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Add a seasonal discount by registering a new policy rather than modifying a growing switch that calculates every discount type.</p><ol>
+<li>Base abstractions on repeated real variation.</li>
+<li>Specify eligibility, precedence, and fallback.</li>
+<li>Add regression tests for existing implementations.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IDiscountPolicy { bool AppliesTo(Cart cart); decimal Calculate(Cart cart); }
+public sealed class MemberDiscount : IDiscountPolicy
+{
+    public bool AppliesTo(Cart cart) =&gt; cart.IsMember;
+    public decimal Calculate(Cart cart) =&gt; cart.Subtotal * 0.05m;
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Protects stable paths when well-understood variants are added.</li>
+<li>Makes each new behavior independently testable.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Premature extension points constrain later design and add indirection.</li>
+<li>Some changes alter the abstraction itself and still require existing code edits.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for recurring, expected variation with a stable contract.</p><p><strong>Avoid:</strong> Avoid designing a plugin framework for one speculative exception.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid designing a plugin framework for one speculative exception.</li>
+<li>Assuming solid: open/closed principle guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep the abstraction smaller than the variation it covers.</li>
+<li>Revisit extension boundaries when new cases challenge the model.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Does OCP forbid modifying existing code?</li>
+<li>What evidence justifies an extension point?</li>
+<li>How can a strategy support OCP for discounts?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>New discount types arrive often, but the code edits an increasingly risky switch. Introduce a policy abstraction and explicitly define precedence and overlap behavior.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>OCP protects stable behavior by isolating known extension points while accepting that abstractions can evolve.</p>
+</section>
+</div>

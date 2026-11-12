@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A distributed transaction attempts to commit changes across multiple resource managers as one atomic outcome, commonly through a coordinator and a protocol such as two-phase commit.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>It promises stronger atomicity than independent local commits but introduces coordination, availability, lock duration, failure recovery, and support constraints.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Prefer one service-owned local transaction plus outbox or a saga when services own independent stores. Use a distributed transaction only when all participants support the protocol and the consistency requirement justifies operational coupling.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Prepare</strong><span>Coordinator asks each supported participant to promise it can commit.</span></div></div>
+<div><span>2</span><div><strong>Decision</strong><span>Coordinator durably decides commit or abort for the transaction.</span></div></div>
+<div><span>3</span><div><strong>Participants</strong><span>Resources apply the same decision and release held state.</span></div></div>
+<div><span>4</span><div><strong>Recovery</strong><span>Coordinator logs and resolves in-doubt work after interruption.</span></div></div>
+</figure>
+<figcaption>Two-phase commit is a protocol between compatible resource managers, not an ordinary sequence of service API calls.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Calling a saga a distributed ACID transaction.</li>
+<li>Assuming a database transaction covers network calls.</li>
+<li>Ignoring lock and coordinator failure behavior.</li>
+</ul>
+</section>
+</div>

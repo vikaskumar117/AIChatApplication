@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Liskov Substitution Principle (LSP) requires a subtype to remain usable wherever its base contract is expected without breaking promised behavior or strengthening preconditions.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Inheritance is safe only when derived types preserve the semantic contract, not merely method signatures; violations make callers depend on concrete-type exceptions.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>State preconditions, postconditions, and invariants in the abstraction. Prefer composition or separate capability interfaces when a subtype cannot support the base behavior.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Base contract</strong><span>Documents allowed inputs, guarantees, errors, and invariants.</span></div></div>
+<div><span>2</span><div><strong>Derived implementation</strong><span>Supports the same valid operations without stronger caller requirements.</span></div></div>
+<div><span>3</span><div><strong>Substitution</strong><span>Caller uses either implementation without concrete-type checks.</span></div></div>
+<div><span>4</span><div><strong>Capability boundary</strong><span>Unsupported behavior is excluded from an abstraction rather than rejected at runtime.</span></div></div>
+</figure>
+<figcaption>LSP is behavioral substitutability; matching signatures and compiling successfully are not enough.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Overriding a valid operation to throw.</li>
+<li>Changing units, side effects, or guarantees in a subtype without contract notice.</li>
+<li>Adding concrete-type conditionals to compensate for a false abstraction.</li>
+</ul>
+</section>
+</div>

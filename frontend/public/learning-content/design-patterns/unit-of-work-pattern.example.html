@@ -1,0 +1,72 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Confirming an order changes order status and writes an audit row in one database transaction, then separately publishes an outbox event.</p><ol>
+<li>Scope context and transaction to one operation.</li>
+<li>Keep commit ownership explicit and commit once where practical.</li>
+<li>Use an outbox for database-plus-message intent.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>await using var tx = await db.Database.BeginTransactionAsync(ct);
+order.Confirm();
+db.AuditEntries.Add(AuditEntry.For(order));
+db.Outbox.Add(OutboxMessage.For(&quot;OrderConfirmed&quot;, order.Id));
+await db.SaveChangesAsync(ct);
+await tx.CommitAsync(ct);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Keeps related local changes atomic and provides one explicit commit point.</li>
+<li>Supports batching and change tracking across a use case.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>A unit of work is store-specific and does not span independent remote services by default.</li>
+<li>Long-lived tracked contexts retain state and can mix unrelated operations.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use one short-lived unit of work per business operation requiring a coordinated local commit.</p><p><strong>Avoid:</strong> Avoid holding a database transaction open across network calls or user interaction.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid holding a database transaction open across network calls or user interaction.</li>
+<li>Assuming unit of work pattern guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep database transactions short.</li>
+<li>Test both commit and rollback behavior for important invariants.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does a unit of work coordinate?</li>
+<li>When does EF Core SaveChanges use a transaction?</li>
+<li>Can a unit of work include a payment provider call?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An order is saved before its audit record due to two commits. Stage both under one context/transaction and use an outbox for external publication.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A unit of work protects one local commit boundary; distributed side effects require another pattern.</p>
+</section>
+</div>

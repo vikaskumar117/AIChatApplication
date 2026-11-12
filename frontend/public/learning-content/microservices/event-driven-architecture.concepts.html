@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Event-driven architecture uses events—immutable statements that something already happened—to notify interested consumers without requiring the producer to invoke each one.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>It supports independent subscribers and asynchronous workflows, but consumers observe changes later and producer-to-consumer contracts still couple meaning and schema.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Publish domain facts after the authoritative state change, version schemas compatibly, and design consumers for duplicates, reordering, lag, and eventual consistency. Use commands for requests to perform work, not as disguised facts.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Domain change</strong><span>Owning service commits the authoritative state transition.</span></div></div>
+<div><span>2</span><div><strong>Fact event</strong><span>A versioned immutable event names what happened, with stable identity.</span></div></div>
+<div><span>3</span><div><strong>Independent consumers</strong><span>Subscribers update their own state and may progress at different rates.</span></div></div>
+<div><span>4</span><div><strong>Convergence</strong><span>Lag and replay eventually bring projections up to date.</span></div></div>
+</figure>
+<figcaption>Event publication is not proof every subscriber has processed the event; producer commit, broker acceptance, and consumer effect are distinct.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Using an event as a command while claiming it is a fact.</li>
+<li>Assuming message order across partitions or subscriptions.</li>
+<li>Returning success to a client that requires downstream completion.</li>
+</ul>
+</section>
+</div>

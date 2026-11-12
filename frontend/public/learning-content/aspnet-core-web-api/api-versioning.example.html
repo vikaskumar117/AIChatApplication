@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Keep /api/v1/orders stable while /api/v2/orders introduces a breaking representation change and a published migration window.</p><ol>
+<li>Client selects contract version</li>
+<li>Routing resolves compatible endpoint</li>
+<li>Versioned response follows documented schema</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>[ApiController]
+[Route(&quot;api/v2/orders&quot;)]
+public sealed class OrdersV2Controller : ControllerBase { /* v2 DTO contract */ }</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Supports gradual consumer migration</li>
+<li>Makes breaking changes explicit and testable</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Every supported version increases test and support burden</li>
+<li>Versioning cannot rescue poor compatibility discipline</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Version when the public contract must break and retain only versions with an owned support and sunset policy.</p><p><strong>Avoid:</strong> Avoid creating a new version for compatible optional additions or leaving versions supported indefinitely without policy.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Treating a new route alone as a complete versioning strategy.</li>
+<li>Removing an old version based only on the latest client release date.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Maintain contract tests for every supported version.</li>
+<li>Track per-version usage and publish a realistic deprecation schedule.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is a breaking API change?</li>
+<li>Compare URL and header version selection.</li>
+<li>How should a version be retired?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A mobile client remains deployed for months; introduce a new version, measure adoption, publish migration examples, and remove the old contract only after the communicated support period.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>API versioning manages incompatible contract evolution while clients migrate at different speeds.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/azure/architecture/best-practices/api-design#versioning-a-restful-web-api" target="_blank" rel="noopener noreferrer">API design guidance: versioning</a></li></ul>
+</section>
+</div>

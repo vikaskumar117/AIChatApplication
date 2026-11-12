@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Transaction A locks Order then Inventory while B locks Inventory then Order; standardize both to Order then Inventory.</p><ol>
+<li>Capture the deadlock graph and correlate transaction IDs to application operations.</li>
+<li>Inspect resource types, lock modes, access order, and plan/index support.</li>
+<li>Make access order consistent and reduce lock duration.</li>
+<li>Retry only a safe, idempotent transaction with bounded backoff; verify external effects are outside or deduplicated.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>-- Pseudocode: retry the complete database operation with bounded backoff.
+// Retry only a known transient deadlock and only an idempotent DB unit.
+await retryPolicy.ExecuteAsync(async () =&gt;
+{
+    await using var tx = await connection.BeginTransactionAsync(ct);
+    await UpdateOrderThenInventoryAsync(tx, orderId, ct);
+    await tx.CommitAsync(ct);
+});</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Deadlock graphs expose involved resources and statements.</li>
+<li>A bounded retry can recover a transient victim rollback.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Retries add latency and can amplify load during contention.</li>
+<li>Blind retries can duplicate external effects or mask a systemic lock-order flaw.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use retries for a narrowly classified transient failure when the transaction can safely be replayed.</p><p><strong>Avoid:</strong> Avoid retrying non-idempotent external side effects inside the retry boundary or swallowing 1205 without diagnosis.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Treating every timeout or blocking wait as a deadlock.</li>
+<li>Retrying unboundedly or retrying operations with already-issued external side effects.</li>
+<li>Changing isolation or adding indexes without graph and plan evidence.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use Extended Events/system_health to capture deadlock XML.</li>
+<li>Keep transactions short and acquire shared resources in a consistent order.</li>
+<li>Use bounded jittered retries only for safe transient transaction failures.</li>
+<li>Log operation correlation IDs and retry counts without sensitive SQL parameter values.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does deadlock differ from blocking?</li>
+<li>What does error 1205 tell you?</li>
+<li>Which information in a deadlock graph guides remediation?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Checkout intermittently fails with 1205. Capture graphs during the incident, map locks to statements and indexes, standardize entity update order, shorten transaction scope, and add a bounded database-only retry with idempotency keys for external payment actions.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A deadlock is a cycle of transactions, each holding a resource needed by another. SQL Server detects the cycle and chooses a victim; error 1205 means that victim transaction was rolled back. Deadlocks differ from ordinary blocking: a wait may resolve when its holder commits, while a deadlock cycle cannot progress without aborting a participant.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-deadlocks-guide" target="_blank" rel="noopener noreferrer">Microsoft Learn: Deadlocks guide</a></li></ul>
+</section>
+</div>

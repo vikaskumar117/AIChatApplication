@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A ProductsController returns 201 with a Location header after creating a product, rather than hand-writing status and JSON response code.</p><ol>
+<li>Route selects API action</li>
+<li>ControllerBase binds and invokes</li>
+<li>Action result becomes HTTP response</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code> [ApiController]
+[Route(&quot;api/products&quot;)]
+public sealed class ProductsController(IProductService products) : ControllerBase
+{
+    [HttpGet(&quot;{id:int}&quot;)]
+    public async Task&lt;ActionResult&lt;ProductDto&gt;&gt; Get(int id, CancellationToken ct)
+    {
+        var product = await products.FindAsync(id, ct);
+        return product is null ? NotFound() : Ok(product);
+    }
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Focused API surface without Razor view support</li>
+<li>Convenient HTTP results and MVC integration</li>
+<li>Works with filters, formatters, binding, and DI</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Still couples endpoint code to MVC abstractions</li>
+<li>Helpers do not enforce good status semantics automatically</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use ControllerBase for attribute-routed MVC controllers that return JSON, files, or other HTTP results.</p><p><strong>Avoid:</strong> Avoid manually returning 200 for missing resources or exposing persistence entities simply because a helper makes it convenient.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming inheriting ControllerBase automatically applies [ApiController].</li>
+<li>Returning Ok(null) for a resource that does not exist.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use explicit route and verb attributes and typed response contracts.</li>
+<li>Inject application services and pass cancellation through asynchronous work.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which API response helpers does ControllerBase provide?</li>
+<li>Why is it preferable to Controller for a JSON API?</li>
+<li>When should an action use ActionResult&lt;T&gt;?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Standardize several resource controllers so create, missing-resource, and validation responses consistently use CreatedAtAction, NotFound, and validation results while preserving service boundaries.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>ControllerBase gives API controllers MVC request, binding, validation, and response helpers without the view-rendering features of Controller.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/web-api/" target="_blank" rel="noopener noreferrer">Create web APIs with ASP.NET Core</a></li></ul>
+</section>
+</div>

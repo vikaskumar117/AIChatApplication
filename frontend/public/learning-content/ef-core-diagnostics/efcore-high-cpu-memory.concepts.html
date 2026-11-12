@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>High CPU can result from application hot loops, excessive serialization, query translation/materialization, contention, or garbage collection. High memory can be allocation pressure, large caches, unbounded buffers, or retained object graphs.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>CPU and memory symptoms require different evidence: a high allocation rate can cause GC/CPU without a leak, while retained memory can grow with stable allocation rate.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Start with bounded runtime counters and process/container metrics. Use dotnet-counters for live trends, dotnet-trace for sampled CPU/GC stacks, and dotnet-dump for heap/root analysis when authorized. Correlate with request volume and deployment; production dumps may contain sensitive data.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Metrics first</strong><span>Observe process/container CPU, working set, GC heap, allocation, and request rate.</span></div></div>
+<div><span>2</span><div><strong>Trace</strong><span>Capture bounded CPU/GC stacks to locate hot methods and allocation sources.</span></div></div>
+<div><span>3</span><div><strong>Dump if authorized</strong><span>Inspect object graph and retaining roots using secured diagnostic storage.</span></div></div>
+<div><span>4</span><div><strong>Fix and compare</strong><span>Repeat the same load and compare allocation, heap, latency, and CPU.</span></div></div>
+</figure>
+<figcaption>Validate the behavior against the deployed EF Core/provider version, generated SQL, database schema, and production configuration.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>High allocation can cause CPU/GC without a retained-memory leak.</li>
+<li>Counters show trends; traces reveal stacks; dumps reveal retained objects/roots.</li>
+<li>Production diagnostic artifacts may contain sensitive data.</li>
+<li>Verify the fix under comparable traffic and resource limits.</li>
+</ul>
+</section>
+</div>

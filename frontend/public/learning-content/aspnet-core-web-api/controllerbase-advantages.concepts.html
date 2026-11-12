@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>ControllerBase is the base class for MVC API controllers and exposes helpers such as Ok, CreatedAtAction, NotFound, and ValidationProblem.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Those helpers produce framework-compatible action results and make HTTP intent more legible than manually constructing every response.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Inherit from ControllerBase, add route and HTTP-method attributes, inject application services, and return ActionResult&lt;T&gt; or an explicit result from each action.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Route selects API action</strong><span>Endpoint routing matches the route template and HTTP verb before MVC invokes the action.</span></div></div>
+<div><span>2</span><div><strong>ControllerBase binds and invokes</strong><span>Model binding, validation state, ModelState, and response helpers are available through the base class.</span></div></div>
+<div><span>3</span><div><strong>Action result becomes HTTP response</strong><span>MVC executes the selected result and formatter to set status, headers, and serialized body.</span></div></div>
+</figure>
+<figcaption>ControllerBase is an API-oriented MVC base class; it does not itself configure routing, authentication, or API conventions.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>ControllerBase supplies API-focused MVC behavior.</li>
+<li>Action helpers express response intent but do not choose domain semantics for you.</li>
+<li>Return contracts, not database entities.</li>
+</ul>
+</section>
+</div>

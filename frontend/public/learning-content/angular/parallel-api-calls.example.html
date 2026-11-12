@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A profile page loads identity, preferences, and feature flags independently and displays them together after the responses arrive.</p><ol>
+<li>Use object form to retain meaningful property names and inferred types.</li>
+<li>Put catchError inside each input when failures should become per-field result states.</li>
+<li>Limit concurrency for large collections rather than creating an unbounded request fan-out.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>readonly pageData$ = forkJoin({
+  user: this.http.get&lt;User&gt;(&#39;/api/me&#39;),
+  preferences: this.http.get&lt;Preferences&gt;(&#39;/api/preferences&#39;),
+  flags: this.http.get&lt;Flags&gt;(&#39;/api/flags&#39;)
+});</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Concurrent latency for independent reads</li>
+<li>Typed aggregate is easy to bind</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>One failure fails forkJoin by default</li>
+<li>Launching too many calls can overload dependencies</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use forkJoin for a finite set of independent requests whose results are needed together.</p><p><strong>Avoid:</strong> Avoid it for never-completing streams or dependencies where a later request needs an earlier result.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Passing an interval or other non-completing source to forkJoin and waiting forever.</li>
+<li>Catching only outside forkJoin when partial results are required.</li>
+<li>Running all API calls concurrently when one requires another response.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use switchMap/concatMap to express dependencies and ordering.</li>
+<li>Represent loading, success, and partial error explicitly.</li>
+<li>Keep cancellation and owner lifetime in the subscription chain.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>When does forkJoin emit?</li>
+<li>What happens if one request errors?</li>
+<li>How should a dependent request be composed?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A dashboard loads three independent widgets. Start them concurrently, catch expected per-widget failures inside each source if partial rendering is required, and avoid blocking on an unrelated long-lived stream.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Independent HttpClient requests can be created together and subscribed as a group. forkJoin is the common choice for finite HTTP calls when the screen needs one aggregate after every request has emitted and completed. Concurrency reduces wall-clock latency from roughly the sum of request durations toward the slowest request, but increases simultaneous load and can hit rate limits. Dependencies should remain sequential.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://rxjs.dev/api/index/function/forkJoin" target="_blank" rel="noopener noreferrer">forkJoin API</a></li><li><a href="https://angular.dev/guide/http" target="_blank" rel="noopener noreferrer">Angular HTTP</a></li></ul>
+</section>
+</div>

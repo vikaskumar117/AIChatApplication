@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Adapter translates one interface or data model into another so incompatible components can collaborate without changing either component’s core contract.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>It isolates vendor-specific APIs, legacy protocols, and awkward external models from application/domain code.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Define the application-facing port, implement a focused adapter around the external client, translate units/errors explicitly, and map cancellation and retry semantics carefully.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Application port</strong><span>Stable domain-facing operation and types express what the app needs.</span></div></div>
+<div><span>2</span><div><strong>Adapter</strong><span>Translates identifiers, units, status, errors, and cancellation deliberately.</span></div></div>
+<div><span>3</span><div><strong>External API</strong><span>Vendor contract remains isolated behind its client and credentials.</span></div></div>
+<div><span>4</span><div><strong>Normalized outcome</strong><span>Caller receives domain meaning or an explicit integration failure.</span></div></div>
+</figure>
+<figcaption>An adapter translates semantics, not just syntax; ambiguous provider outcomes should remain visible rather than being silently normalized.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Converting units without precision or range checks.</li>
+<li>Mapping unknown external states to a success default.</li>
+<li>Letting provider exceptions leak as domain exceptions.</li>
+</ul>
+</section>
+</div>

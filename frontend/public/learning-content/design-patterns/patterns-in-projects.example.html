@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Order placement uses DI to provide an order repository and payment strategy; a logging decorator adds telemetry without changing payment logic.</p><ol>
+<li>Follow an actual request across the layers.</li>
+<li>Name the unique responsibility each layer owns.</li>
+<li>Make transaction and external side-effect boundaries explicit.</li>
+<li>Remove wrappers that merely forward every call.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public sealed class OrderService(IOrderRepository orders, IPaymentMethod payment)
+{
+    public async Task PlaceAsync(Order order, CancellationToken ct)
+    {
+        await payment.PayAsync(order.Payment, ct);
+        await orders.AddAsync(order, ct);
+    }
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Responsibilities can be isolated and tested at meaningful boundaries.</li>
+<li>Cross-cutting behavior can be composed without embedding it in every domain class.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Too many handlers, interfaces, and wrappers make navigation harder.</li>
+<li>Patterns composed without explicit transaction/error semantics can create correctness gaps.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use patterns that answer a concrete need in the use case and document ownership.</p><p><strong>Avoid:</strong> Avoid layering every CRUD action through a pattern stack by default.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid layering every CRUD action through a pattern stack by default.</li>
+<li>Assuming patterns used together in projects guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep composition at the application boundary.</li>
+<li>Test policy, orchestration, and infrastructure at their appropriate levels.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Where are implementations composed in a .NET application?</li>
+<li>How can decorators add behavior without changing a service?</li>
+<li>Who owns the transaction when several patterns participate?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A payment succeeds but order persistence fails. Trace the flow and redesign the transaction/workflow boundary rather than assuming DI or repositories make the two effects atomic.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Patterns work together when responsibilities remain distinct and the use-case flow stays understandable.</p>
+</section>
+</div>

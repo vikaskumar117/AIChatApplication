@@ -1,0 +1,79 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A correlation interceptor tags requests and measures latency without embedding telemetry code in each feature service.</p><ol>
+<li>Prefer functional interceptors for explicit dependency injection and predictable configuration.</li>
+<li>Use HttpContextToken for opt-out or per-request policy flags.</li>
+<li>Test both outgoing request mutations and response/error behavior.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>export const correlationInterceptor: HttpInterceptorFn = (req, next) =&gt; {
+  const id = inject(CorrelationIds).create();
+  return next(req.clone({ setHeaders: { &#39;X-Correlation-ID&#39;: id } }));
+};
+
+provideHttpClient(withInterceptors([correlationInterceptor]));</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>One policy across feature services</li>
+<li>Composable request and response instrumentation</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Ordering and retries can be difficult to reason about</li>
+<li>Global logic can hide feature-specific behavior</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use functional interceptors for transport-wide behavior and register their order intentionally.</p><p><strong>Avoid:</strong> Avoid unbounded retries, business-specific decisions, and logging sensitive headers.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Mutating a request object instead of cloning it.</li>
+<li>Retrying every request indefinitely or refreshing on the refresh endpoint itself.</li>
+<li>Logging full headers or bodies containing credentials and personal data.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep the chain narrow and ordered.</li>
+<li>Protect recursive flows with explicit request context or endpoint policy.</li>
+<li>Separate transport concerns from domain decisions.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why are HttpRequest objects cloned?</li>
+<li>How does interceptor order affect request/response flow?</li>
+<li>What prevents refresh requests from recursively invoking refresh logic?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Several APIs need correlation IDs and common telemetry. Add a functional interceptor, verify ordering with a test backend, and ensure the telemetry output redacts authorization and personal data.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>An HttpInterceptorFn receives an immutable HttpRequest and a next handler, then returns an Observable&lt;HttpEvent&lt;unknown&gt;&gt;. Clone requests to change headers or parameters; responses and errors flow back through the chain. Interceptors centralize concerns such as correlation IDs, trusted-origin credentials, timing, and consistent transport error mapping. Ordering matters: each interceptor wraps downstream processing and can observe the transformed result.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/guide/http/interceptors" target="_blank" rel="noopener noreferrer">Angular interceptors</a></li><li><a href="https://angular.dev/guide/http" target="_blank" rel="noopener noreferrer">Angular HTTP</a></li></ul>
+</section>
+</div>

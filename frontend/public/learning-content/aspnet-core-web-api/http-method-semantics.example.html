@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Use GET /orders/7 to retrieve, POST /orders to create, PUT /orders/7 for full replacement, and PATCH /orders/7 for a defined partial change.</p><ol>
+<li>Client selects method and resource</li>
+<li>API applies method contract</li>
+<li>Response reflects operation outcome</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>[HttpGet(&quot;{id:int}&quot;)] public Task&lt;ActionResult&lt;OrderDto&gt;&gt; Get(int id) =&gt; ...;
+[HttpPost] public Task&lt;ActionResult&lt;OrderDto&gt;&gt; Create(CreateOrderDto input) =&gt; ...;
+[HttpPut(&quot;{id:int}&quot;)] public Task&lt;IActionResult&gt; Replace(int id, ReplaceOrderDto input) =&gt; ...;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Standard semantics aid retries, caches, and client libraries</li>
+<li>Resource-oriented verbs make contracts easier to reason about</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>PATCH formats require clear semantics and validation</li>
+<li>A badly implemented endpoint can violate its declared method semantics</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Choose a method based on its HTTP semantics and the resource contract, and document conditional behavior.</p><p><strong>Avoid:</strong> Avoid state changes on GET or using POST as a catch-all solely for convenience.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Treating every repeated request as harmless regardless of side effects.</li>
+<li>Using GET for actions that mutate persistent state.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Document full replacement versus partial update.</li>
+<li>Use idempotency keys where retryable POST operations must prevent duplicate business effects.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is the difference between safe and idempotent?</li>
+<li>Is DELETE idempotent if a repeated call returns 404?</li>
+<li>When should a resource use PATCH rather than PUT?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A client retries a timed-out update; align method semantics and conditional request behavior so repeating the same operation does not create an additional business effect.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>HTTP methods communicate the intended operation and whether it is safe or idempotent, independent of how an endpoint is named.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener noreferrer">RFC 9110: HTTP Semantics</a></li></ul>
+</section>
+</div>

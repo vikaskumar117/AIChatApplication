@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A checkout depends on IPaymentGateway so card and bank-transfer adapters can be substituted; a shared base class is appropriate only if they truly share stateful invariants.</p><ol>
+<li>Declare only the payment capability callers need.</li>
+<li>Implement it in a provider adapter.</li>
+<li>Pass the adapter to business logic through the interface.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IPaymentGateway
+{
+    Task PayAsync(decimal amount, CancellationToken cancellationToken);
+}
+
+public sealed class CardGateway : IPaymentGateway
+{
+    public Task PayAsync(decimal amount, CancellationToken cancellationToken)
+        =&gt; Task.CompletedTask;
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Multiple contracts and unrelated implementations</li>
+<li>Abstract base can centralize invariant behavior</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Interface proliferation adds indirection</li>
+<li>Base-class changes can break all derived classes</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use interfaces at replacement/testing boundaries and abstract classes for coherent shared state or invariants.</p><p><strong>Avoid:</strong> Avoid deep inheritance and interfaces that simply mirror every class without a real boundary.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Creating interfaces with no independent client or replacement need.</li>
+<li>Using a base class only to share a few unrelated helper methods.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep contracts small and stable.</li>
+<li>Put provider-specific behavior behind adapters.</li>
+<li>Test business rules against the contract and adapter integration separately.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Can one class implement multiple interfaces?</li>
+<li>When is an abstract class preferable?</li>
+<li>What does polymorphic dispatch mean here?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Support two payment providers without leaking provider details into checkout. Define a narrow interface, inject an adapter, and preserve provider-specific idempotency and retry policies inside each implementation.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Interfaces enable independent substitution; abstract classes share state and implementation when a true inheritance relationship exists.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

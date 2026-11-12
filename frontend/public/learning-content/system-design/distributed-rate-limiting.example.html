@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Give each authenticated tenant a token bucket with a short burst allowance and a sustained refill limit, while enforcing a stricter global budget on a costly report-generation backend.</p><ol>
+<li>Authenticate tenant and map request route to a policy.</li>
+<li>Atomically refill and consume one token in the shared limiter.</li>
+<li>Continue when a token is available; otherwise respond 429.</li>
+<li>Track allowed, rejected, and limiter-unavailable rates separately.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Token bucket policy example:
+capacity = 100 tokens
+refill = 20 tokens per second
+request cost = 1 token
+
+// Evaluate and update tokens atomically in the shared limiter.
+// If insufficient: return 429 with Retry-After when known.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Controls bursts and protects shared resources</li>
+<li>Tenant policies can improve fairness across replicas</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Shared checks add latency and another failure mode</li>
+<li>Bad identity keys or policy boundaries can unfairly block callers</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use at an ingress or shared enforcement point with authenticated keys, atomic accounting, explicit burst policy, and a documented limiter-outage mode.</p><p><strong>Avoid:</strong> Avoid trusting arbitrary client-supplied identity headers or relying only on per-instance counters when quotas are meant to be global.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using an untrusted header as the quota key lets callers evade or share limits.</li>
+<li>Applying only local limits gives each replica its own full quota.</li>
+<li>Failing open during limiter outage can overload the very service the limiter protects.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Separate per-tenant fairness limits from global resource safety limits.</li>
+<li>Set atomicity, timeout, fail-open/fail-closed behavior, and retry guidance deliberately.</li>
+<li>Test multi-replica bursts, identity spoofing, and shared-store outage behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does token bucket differ from fixed window?</li>
+<li>Why can per-process limits exceed the intended quota?</li>
+<li>Where should a global backend limit be enforced?</li>
+<li>How should clients and the service behave when quota is exhausted or the shared limiter is down?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A tenant spreads a traffic burst across several application replicas and overloads an expensive search endpoint. Enforce a tenant quota at ingress and a global backend budget near search, return 429 consistently, and verify that limiter-store failure cannot silently make every replica unlimited.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A shared, atomic limiter enforces a deliberate burst and sustained-rate policy, with trusted identities and explicit behavior under failure.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/performance/rate-limit" target="_blank" rel="noopener noreferrer">Microsoft: ASP.NET Core rate limiting middleware</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc6585#section-4" target="_blank" rel="noopener noreferrer">RFC 6585: 429 Too Many Requests</a></li></ul>
+</section>
+</div>

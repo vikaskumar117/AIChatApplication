@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>“Open for extension, closed for modification” means an established policy can gain variants without constantly rewriting stable client logic; it does not mean code is never edited.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>An appropriate abstraction localizes variation, reducing regression risk when new cases arrive. Premature extension points can make a simple design harder to understand.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Replace repeated type switches with polymorphism, strategies, or explicit registrations when variation is expected. Keep validation and invariant checks centralized where appropriate.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Stable checkout policy</strong><span>Checkout delegates the variable pricing rule rather than branching on campaign names.</span></div></div>
+<div><span>2</span><div><strong>Extension contract</strong><span>IDiscountPolicy fixes the expected Apply behavior.</span></div></div>
+<div><span>3</span><div><strong>New campaign strategy</strong><span>A new implementation adds a variant without editing Checkout.</span></div></div>
+</figure>
+<figcaption>Follow the labeled stages; each node names a concrete decision or runtime effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>OCP targets stable client logic under expected variation.</li>
+<li>Extension points have a maintenance cost.</li>
+<li>Changing code is still appropriate when requirements alter invariants.</li>
+</ul>
+</section>
+</div>

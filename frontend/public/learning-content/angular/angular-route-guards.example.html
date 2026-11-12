@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An authenticated user without an admin role is redirected from the admin route, while the API still checks the role on every administrative request.</p><ol>
+<li>Prefer functional guards and injectable policy services.</li>
+<li>Handle an authentication state that is still loading without racing the router.</li>
+<li>Use CanDeactivate for unsaved work and provide accessible confirmation.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>export const signedInGuard: CanActivateFn = () =&gt; {
+  const auth = inject(AuthSession);
+  const router = inject(Router);
+  return auth.isSignedIn()
+    ? true
+    : router.createUrlTree([&#39;/sign-in&#39;]);
+};</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Keeps navigation aligned with application state</li>
+<li>UrlTree redirects are declarative and race-resistant</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Client checks are bypassable</li>
+<li>Slow guard dependencies delay route activation</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use guards for client navigation UX and return UrlTree for redirects.</p><p><strong>Avoid:</strong> Avoid treating a route guard as authorization or duplicating complex business policy in the router.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using a guard as the sole protection for sensitive API data.</li>
+<li>Calling router.navigate and returning false, causing competing transitions.</li>
+<li>Putting long or side-effect-heavy workflows inside a guard.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Return explicit typed decisions and keep checks fast.</li>
+<li>Test direct URL entry, reload, delayed auth resolution, and rejected access.</li>
+<li>Enforce authorization at the API and data layer.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is the difference between CanMatch and CanActivate?</li>
+<li>Why return a UrlTree rather than navigate imperatively?</li>
+<li>Where must authorization be enforced?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A user can alter client state or call APIs directly. The guard hides inaccessible navigation, while each protected API independently validates the identity and permission.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>CanActivate, CanActivateChild, CanMatch, and CanDeactivate guard different router decisions. A guard may synchronously return a boolean or return a Promise/Observable that resolves to a decision or UrlTree/RedirectCommand. Returning a UrlTree communicates redirect intent to the router; imperatively navigating and returning false can create races. CanMatch can prevent a route from matching, while CanDeactivate is suited to unsaved-change confirmation.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/guide/routing/route-guards" target="_blank" rel="noopener noreferrer">Angular route guards</a></li></ul>
+</section>
+</div>

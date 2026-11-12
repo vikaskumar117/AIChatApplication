@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — An anagram rearranges the same characters with the same multiplicities; order does not matter.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Frequency counting solves the problem in expected O(n) time without sorting both strings, and demonstrates a useful dictionary pattern.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Normalize according to the contract, reject unequal lengths, increment counts for the first input, decrement for the second, and ensure every count returns to zero. The dictionary uses O(k) space for k distinct characters.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Normalize</strong><span>&quot;Dormitory&quot; and &quot;Dirty room&quot; become comparable character sequences.</span></div></div>
+<div><span>2</span><div><strong>Build counts</strong><span>Count each character in the first string, including repetitions.</span></div></div>
+<div><span>3</span><div><strong>Consume counts</strong><span>Each character in the second string must decrement an available count.</span></div></div>
+<div><span>4</span><div><strong>Verify</strong><span>All counts are zero: same multiset, therefore anagram.</span></div></div>
+</figure>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>An anagram compares multisets, not sets.</li>
+<li>Use the same normalization on both inputs.</li>
+<li>Frequency counting is expected O(n); sorting is O(n log n) but may be simpler.</li>
+</ul>
+</section>
+</div>

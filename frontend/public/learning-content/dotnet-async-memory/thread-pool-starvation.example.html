@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Calling Result on an HTTP Task blocks a worker while the asynchronous request needs a continuation to complete, reducing capacity for other work.</p><ol>
+<li>Observe queue length and completed work during the incident.</li>
+<li>Capture stacks to identify blocking waits.</li>
+<li>Replace sync-over-async and remeasure throughput.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Avoid: blocks a pool worker
+var data = client.GetStringAsync(url).Result;
+
+// Prefer: yields while I/O is pending
+var asyncData = await client.GetStringAsync(url, cancellationToken);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Diagnosable using runtime counters and traces</li>
+<li>Async I/O returns workers to useful work</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Symptoms can resemble slow dependencies</li>
+<li>Adding workers may increase contention without removing cause</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use async end-to-end, bound CPU concurrency, and inspect blocking traces.</p><p><strong>Avoid:</strong> Avoid increasing minimum threads as a substitute for fixing sync-over-async.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Blindly raising minimum worker threads.</li>
+<li>Confusing downstream slowness with proof of starvation.</li>
+<li>Wrapping blocking I/O in more Task.Run work.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Make I/O asynchronous end-to-end.</li>
+<li>Bound long-running CPU/background work.</li>
+<li>Correlate counters, traces, and dependency latency.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What metrics suggest starvation?</li>
+<li>Why can .Result harm throughput?</li>
+<li>How can starvation occur with low CPU?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Latency rises while CPU stays low. Correlate queue length, thread count, completed work, dependency time, and stack traces; remove sync-over-async before tuning pool settings.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Starvation is delayed queued work caused by unavailable workers; diagnose blocking and queue behavior before tuning.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>TryParse uses out because there may be no parsed result on entry; ref would misleadingly imply a meaningful initialized value.</p><ol>
+<li>Call Increment with ref to update the existing count.</li>
+<li>Call TryPercent with out to receive its result.</li>
+<li>Pass values with in to the readonly Sum method.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>static bool TryPercent(string text, out int value)
+    =&gt; int.TryParse(text, out value);
+
+static void Increment(ref int value) =&gt; value++;
+static int Sum(in int left, in int right) =&gt; left + right;
+
+int count = 3;
+Increment(ref count);
+if (TryPercent(&quot;42&quot;, out var parsed))
+    Console.WriteLine(Sum(in count, in parsed));</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Efficient large readonly values</li>
+<li>Clear Try-pattern output</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Call-site coupling and aliasing</li>
+<li>Ref-like types impose escape and async restrictions</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use out for a Try-style output and ref only when caller-visible mutation is essential.</p><p><strong>Avoid:</strong> Avoid ref/out/in for ordinary small values or using ref as an unmeasured optimization.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using out when input value is meaningful.</li>
+<li>Assuming in prohibits mutation of an object reached through the reference.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use the Try pattern for conditional results.</li>
+<li>Keep mutation explicit and narrow.</li>
+<li>Respect ref-like lifetime and async restrictions.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why does out not require initialization?</li>
+<li>Does in make an object graph immutable?</li>
+<li>What is the difference between ref and out?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A numeric API handles large immutable structs. Keep scalar results as returns, use out for parse success, and benchmark in only where avoiding a copy matters.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>ref reads and writes an initialized variable, out must assign a result, and in provides readonly by-reference input.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

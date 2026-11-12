@@ -1,0 +1,39 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>INNER JOIN returns rows with matching join keys on both sides. LEFT JOIN preserves every left-side row and returns NULLs for right-side columns when no match exists.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Join type encodes whether unmatched left entities matter. A predicate on the nullable right side in WHERE can remove unmatched rows and make a LEFT JOIN behave like an inner join for that predicate.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Put relationship matching in ON. Put right-side filters in ON when unmatched left rows must remain; put them in WHERE only when the result should exclude rows without a qualifying right match. Use COUNT(right.PrimaryKey), not COUNT(*), to count actual matches after an outer join.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Left relation</strong><span>Rows from this side are preserved by LEFT JOIN.</span></div></div>
+<div><span>2</span><div><strong>ON match</strong><span>Match candidates on keys and any right-side condition that defines an eligible match.</span></div></div>
+<div><span>3</span><div><strong>INNER result</strong><span>Keep only matched pairs.</span></div></div>
+<div><span>4</span><div><strong>LEFT result</strong><span>Keep matches plus one NULL-extended right side for unmatched left rows.</span></div></div>
+<div><span>5</span><div><strong>WHERE / aggregate</strong><span>Apply filters with intended null behavior; count a right key to count matches.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>INNER JOIN drops rows without a match.</li>
+<li>LEFT JOIN preserves left rows and supplies NULL right-side values.</li>
+<li>A right-side WHERE condition can remove NULL-extended rows.</li>
+<li>COUNT(*) counts the preserved row; COUNT(non-null right key) counts matches.</li>
+</ul>
+</section>
+</div>

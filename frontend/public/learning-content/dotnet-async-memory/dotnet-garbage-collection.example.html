@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A temporary request buffer becomes eligible for collection after references disappear, but an object still stored in a static cache remains reachable.</p><ol>
+<li>Record allocation around a representative operation.</li>
+<li>Compare roots and surviving objects in a heap snapshot.</li>
+<li>Fix retention/allocation causes and remeasure.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>long allocatedBefore = GC.GetTotalAllocatedBytes();
+ProcessBatch();
+long allocated = GC.GetTotalAllocatedBytes() - allocatedBefore;
+Console.WriteLine($&quot;Allocated: {allocated} bytes&quot;);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Automatic reclamation reduces manual memory errors</li>
+<li>Generations optimize common object lifetimes</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Collections can pause or consume CPU</li>
+<li>Finalizers and pins complicate lifetime and compaction</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use GC metrics and heap tools to find the cause before optimizing.</p><p><strong>Avoid:</strong> Avoid routine GC.Collect calls, finalizer-based ownership, and unjustified pooling.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Expecting GC to reclaim referenced cache entries.</li>
+<li>Using GC.Collect as routine memory management.</li>
+<li>Pooling allocations without measuring retention and contention costs.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use counters and traces under representative load.</li>
+<li>Release references and disposable resources appropriately.</li>
+<li>Avoid unnecessary pinning and finalizers.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does GC reachability mean?</li>
+<li>Does GC collect a still-referenced object?</li>
+<li>Why can forced collections hurt?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Memory climbs after every batch. Compare allocation rate and heap snapshots, identify retained roots or large objects, then fix ownership rather than forcing collections.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>The GC traces roots to reclaim unreachable managed objects; diagnose allocation and retention with runtime evidence.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

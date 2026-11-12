@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Generation is an age/survival classification, not a C# type. New small objects usually begin in Gen 0; survivors may be promoted to Gen 1 and then Gen 2. Gen 2 holds longer-lived objects.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Most temporary objects die quickly, so collecting a young generation can examine less memory than a full collection. Survivors increase long-term scanning and promotion pressure.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Large Object Heap (LOH) allocation and pinned-object handling use specialized areas and rules; they should not be simplistically equated with ordinary Gen 0 allocation. Diagnose with allocation size, survival, and collection metrics.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Gen 0 allocation</strong><span>Most new small objects begin in the nursery and are cheap to examine.</span></div></div>
+<div><span>2</span><div><strong>Gen 0 survivor</strong><span>Object still reachable at collection and may be promoted to Gen 1.</span></div></div>
+<div><span>3</span><div><strong>Gen 1 survivor</strong><span>Repeated survival can promote the object to Gen 2.</span></div></div>
+<div><span>4</span><div><strong>Gen 2 / specialized heaps</strong><span>Long-lived and large/pinned allocations can impose different collection costs.</span></div></div>
+</figure>
+<figcaption>Follow each labeled stage to see the concrete scheduling, ownership, or memory effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Generation tracks survival, not a programmer-assigned type.</li>
+<li>Young generations optimize short-lived allocations.</li>
+<li>Gen 2 growth often points to long-lived retention, but investigate evidence.</li>
+</ul>
+</section>
+</div>

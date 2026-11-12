@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — Service Bus is a broker for commands and enterprise messaging; Event Hubs is a partitioned event-stream ingestion service; Event Grid routes event notifications to subscribers.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Delivery, ordering, replay, and fan-out differ. Selecting the service by its required semantics avoids data loss or costly application-level reimplementation.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Service Bus queues use competing consumers and PeekLock settlement; topics fan out to subscriptions. Event Hubs consumers read partitions and checkpoint offsets. Event Grid pushes events to handlers and retries delivery. All can redeliver; none makes arbitrary downstream side effects exactly-once.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Command / work item</strong><span>Service Bus: lock, settle, defer, or dead-letter a durable message.</span></div></div>
+<div><span>2</span><div><strong>Telemetry stream</strong><span>Event Hubs: partitioned ordered records, retention, consumer offsets, replay.</span></div></div>
+<div><span>3</span><div><strong>State-change event</strong><span>Event Grid: filtered push delivery to one or more handlers.</span></div></div>
+<div><span>4</span><div><strong>Idempotent consumer</strong><span>Expect retries and duplicates; commit business effects before settlement/checkpoint.</span></div></div>
+</figure>
+<figcaption>Service Bus PeekLock is at-least-once, Event Hubs checkpoints can replay records, and Event Grid retries can redeliver; application effects still need idempotency.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>At-least-once is the practical contract to design for; duplicates are normal recovery behavior.</li>
+<li>Event Hubs orders within a partition, not globally across the stream.</li>
+<li>A dead-letter queue or failed-event destination is an operational workflow, not automatic resolution.</li>
+</ul>
+</section>
+</div>

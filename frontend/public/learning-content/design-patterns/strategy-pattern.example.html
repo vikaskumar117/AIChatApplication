@@ -1,0 +1,73 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A shipping quote chooses an eligible carrier strategy using destination, weight, and service constraints, then returns an estimate with its assumptions.</p><ol>
+<li>Keep strategy contracts cohesive and deterministic.</li>
+<li>Test boundary conditions and selection ambiguity.</li>
+<li>Return rich results when quote assumptions matter.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IShippingRate
+{
+    bool Supports(Shipment shipment);
+    decimal Quote(Shipment shipment);
+}
+var strategy = rates.Single(x =&gt; x.Supports(shipment));
+var quote = strategy.Quote(shipment);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Adds a carrier policy without changing unrelated quote logic.</li>
+<li>Enables direct tests of each algorithm and supports runtime selection.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Selection rules can become scattered or ambiguous.</li>
+<li>Additional types and registrations are unnecessary for stable, tiny behavior.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use when behavior varies by context and alternatives share a meaningful contract.</p><p><strong>Avoid:</strong> Avoid strategy when one simple expression is clearer and unlikely to vary.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid strategy when one simple expression is clearer and unlikely to vary.</li>
+<li>Assuming strategy pattern: shipping rate example guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Make no-match and tie behavior explicit.</li>
+<li>Inject strategies through DI rather than constructing them in the caller.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does Strategy differ from a conditional?</li>
+<li>Where should strategy selection live?</li>
+<li>What should happen if multiple strategies match?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A new carrier supports only some postal codes. Its Supports rule and quote tests define eligibility; the selector detects no match rather than silently choosing the wrong carrier.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Strategy is valuable when meaningful algorithms vary at runtime and share a truthful contract.</p>
+</section>
+</div>

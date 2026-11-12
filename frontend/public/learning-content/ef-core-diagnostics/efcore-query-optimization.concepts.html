@@ -1,0 +1,39 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>EF Core query optimization aligns the LINQ expression, generated SQL, indexes, result shape, and database plan with the workload. Deferred IQueryable composition runs at the database only when materialized or enumerated.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>ORM abstractions can hide over-fetching, client-side work, repeated queries, tracking allocations, and provider translation costs. Database-side execution still follows database planning and resource constraints.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Project only required columns, filter and page on the server, use AsNoTracking for read-only entities, avoid premature ToList, inspect generated SQL and actual plans, and measure reads/rows/time. Use compiled queries only after measurement shows query compilation overhead is material.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Expression tree</strong><span>IQueryable composes operations before execution.</span></div></div>
+<div><span>2</span><div><strong>SQL translation</strong><span>EF provider translates supported expressions for the target database.</span></div></div>
+<div><span>3</span><div><strong>Database plan</strong><span>SQL Server chooses access paths, joins, sort, and pagination strategy.</span></div></div>
+<div><span>4</span><div><strong>Materialization</strong><span>Only requested rows/columns become DTOs or tracked entities.</span></div></div>
+<div><span>5</span><div><strong>Measurement</strong><span>Validate command count, result size, allocations, reads, and tail latency.</span></div></div>
+</figure>
+<figcaption>Validate the behavior against the deployed EF Core/provider version, generated SQL, database schema, and production configuration.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>IQueryable is deferred until materialization; ToList changes the boundary to memory.</li>
+<li>Project only the required fields and keep filtering/paging server-side.</li>
+<li>Generated SQL and database plans are part of EF performance diagnosis.</li>
+<li>Optimize from workload evidence, not premature complexity.</li>
+</ul>
+</section>
+</div>

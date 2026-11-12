@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>ReadAsync should be awaited directly; a substantial CPU-only image transform may be scheduled with Task.Run from a UI event handler.</p><ol>
+<li>Await native asynchronous file reading directly.</li>
+<li>Schedule only the CPU-intensive digest when offloading is appropriate.</li>
+<li>Await both tasks and propagate cancellation.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var contents = await File.ReadAllTextAsync(path, token); // direct async I/O
+var digest = await Task.Run(() =&gt; ComputeDigest(contents), token); // CPU-bound delegate</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Task composes any supported completion</li>
+<li>Task.Run protects a responsive caller from CPU work</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Unnecessary scheduling overhead</li>
+<li>Blocking on pool workers can cause starvation</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use Task.Run selectively for CPU-bound work that benefits from offloading.</p><p><strong>Avoid:</strong> Avoid wrapping native async I/O or every service method in Task.Run.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Wrapping an already-asynchronous HTTP/database call in Task.Run.</li>
+<li>Using Task.Run to hide blocking work on a saturated server.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Classify work as I/O-bound or CPU-bound first.</li>
+<li>Bound expensive parallel CPU tasks.</li>
+<li>Measure end-to-end latency and pool queueing.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does Task.Run schedule?</li>
+<li>Why not wrap HTTP calls in Task.Run?</li>
+<li>When could Task.Run help a UI?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A Web API wraps database queries in Task.Run. Remove the wrapper, use the provider’s asynchronous I/O, and separately cap expensive CPU transformations.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Task.Run schedules synchronous delegate work on the pool; it is not a general-purpose async wrapper.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

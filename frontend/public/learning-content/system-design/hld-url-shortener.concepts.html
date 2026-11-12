@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — The service creates a short code for a long URL and resolves that code to a redirect target.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — The workload is write-light and read-heavy, making it a useful exercise in API design, key generation, storage, caching, abuse controls, and analytics trade-offs.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Validate and normalize the URL, generate a unique key with collision handling, persist the mapping, and return a short link. On redirect, check cache then storage, apply expiry/safety policy, and return the configured redirect. Analytics can be emitted asynchronously so counting does not dominate the redirect path.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Create API</strong><span>Authenticate as needed; validate URL and enforce abuse policy.</span></div></div>
+<div><span>2</span><div><strong>Key + durable mapping</strong><span>Generate unique code and commit mapping with expiry/owner metadata.</span></div></div>
+<div><span>3</span><div><strong>Redirect API</strong><span>Read cache, then store; validate expiry and response policy.</span></div></div>
+<div><span>4</span><div><strong>Analytics queue</strong><span>Emit click event without waiting for analytics processing.</span></div></div>
+<div><span>5</span><div><strong>Operations</strong><span>Monitor hot keys, cache misses, abuse, storage growth, and queue lag.</span></div></div>
+</figure>
+<figcaption>The mapping store owns redirect correctness. Cache and analytics are supporting paths with separate consistency and failure expectations.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Define URL safety, expiry, and ownership before designing storage.</li>
+<li>Unique constraints are the final collision guard.</li>
+<li>Keep analytics off the latency-critical redirect path.</li>
+</ul>
+</section>
+</div>

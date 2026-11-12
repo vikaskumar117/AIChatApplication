@@ -1,0 +1,68 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>The Order service emits OrderConfirmed; invoice, fulfillment, and analytics consumers independently react at their own pace.</p><ol>
+<li>Publish domain facts, not private table-change dumps.</li>
+<li>Track consumer lag and schema compatibility.</li>
+<li>Make projections replayable and consumer effects idempotent.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public sealed record OrderConfirmed(Guid EventId, Guid OrderId, DateTimeOffset OccurredAt);
+// Publish after the order state and outbox row commit together.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>One event can serve several independent consumers.</li>
+<li>Producer does not need to know consumer deployment or availability.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Consumers see stale or reordered views and can fail independently.</li>
+<li>Event schema and semantics become long-lived public contracts.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use events for facts and independent reactions that may be eventual.</p><p><strong>Avoid:</strong> Avoid eventing synchronous decisions that must be atomically answered to the caller.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid eventing synchronous decisions that must be atomically answered to the caller.</li>
+<li>Assuming event-driven architecture guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Define event ownership and compatibility policy.</li>
+<li>Expose freshness or pending status when consumers affect user expectations.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does an event differ from a command?</li>
+<li>Why can an event consumer see stale state?</li>
+<li>What does eventual consistency mean to a client?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Analytics falls behind while checkout remains available. Track consumer lag and communicate the freshness of analytics rather than treating event acceptance as projection completion.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Events decouple reactions in time, not meaning; eventual consistency and consumer recovery are part of the contract.</p>
+</section>
+</div>

@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A method that only returns repository.LoadAsync can return that Task directly; retaining async/await adds no behavior.</p><ol>
+<li>Inspect whether the body has any await or transformation.</li>
+<li>Return the repository Task directly if forwarding only.</li>
+<li>Retain async if local catch/finally or exception semantics are required.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Redundant wrapper:
+async Task&lt;Customer?&gt; FindAsync(Guid id) =&gt; await repository.FindAsync(id);
+
+// Direct forwarding:
+Task&lt;Customer?&gt; FindAsync(Guid id) =&gt; repository.FindAsync(id);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Direct forwarding avoids needless state-machine work</li>
+<li>Consistent async contract may be valuable</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Synchronous exceptions may escape differently</li>
+<li>Removing async can change stack traces and exception timing</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Return a Task directly when truly forwarding without transformation.</p><p><strong>Avoid:</strong> Keep async when adding await-specific cleanup, exception conversion, or multiple sequential asynchronous steps.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Removing async without checking exception behavior.</li>
+<li>Using Task.Run merely to make a synchronous body appear asynchronous.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep method semantics consistent with its contract.</li>
+<li>Use Task.FromResult for truly synchronous results when useful.</li>
+<li>Test both successful and failing paths after refactoring.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What happens to code in async without await?</li>
+<li>How does direct forwarding affect synchronous exceptions?</li>
+<li>When is retaining async intentional?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A repository wrapper merely forwards a Task. Remove the redundant async modifier only after verifying callers and tests accept exception timing and stack-trace behavior.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Without await an async method runs synchronously; direct Task forwarding is simpler unless async exception or cleanup semantics are needed.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

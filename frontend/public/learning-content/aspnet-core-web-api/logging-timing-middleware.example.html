@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An incident review correlates slow order requests with a database span by trace ID and route template.</p><ol>
+<li>Capture safe request context</li>
+<li>Run downstream application work</li>
+<li>Record status, duration, and correlation</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var started = Stopwatch.GetTimestamp();
+await next(context);
+logger.LogInformation(&quot;HTTP {Method} {Route} {Status} in {ElapsedMs}ms TraceId={TraceId}&quot;,
+    context.Request.Method, context.GetEndpoint()?.DisplayName,
+    context.Response.StatusCode, Stopwatch.GetElapsedTime(started).TotalMilliseconds,
+    context.TraceIdentifier);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Consistent request-level operational context</li>
+<li>Supports latency analysis and cross-service investigation</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>High-volume logs and high-cardinality fields raise cost</li>
+<li>Over-collection can expose secrets or personal data</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use structured framework logging and tracing with reviewed fields, sampling, retention, and access controls.</p><p><strong>Avoid:</strong> Avoid logging authorization headers, tokens, passwords, full bodies, or raw user identifiers without a documented need and safeguards.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Logging bearer tokens or entire bodies for convenience.</li>
+<li>Using raw URLs or user input as unbounded metric labels.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Define redaction, retention, and access policies for telemetry.</li>
+<li>Prefer standard ASP.NET Core diagnostics and OpenTelemetry instrumentation.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why log route templates rather than raw paths?</li>
+<li>How do trace IDs help across services?</li>
+<li>Why not log every request body?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>p95 latency worsens while logs grow; sample noisy low-value routes, correlate traces with dependency spans, and remove sensitive high-cardinality dimensions.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Request instrumentation correlates HTTP outcomes and elapsed time with structured logs and distributed traces.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/logging/" target="_blank" rel="noopener noreferrer">ASP.NET Core logging</a></li></ul>
+</section>
+</div>

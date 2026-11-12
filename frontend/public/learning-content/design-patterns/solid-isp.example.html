@@ -1,0 +1,69 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A receipt printer implements IPrintReceipt, while a multifunction device implements both print and scan capabilities.</p><ol>
+<li>Group operations by real client use and change together.</li>
+<li>Make unsupported capability impossible to request through the contract.</li>
+<li>Use contract tests for each capability.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IPrintReceipt { Task PrintAsync(Receipt receipt, CancellationToken ct); }
+public interface IScanDocument { Task&lt;Scan&gt; ScanAsync(CancellationToken ct); }
+public sealed class ReceiptPrinter : IPrintReceipt { /* print only */ }</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Changes to unused methods no longer affect every client.</li>
+<li>Implementations and test doubles need only fulfill relevant capabilities.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Too many micro-interfaces can obscure cohesive concepts.</li>
+<li>Splitting interfaces does not automatically make domain boundaries correct.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Separate methods when distinct clients need independent capabilities.</p><p><strong>Avoid:</strong> Avoid interfaces so small they carry no meaningful cohesion or substitution role.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid interfaces so small they carry no meaningful cohesion or substitution role.</li>
+<li>Assuming solid: interface segregation principle guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Follow actual client dependency boundaries.</li>
+<li>Keep composition manageable as interfaces are split.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is the client perspective in ISP?</li>
+<li>Why is a printer forced to scan a design smell?</li>
+<li>How can interface fragmentation also hurt?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A shipping client changes because an unrelated invoice method was added to a large gateway interface. Split interfaces along stable client capabilities.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>ISP keeps clients coupled only to cohesive capabilities they consume.</p>
+</section>
+</div>

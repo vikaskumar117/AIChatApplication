@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A worker thread executes scheduled code; a work queue holds work until a worker can run it. The pool dynamically adjusts worker availability but is finite and shared by many runtime components.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Reusing workers avoids the cost of creating a dedicated thread for every operation. Blocking workers reduces available capacity and can delay unrelated requests, timers, and continuations.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use asynchronous I/O to avoid occupying workers while waiting, bound CPU parallelism, and inspect runtime counters for queue length, thread count, and completed work.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Work queued</strong><span>Task.Run or runtime callback places work in a pool queue.</span></div></div>
+<div><span>2</span><div><strong>Worker available</strong><span>A reusable worker takes queued work and executes instructions.</span></div></div>
+<div><span>3</span><div><strong>Worker blocked</strong><span>A synchronous wait ties up capacity that could run other queued work.</span></div></div>
+<div><span>4</span><div><strong>Worker reused</strong><span>Completed workers return to service later work.</span></div></div>
+</figure>
+<figcaption>Follow each labeled stage to see the concrete scheduling, ownership, or memory effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Pool threads are shared execution resources.</li>
+<li>Task.Run uses pool capacity, not a private thread.</li>
+<li>Async I/O avoids occupying a worker while waiting.</li>
+</ul>
+</section>
+</div>

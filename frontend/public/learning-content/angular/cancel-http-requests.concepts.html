@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Angular HttpClient returns cold Observables. Unsubscribing before completion aborts the in-progress browser request where the backend supports it; it does not guarantee that the server did not receive or finish processing the request.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>switchMap unsubscribes the previous inner Observable when a newer source value arrives, making it appropriate for replaceable reads such as search. takeUntilDestroyed ends work when its Angular owner is destroyed.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Cancellation is not a substitute for server idempotency, authorization, or transaction semantics. Do not cancel writes casually; a client abort can leave outcome unknown and require reconciliation.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Observe intent</strong><span>Each new query or selected identifier represents the latest desired read.</span></div></div>
+<div><span>2</span><div><strong>Replace inner work</strong><span>switchMap unsubscribes its previous inner subscription before subscribing to the new request.</span></div></div>
+<div><span>3</span><div><strong>Abort supported transport</strong><span>HttpClient propagates teardown to the browser backend when the request is still in flight.</span></div></div>
+<div><span>4</span><div><strong>Render current result</strong><span>A cancelled request cannot deliver a later next notification to this subscription.</span></div></div>
+</figure>
+<figcaption>Client cancellation controls observation and may abort transport; it cannot promise server-side cancellation or rollback.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Angular HttpClient returns cold Observables. Unsubscribing before completion aborts the in-progress browser request where the backend supports it; it does not guarantee that the server did not receive or finish processing the request.</li>
+<li>switchMap unsubscribes the previous inner Observable when a newer source value arrives, making it appropriate for replaceable reads such as search. takeUntilDestroyed ends work when its Angular owner is destroyed.</li>
+<li>Cancellation is not a substitute for server idempotency, authorization, or transaction semantics. Do not cancel writes casually; a client abort can leave outcome unknown and require reconciliation.</li>
+</ul>
+</section>
+</div>

@@ -1,0 +1,76 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An inventory decrement must never make stock negative; perform one conditional UPDATE and treat zero affected rows as unavailable or stale.</p><ol>
+<li>Identify invariant and concurrent write pattern.</li>
+<li>Express simple checks in the UPDATE predicate and update atomically.</li>
+<li>Check affected rows or compare concurrency token.</li>
+<li>Handle conflict as a domain outcome and keep external effects idempotent.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>UPDATE dbo.Inventory
+SET Quantity = Quantity - @requested
+WHERE ProductId = @productId
+  AND Quantity &gt;= @requested;
+
+IF @@ROWCOUNT = 0
+  THROW 50010, &#39;Insufficient stock or product not found.&#39;, 1;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Atomic predicates prevent stale application reads from violating invariants.</li>
+<li>Optimistic concurrency supports conflict detection without long-held read locks.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Conflicts require domain-specific retry, merge, or rejection behavior.</li>
+<li>Pessimistic locking can reduce throughput when contention is high.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use conditional updates for simple invariants and rowversion/ETag-style optimistic concurrency for user-edited records.</p><p><strong>Avoid:</strong> Avoid silently overwriting stale state or retrying a business update without revalidating its preconditions.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Overwriting a row with a stale entity without concurrency checking.</li>
+<li>Retrying stale writes blindly and reintroducing the same conflict.</li>
+<li>Assuming a transaction alone prevents lost updates at every isolation level.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use conditional updates or optimistic concurrency tokens.</li>
+<li>Keep transactions short and handle conflict exceptions explicitly.</li>
+<li>Use unique constraints and domain-level idempotency for concurrent requests.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is a lost update?</li>
+<li>How does a rowversion concurrency token detect a stale write?</li>
+<li>Why should affected row count be checked?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Two shoppers attempt to buy the last item. Use a single conditional inventory decrement, commit order state atomically, treat zero affected rows as a domain conflict, and emit the order event through an outbox.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Concurrent writes to one row contend for locks or encounter optimistic concurrency conflicts. A later write may wait, overwrite earlier values, or fail based on transaction and application design. A read-modify-write sequence can lose updates if application code calculates from stale data. Correctness requires atomic SQL operations, concurrency tokens, or an explicit serialization strategy.</p>
+</section>
+</div>

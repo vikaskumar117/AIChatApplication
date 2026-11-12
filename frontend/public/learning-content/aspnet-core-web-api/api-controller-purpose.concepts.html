@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>[ApiController] marks a controller as an API controller and enables conventions including automatic 400 responses for invalid model state.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Automatic consistent failures prevent actions from accidentally processing invalid input and reduce repetitive boilerplate.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>The attribute also enables inference of binding sources for parameters and client-error conventions; inspect generated responses and override inference only when the contract requires it.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Bind request using API conventions</strong><span>MVC binds from route, query, body, and services using explicit declarations or API-controller inference rules.</span></div></div>
+<div><span>2</span><div><strong>Validate model and infer sources</strong><span>Validation annotations and validators populate ModelState; binding failures do too.</span></div></div>
+<div><span>3</span><div><strong>Short-circuit invalid input with 400</strong><span>An invalid model state yields a validation-problem response before the action body executes unless behavior is deliberately customized.</span></div></div>
+</figure>
+<figcaption>Automatic 400 concerns MVC model state; it does not replace business-rule validation, authorization, or conflict detection.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>The attribute adds conventions, especially automatic 400 validation responses.</li>
+<li>Binding failures also contribute to model state.</li>
+<li>Domain invariants remain the application’s responsibility.</li>
+</ul>
+</section>
+</div>

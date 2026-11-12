@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A checkout synchronously checks an authorization decision, but asynchronously requests a shipping label after the order is accepted.</p><ol>
+<li>Ask whether the caller needs the answer to complete its operation.</li>
+<li>For sync, propagate a bounded deadline.</li>
+<li>For async, persist intent and define how consumers report failure.</li>
+<li>Communicate pending and eventual status to clients when needed.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var decision = await risk.CheckAsync(order, deadlineToken);
+if (!decision.Allowed) return Results.Conflict();
+await bus.PublishAsync(new OrderAccepted(order.Id), deadlineToken);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Sync is straightforward when the response is required immediately.</li>
+<li>Async can absorb bursts and decouple producer availability from consumer availability.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Sync dependency chains add latency and amplify outages.</li>
+<li>Async adds queues, delayed results, duplicate delivery, ordering concerns, and harder tracing.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use synchronous communication for bounded immediate decisions and async for deferrable work.</p><p><strong>Avoid:</strong> Avoid async solely to hide slow work when the caller still needs the result before responding.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid async solely to hide slow work when the caller still needs the result before responding.</li>
+<li>Assuming synchronous vs asynchronous communication guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use async for durable, independently processable work.</li>
+<li>Set queue limits, consumer capacity, and client-visible completion semantics.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does a broker decouple that HTTP does not?</li>
+<li>When is a synchronous call still the right choice?</li>
+<li>What user experience changes when work becomes asynchronous?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A user’s order endpoint times out while a background email eventually sends. Separate order acceptance from email completion and expose status only where business semantics require it.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Sync couples availability in time; async loosens timing but requires explicit delivery and completion semantics.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/dotnet/architecture/microservices/" target="_blank" rel="noopener noreferrer">Microsoft microservices communication</a></li></ul>
+</section>
+</div>

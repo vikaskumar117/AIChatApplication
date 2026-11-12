@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A signal is a getter/setter-style reactive value: reading it tracks a dependency in a reactive context, while set/update changes its value and notifies consumers. computed creates a lazy, memoized derived signal; effect runs imperative work when tracked dependencies change.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Signals make local UI state and derived state explicit and integrate with Angular rendering. They do not automatically make arbitrary asynchronous work cancellable, nor are effects a replacement for every stream transformation.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use computed for derivation, effects for genuine external side effects, and explicit cleanup for effect-owned resources. Avoid writing to signals from effects merely to mirror other signals; that duplicates state and can create cycles.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Store source state</strong><span>Use writable signals for the smallest authoritative local state.</span></div></div>
+<div><span>2</span><div><strong>Track derivation</strong><span>computed records signal reads and recalculates lazily when dependencies change.</span></div></div>
+<div><span>3</span><div><strong>Notify consumers</strong><span>Templates and reactive consumers are informed when a dependency changes.</span></div></div>
+<div><span>4</span><div><strong>Run side effects sparingly</strong><span>An effect tracks reads and synchronizes with an external imperative system when necessary.</span></div></div>
+</figure>
+<figcaption>A computed value is a derivation; an effect is an imperative reaction with lifecycle and cleanup implications.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>A signal is a getter/setter-style reactive value: reading it tracks a dependency in a reactive context, while set/update changes its value and notifies consumers. computed creates a lazy, memoized derived signal; effect runs imperative work when tracked dependencies change.</li>
+<li>Signals make local UI state and derived state explicit and integrate with Angular rendering. They do not automatically make arbitrary asynchronous work cancellable, nor are effects a replacement for every stream transformation.</li>
+<li>Use computed for derivation, effects for genuine external side effects, and explicit cleanup for effect-owned resources. Avoid writing to signals from effects merely to mirror other signals; that duplicates state and can create cycles.</li>
+</ul>
+</section>
+</div>

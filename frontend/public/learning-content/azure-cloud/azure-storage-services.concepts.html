@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — Blob Storage stores unstructured objects; Queue Storage provides a simple asynchronous message queue; Azure Files exposes managed SMB/NFS file shares.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Choosing storage by access pattern avoids forcing a filesystem, database, or enterprise broker model onto the wrong workload.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Select account redundancy, access tier, lifecycle, authorization, network access, and retention. Use Entra ID and managed identity where supported; use SAS only with narrow scope and expiry. Queue consumers must handle visibility timeouts, poison messages, duplicate delivery, and idempotent processing.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Document bytes</strong><span>Blob Storage holds private, versioned objects with lifecycle rules.</span></div></div>
+<div><span>2</span><div><strong>Metadata</strong><span>A database stores owner, status, and business relationships.</span></div></div>
+<div><span>3</span><div><strong>Queue reference</strong><span>A small message carries the blob ID, not the entire file.</span></div></div>
+<div><span>4</span><div><strong>Worker</strong><span>An idempotent processor scans and transforms the object.</span></div></div>
+<div><span>5</span><div><strong>Lifecycle</strong><span>Retention, tiering, deletion, and recovery follow policy.</span></div></div>
+</figure>
+<figcaption>Keep authorization metadata authoritative in the application; a blob URL or queue message is not proof that a caller may access the data.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Pick the primitive by access semantics: object, message, or shared filesystem.</li>
+<li>Store references in messages rather than large payloads.</li>
+<li>Redundancy, tier, retention, and access controls are architecture decisions.</li>
+</ul>
+</section>
+</div>

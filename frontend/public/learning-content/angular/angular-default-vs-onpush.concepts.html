@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Default strategy makes a view broadly eligible during Angular change-detection passes. OnPush allows Angular to skip a subtree until a recognized trigger marks it, such as a changed input binding, an event in the subtree, a signal update read by the view, or an async pipe emission.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>OnPush encourages explicit data flow and can reduce unnecessary checks in large trees, but it does not eliminate checks or require every internal property to be immutable. In-place mutation of an input object can evade reference-based input change detection.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Choose OnPush as the normal boundary for predictable components and pair it with immutable inputs, signals, or async pipe. markForCheck marks a view for a future check; detectChanges runs a local check immediately and should be reserved for specialized integrations.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Declare boundary</strong><span>OnPush tells Angular the component can be skipped until a relevant notification marks it.</span></div></div>
+<div><span>2</span><div><strong>Receive trigger</strong><span>Changed input binding, local event, template-read signal update, or async pipe emission can mark the view.</span></div></div>
+<div><span>3</span><div><strong>Check marked path</strong><span>Angular evaluates marked views and required ancestors while skipping unaffected clean subtrees.</span></div></div>
+<div><span>4</span><div><strong>Update consistently</strong><span>New immutable references or reactive values make state transitions visible at component boundaries.</span></div></div>
+</figure>
+<figcaption>OnPush is an eligibility optimization with defined triggers, not a guarantee of zero checks.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Default strategy makes a view broadly eligible during Angular change-detection passes. OnPush allows Angular to skip a subtree until a recognized trigger marks it, such as a changed input binding, an event in the subtree, a signal update read by the view, or an async pipe emission.</li>
+<li>OnPush encourages explicit data flow and can reduce unnecessary checks in large trees, but it does not eliminate checks or require every internal property to be immutable. In-place mutation of an input object can evade reference-based input change detection.</li>
+<li>Choose OnPush as the normal boundary for predictable components and pair it with immutable inputs, signals, or async pipe. markForCheck marks a view for a future check; detectChanges runs a local check immediately and should be reserved for specialized integrations.</li>
+</ul>
+</section>
+</div>

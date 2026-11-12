@@ -1,0 +1,71 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Order creation and OrderPlaced outbox row commit together; a dispatcher later publishes the event to the broker.</p><ol>
+<li>Use stable event IDs and schema versions.</li>
+<li>Monitor age and volume, not only dispatcher liveness.</li>
+<li>Plan cleanup, poison handling, and replay procedures.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>await using var tx = await db.Database.BeginTransactionAsync(ct);
+db.Orders.Add(order);
+db.Outbox.Add(OutboxMessage.For(&quot;OrderPlaced&quot;, order.Id));
+await db.SaveChangesAsync(ct);
+await tx.CommitAsync(ct);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Closes the lost-publish-intent gap without a distributed commit.</li>
+<li>Supports polling or CDC and lets the business transaction remain local.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Adds dispatcher, storage, cleanup, and backlog operations.</li>
+<li>A crash after publish but before marking completion can produce duplicate delivery.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use when database state and broker publication intent must stay consistent.</p><p><strong>Avoid:</strong> Avoid describing the pattern as exactly-once delivery or adding it where no event consistency requirement exists.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid describing the pattern as exactly-once delivery or adding it where no event consistency requirement exists.</li>
+<li>Assuming transactional outbox guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep the outbox write in the same database transaction as the business mutation.</li>
+<li>Make consumers idempotent even if the publisher tracks sent state.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What dual-write failure does the outbox prevent?</li>
+<li>Why can the dispatcher publish twice?</li>
+<li>How does CDC differ from polling?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A broker outage leaves committed events pending. Alert on oldest-record age and backlog, resume dispatch, and verify replay cannot duplicate a payment or notification.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>The outbox converts a dangerous dual write into durable intent plus at-least-once dispatch and idempotent consumption.</p>
+</section>
+</div>

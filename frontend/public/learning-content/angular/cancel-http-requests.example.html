@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>For live search, a newer query supersedes the older query; for a submitted payment, cancellation cannot establish whether the payment committed.</p><ol>
+<li>Debounce and deduplicate user input before issuing requests.</li>
+<li>Use switchMap only when newer intent supersedes earlier work.</li>
+<li>Use idempotency keys and server-side status checks for critical writes.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>readonly results$ = this.query$.pipe(
+  debounceTime(250),
+  distinctUntilChanged(),
+  switchMap(query =&gt; this.http.get&lt;Result[]&gt;(&#39;/api/search&#39;, {
+    params: { query }
+  }))
+);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Prevents stale read results from winning races</li>
+<li>Reduces unnecessary client/network work</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Server may still process an aborted request</li>
+<li>switchMap is wrong when every write must be observed</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use switchMap for replaceable reads, and async pipe or takeUntilDestroyed for owner-bound subscriptions.</p><p><strong>Avoid:</strong> Avoid interpreting unsubscribe as rollback or using switchMap for non-idempotent commands that must all complete.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Starting a request inside an unmanaged nested subscribe.</li>
+<li>Using switchMap for every POST/PUT even when all operations must finish.</li>
+<li>Assuming unsubscribe proves a mutation was not applied.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Prefer stream composition over manual subscription replacement.</li>
+<li>Tie component-owned streams to the component lifetime.</li>
+<li>Design mutation APIs for retries, idempotency, and ambiguous client disconnects.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What exactly does HttpClient unsubscription cancel?</li>
+<li>Why is switchMap a good fit for typeahead?</li>
+<li>Why might mergeMap be safer than switchMap for writes?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A slow prior search finishes after a fast newer one. switchMap removes the old subscription, and the UI renders only the newest response; verify server behavior separately for any mutation endpoints.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Angular HttpClient returns cold Observables. Unsubscribing before completion aborts the in-progress browser request where the backend supports it; it does not guarantee that the server did not receive or finish processing the request. switchMap unsubscribes the previous inner Observable when a newer source value arrives, making it appropriate for replaceable reads such as search. takeUntilDestroyed ends work when its Angular owner is destroyed.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/guide/http" target="_blank" rel="noopener noreferrer">Angular HTTP requests</a></li><li><a href="https://rxjs.dev/api/operators/switchMap" target="_blank" rel="noopener noreferrer">switchMap API</a></li></ul>
+</section>
+</div>

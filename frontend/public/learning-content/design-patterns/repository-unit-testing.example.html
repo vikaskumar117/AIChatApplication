@@ -1,0 +1,70 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Test that a confirmation handler rejects cancelled orders with a fake repository; separately test its EF query and transaction against a relational test database.</p><ol>
+<li>Test observable behavior rather than private method calls.</li>
+<li>Use a relational provider for SQL-dependent query semantics.</li>
+<li>Keep fake repository behavior faithful to its contract.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var repository = new FakeOrderRepository(Order.Cancelled(orderId));
+var handler = new ConfirmOrderHandler(repository);
+var result = await handler.Handle(new ConfirmOrder(orderId), ct);
+Assert.Equal(ConfirmResult.AlreadyCancelled, result);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Focused tests give fast feedback on business outcomes.</li>
+<li>Provider integration tests catch SQL, mapping, and transaction errors that mocks cannot.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Mocks can become coupled to implementation details.</li>
+<li>In-memory providers may differ from production relational behavior.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use unit tests for deterministic policy and interaction boundaries; integration tests for persistence semantics.</p><p><strong>Avoid:</strong> Avoid mocking every DbSet and treating those tests as proof of database correctness.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid mocking every DbSet and treating those tests as proof of database correctness.</li>
+<li>Assuming repository pattern and unit testing guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep unit and integration test goals distinct.</li>
+<li>Run important repository tests against the same provider family as production.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What should a repository unit test prove?</li>
+<li>When is an integration test necessary?</li>
+<li>Why can mocking EF Core hide defects?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A repository test passes with an in-memory fake but production SQL fails on a translation. Add provider-backed coverage for the query and retain unit tests for domain rules.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Repository boundaries can support focused tests, but persistence correctness requires provider-backed integration coverage.</p>
+</section>
+</div>

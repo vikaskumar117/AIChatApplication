@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>The model proposes FindOrder with an order ID. The server verifies that the authenticated caller owns that order before querying it; the model’s choice of ID never substitutes for authorization.</p><ol>
+<li>Design one narrow operation with typed inputs and a bounded result.</li>
+<li>Validate syntax and business constraints, then authorize the signed-in caller against the specific resource.</li>
+<li>Use scoped credentials, idempotency, deadlines, rate limits, and explicit confirmation for risky side effects.</li>
+<li>Log operation identity and outcome without storing unnecessary prompts, secrets, or sensitive tool results.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>if (tool.Name == &quot;FindOrder&quot; &amp;&amp;
+    Guid.TryParse(tool.Arguments[&quot;id&quot;], out var id) &amp;&amp;
+    await authorization.CanReadOrderAsync(user, id, cancellationToken))
+{
+    return await orders.FindAsync(id, cancellationToken);
+}
+
+throw new UnauthorizedAccessException();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Connects model reasoning to application data and actions</li>
+<li>Typed schemas make argument validation more predictable</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Model output is untrusted and may be malformed or manipulated</li>
+<li>Tool execution can cause costly or irreversible side effects</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use explicit allowlists, strict argument validation, server-side authorization, least privilege, timeouts, audit logs, and confirmation for high-impact actions.</p><p><strong>Avoid:</strong> Never execute model-generated code, use model-selected identity/authorization, or expose a broad generic database/shell tool.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Treating a valid tool schema or model instruction as proof that the caller may perform the action.</li>
+<li>Providing a powerful catch-all tool that can query arbitrary data or execute arbitrary commands.</li>
+<li>Retrying a side-effecting operation without a durable idempotency key.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Authorize every resource access in the tool handler using the caller’s verified identity.</li>
+<li>Require confirmation and idempotency for financial, destructive, or externally visible actions.</li>
+<li>Use least privilege, bounded outputs, timeouts, audit events, and adversarial prompt-injection tests.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Who actually executes a function call?</li>
+<li>Why is validating the JSON schema not sufficient authorization?</li>
+<li>When should an action require user confirmation or idempotency?</li>
+<li>How can retrieved prompt-injection text influence a tool request?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A model requests a refund for an order belonging to another user. Recheck ownership, refund window, amount limit, and idempotency in the server-side action; require confirmation for policy-defined high-impact refunds, audit the decision, and return no unrelated customer data.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Tool calling is a proposed interaction protocol; safe execution depends on ordinary server-side security and business controls.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/azure/ai-services/openai/how-to/function-calling" target="_blank" rel="noopener noreferrer">Function calling with Azure OpenAI</a></li><li><a href="https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai" target="_blank" rel="noopener noreferrer">Microsoft.Extensions.AI overview</a></li><li><a href="https://learn.microsoft.com/azure/ai-services/openai/concepts/content-filter" target="_blank" rel="noopener noreferrer">Azure OpenAI content filtering</a></li></ul>
+</section>
+</div>

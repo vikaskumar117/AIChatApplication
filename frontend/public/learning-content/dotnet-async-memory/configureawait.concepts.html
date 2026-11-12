@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A synchronization context is an abstraction that can marshal work to a destination such as a UI thread. A task scheduler may also influence continuation execution.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Avoiding unnecessary context capture helps context-agnostic libraries avoid UI-context dependencies and some deadlock patterns. ASP.NET Core generally has no custom request synchronization context, so blanket use there usually adds little.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>false does not mean “run on another thread”; continuation can run inline or on an available scheduler. Use it in library awaits when caller-context affinity is unnecessary, while UI code normally preserves context before updating controls.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Captured context</strong><span>Ordinary await may request resumption on an available synchronization context.</span></div></div>
+<div><span>2</span><div><strong>ConfigureAwait(false)</strong><span>Awaiter does not require that captured context for this continuation.</span></div></div>
+<div><span>3</span><div><strong>Operation completes</strong><span>Completion may occur on an I/O callback or other runtime path.</span></div></div>
+<div><span>4</span><div><strong>Continuation resumes</strong><span>Work may run inline or on an eligible thread; no new-thread guarantee exists.</span></div></div>
+</figure>
+<figcaption>Follow each labeled stage to see the concrete scheduling, ownership, or memory effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>The option affects context requirement, not thread creation.</li>
+<li>UI code often needs its original context.</li>
+<li>Async all the way is better than blocking and hoping context configuration fixes it.</li>
+</ul>
+</section>
+</div>

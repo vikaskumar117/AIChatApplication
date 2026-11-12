@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>OrderPlaced is published to a topic; fulfillment and analytics subscriptions each receive their own copy, while one fulfillment queue distributes work across workers.</p><ol>
+<li>Specify message identity, schema, retention, and ordering needs.</li>
+<li>Acknowledge only after the outcome is durable.</li>
+<li>Monitor age, depth, redelivery, and dead-letter volume.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public sealed record OrderPlaced(Guid OrderId, long Sequence);
+// Broker-specific publisher persists/sends the message.
+// Consumer acknowledges only after its durable effect is complete.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Buffers bursts and permits consumers to scale independently.</li>
+<li>Topics enable multiple subscribers without producer knowledge of each consumer.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Brokers can fill, redeliver, reorder, or reject work under quota and outage conditions.</li>
+<li>Broker semantics differ; “exactly once” claims do not remove application-level duplicate effects.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use broker primitives to match competing work versus independent subscriptions.</p><p><strong>Avoid:</strong> Avoid assuming broker configuration alone guarantees end-to-end processing exactly once.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid assuming broker configuration alone guarantees end-to-end processing exactly once.</li>
+<li>Assuming rabbitmq and azure service bus concepts guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Design consumers for duplicate delivery.</li>
+<li>Document broker-specific limits, lock/visibility timeout, and replay operations.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does a queue differ from a topic subscription?</li>
+<li>Why acknowledge after durable processing?</li>
+<li>What is a dead-letter queue for?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A consumer crashes after charging a card but before acknowledging. The broker redelivers; a stable message ID and idempotent payment operation prevent a second charge.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A broker transports and stores work; application correctness still depends on consumer behavior and explicit delivery semantics.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/azure/service-bus-messaging/service-bus-messaging-overview" target="_blank" rel="noopener noreferrer">Azure Service Bus documentation</a></li><li><a href="https://www.rabbitmq.com/tutorials" target="_blank" rel="noopener noreferrer">RabbitMQ tutorials</a></li></ul>
+</section>
+</div>

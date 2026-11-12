@@ -1,0 +1,84 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An API list returns a DTO projection; an edit command loads one tracked entity and changes allowed fields.</p><ol>
+<li>Identify whether the request reads, updates, or both.</li>
+<li>Project to a DTO when only selected fields are required.</li>
+<li>Choose tracking behavior explicitly for entity results.</li>
+<li>Measure allocations and ensure detached updates are attached/validated deliberately if needed.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var rows = await db.Orders
+    .AsNoTracking()
+    .Where(o =&gt; o.CreatedAt &gt;= start)
+    .Select(o =&gt; new OrderSummary(o.Id, o.Status, o.Total))
+    .ToListAsync(ct);
+
+var order = await db.Orders.SingleAsync(o =&gt; o.Id == command.Id, ct);
+order.Status = command.Status;
+await db.SaveChangesAsync(ct);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>No-tracking/projection reduces tracker state on read-heavy paths.</li>
+<li>Tracking supports identity resolution and convenient change persistence.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>No-tracking entities do not automatically persist edits.</li>
+<li>Tracking a large graph increases memory and can return existing context instances with locally modified values.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use projection/no-tracking for read models and tracking for bounded update units.</p><p><strong>Avoid:</strong> Avoid enabling tracking globally for large read-only reports or using no-tracking when you expect SaveChanges to persist detached edits.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Changing a no-tracking entity and expecting SaveChanges to detect it.</li>
+<li>Returning full entity graphs where a DTO projection suffices.</li>
+<li>Reusing a long-lived context and observing stale/locally changed instances.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use short-lived DbContext instances.</li>
+<li>Choose tracking mode per query based on behavior.</li>
+<li>Prefer DTO projections for read APIs.</li>
+<li>Test update flows for concurrency and field-level authorization.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does the change tracker record?</li>
+<li>How does AsNoTrackingWithIdentityResolution differ from tracking?</li>
+<li>Why is a DTO projection often preferable to an entity for an API?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A report retains thousands of tracked entities per request. Project only required fields, compare allocations and SQL result size, and retain tracked reads only in write workflows.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A tracking query registers materialized entities in DbContext’s change tracker, which records state and original values for SaveChanges. A no-tracking query materializes results without registering them for normal updates; identity resolution controls whether repeated keys share an instance. Tracking supports convenient updates and identity consistency but consumes CPU and memory. Read-only endpoints often benefit from projection or no-tracking materialization.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/ef/core/querying/tracking" target="_blank" rel="noopener noreferrer">Microsoft Learn: Tracking vs. no-tracking queries</a></li></ul>
+</section>
+</div>

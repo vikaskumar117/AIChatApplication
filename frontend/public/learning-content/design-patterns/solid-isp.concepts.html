@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Interface Segregation Principle (ISP) says clients should not depend on operations they do not use; interfaces should represent cohesive client needs.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Focused interfaces reduce unwanted coupling and make implementations and test doubles simpler, but excessive fragmentation creates needless contracts and wiring.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Split a broad device API into capabilities used by distinct clients—for example, printing versus scanning—so a printer-only device need not fake scanning.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Broad contract</strong><span>One interface combines print, scan, fax, and maintenance operations.</span></div></div>
+<div><span>2</span><div><strong>Client needs</strong><span>Receipt workflow uses printing only; archive workflow uses scanning.</span></div></div>
+<div><span>3</span><div><strong>Segregated contracts</strong><span>Each abstraction presents the cohesive operations a client actually needs.</span></div></div>
+<div><span>4</span><div><strong>Implementations</strong><span>Simple devices implement only the capabilities they support.</span></div></div>
+</figure>
+<figcaption>ISP is about client dependency and cohesive capabilities, not maximizing the number of interfaces.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>One giant interface that forces no-op or throwing methods.</li>
+<li>Creating a separate interface for every single method without cohesion.</li>
+<li>Treating interface count as a quality metric.</li>
+</ul>
+</section>
+</div>

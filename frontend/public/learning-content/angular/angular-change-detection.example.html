@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A callback from a non-Angular widget updates a signal read by the template, so the state change has an explicit rendering notification.</p><ol>
+<li>Keep template expressions cheap and move nontrivial derivation into computed values or memoized selectors.</li>
+<li>Use track/trackBy identity to preserve repeated-view instances.</li>
+<li>Use Angular DevTools and production-like profiling to validate improvements.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>readonly count = signal(0);
+
+increment(): void {
+  this.count.update(value =&gt; value + 1);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Understanding eligibility makes rendering predictable</li>
+<li>Signals and async pipe provide explicit notifications</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Broad checks can cost time in large trees</li>
+<li>Manual detection can mask broken state boundaries</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use Angular-observed events, signals, and async pipe; profile before optimizing.</p><p><strong>Avoid:</strong> Avoid repeated detectChanges calls and direct DOM writes that diverge from template state.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming every object mutation triggers every view.</li>
+<li>Calling detectChanges as a general-purpose fix for stale state.</li>
+<li>Measuring only development mode or synthetic microbenchmarks.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use immutable updates at component boundaries when reference identity matters.</li>
+<li>Adopt signals/async pipe for explicit reactive rendering.</li>
+<li>Optimize measured bottlenecks rather than applying blanket manual detection.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does change detection do?</li>
+<li>Why does an external callback sometimes leave a view stale?</li>
+<li>How do async pipe and signal updates notify Angular?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A legacy chart fires a callback outside the usual Angular event path. Update a template-read signal or bridge into Angular’s scheduling model, then verify the affected view with profiling rather than adding global forced checks.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Angular evaluates template expressions for views considered eligible for checking and applies changed binding values to the DOM. A state mutation alone is not universally a notification; Angular must know that relevant work may have occurred. Events, input updates, async pipe emissions, and signal writes read by a template provide notification paths. OnPush narrows eligibility but does not mean “never check”; Angular traverses marked paths and checks the relevant view.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/best-practices/skipping-subtrees" target="_blank" rel="noopener noreferrer">Angular change detection</a></li></ul>
+</section>
+</div>

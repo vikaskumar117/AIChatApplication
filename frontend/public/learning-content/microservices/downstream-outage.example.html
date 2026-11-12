@@ -1,0 +1,72 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>If Recommendations is down, the product page still returns core product details and omits the optional recommendation panel.</p><ol>
+<li>Determine whether the dependency is essential to this use case.</li>
+<li>Set a caller budget and concurrency limit.</li>
+<li>Map failure to valid fallback, pending status, or explicit error.</li>
+<li>Alert on degradation and test recovery under load.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>using var cts = CancellationTokenSource.CreateLinkedTokenSource(requestAborted);
+cts.CancelAfter(TimeSpan.FromMilliseconds(250));
+try { return await recommendations.GetAsync(id, cts.Token); }
+catch (OperationCanceledException) when (!requestAborted.IsCancellationRequested)
+{ return RecommendationResult.Unavailable(); }</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Explicit degradation preserves critical paths when an optional dependency fails.</li>
+<li>Load shedding protects healthy dependencies and local capacity.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Fallbacks can mislead users if stale or semantically invalid.</li>
+<li>A failed dependency can still cause cascading overload through queued or blocked calls.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Classify dependencies as critical or optional and define outage behavior per operation.</p><p><strong>Avoid:</strong> Avoid swallowing failures or presenting defaults that look authoritative.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid swallowing failures or presenting defaults that look authoritative.</li>
+<li>Assuming responding to a downstream outage guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep critical and optional dependencies distinct.</li>
+<li>Expose degraded behavior in telemetry and, where appropriate, the response.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How can a slow dependency take down a healthy caller?</li>
+<li>What is graceful degradation?</li>
+<li>Which failures should become user-visible errors?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Catalog is healthy but its image service is stalled. Deadline-bound image calls and a placeholder protect product requests; dashboards distinguish degraded images from catalog errors.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Outage handling limits resource damage and preserves truthful business behavior; it does not make the dependency available.</p>
+</section>
+</div>

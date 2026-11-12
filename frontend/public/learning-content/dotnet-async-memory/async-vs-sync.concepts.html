@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Synchronous execution runs a call and does not continue until it returns. Asynchronous APIs represent incomplete work and allow a method to suspend and later observe its completion.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Async is valuable for latency-bound work such as network, file, and database I/O because a waiting request need not occupy a worker thread. It does not make the underlying operation faster and is not automatically beneficial for tiny CPU work.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use true asynchronous I/O APIs end-to-end, await their results, and propagate cancellation. For CPU-bound work, optimize or schedule bounded computation rather than wrapping it in async syntax by default.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>I/O request begins</strong><span>The client starts a database or network operation that may take time.</span></div></div>
+<div><span>2</span><div><strong>Synchronous path</strong><span>Caller remains blocked and cannot serve other work.</span></div></div>
+<div><span>3</span><div><strong>Asynchronous path</strong><span>Caller awaits a Task and yields its execution opportunity while I/O is pending.</span></div></div>
+<div><span>4</span><div><strong>Completion observed</strong><span>Continuation reads result or handles exception after completion.</span></div></div>
+</figure>
+<figcaption>Follow each labeled stage to see the concrete scheduling, ownership, or memory effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Async primarily improves waiting efficiency.</li>
+<li>Async does not imply a new thread or parallel execution.</li>
+<li>The operation’s actual latency may be unchanged.</li>
+</ul>
+</section>
+</div>

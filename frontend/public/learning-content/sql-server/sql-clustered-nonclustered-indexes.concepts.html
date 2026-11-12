@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A clustered index is the table’s rowstore B-tree whose leaf level contains the data rows; a table has at most one. A nonclustered index is a separate B-tree with key columns and a row locator (clustered key or RID), and a table may have many.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Indexes provide ordered access paths, support constraints, and can avoid scans or lookups. Each index also adds storage, write work, and maintenance.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Choose a clustered key that fits access patterns and key stability; design nonclustered keys for predicates, joins, ordering, and grouping. INCLUDE non-key columns for coverage without making them ordering keys. Validate with actual plans and workload evidence.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Clustered B-tree</strong><span>Leaf level is the table data; defines rowstore organization and row locator for secondary indexes.</span></div></div>
+<div><span>2</span><div><strong>Nonclustered key</strong><span>Separate ordered tree stores search keys plus row locator.</span></div></div>
+<div><span>3</span><div><strong>INCLUDE payload</strong><span>Leaf-only columns can cover output without extending search/order key.</span></div></div>
+<div><span>4</span><div><strong>Access plan</strong><span>Optimizer may seek, scan, lookup, or prefer another access path.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>A table has at most one clustered index; its leaf level is the table data.</li>
+<li>A nonclustered index stores key values and a row locator.</li>
+<li>INCLUDE can cover output without expanding the index key.</li>
+<li>Indexes trade read efficiency for storage and write maintenance.</li>
+</ul>
+</section>
+</div>

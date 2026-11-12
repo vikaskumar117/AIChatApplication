@@ -1,0 +1,86 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A multi-tenant Orders API validates an Entra-issued access token, checks both order permission and tenant ownership, queries with parameters, limits expensive searches, and emits redacted trace-correlated audit events.</p><ol>
+<li>Harden transport and edge</li>
+<li>Authenticate and authorize</li>
+<li>Validate, execute, observe, and respond</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =&gt;
+    {
+        options.Authority = configuration[&quot;Identity:Authority&quot;];
+        options.Audience = configuration[&quot;Identity:OrdersAudience&quot;];
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddRateLimiter(options =&gt; { /* partition and bound costly routes */ });
+
+app.UseExceptionHandler();
+app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseRateLimiter();
+app.MapControllers();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Layered safeguards reduce single-control failure risk</li>
+<li>Clear boundaries make controls auditable and testable</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Security requires operational ownership and continuous review</li>
+<li>Misconfigured layers can cause outages or false confidence</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Apply a threat-model-driven baseline to every API and add controls proportionate to data sensitivity, exposure, and abuse cost.</p><p><strong>Avoid:</strong> Avoid describing an API as secure because it uses JWT, CORS, HTTPS, or a gateway alone.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Treating CORS as protection against direct HTTP clients.</li>
+<li>Treating authentication as proof of authorization for every record.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Threat-model endpoints, identities, data flows, and failure modes.</li>
+<li>Automate dependency updates, security tests, redaction checks, and incident-ready telemetry.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is CORS not an API authorization mechanism?</li>
+<li>How do authentication and resource authorization compose?</li>
+<li>Which controls reduce both data theft and resource exhaustion?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An external assessment finds cross-tenant access and unbounded search traffic; first enforce resource ownership and operation-specific permissions, then bound expensive work, add regression tests, and review telemetry for prior exposure.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>API security is a layered system of transport protection, trusted identity, authorization, input and data safety, resilience, and operational response.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/security/" target="_blank" rel="noopener noreferrer">ASP.NET Core security</a></li><li><a href="https://owasp.org/API-Security/" target="_blank" rel="noopener noreferrer">OWASP API Security Top 10</a></li></ul>
+</section>
+</div>

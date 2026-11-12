@@ -1,0 +1,76 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A new release causes database timeouts; stop rollout or roll back, protect the database from retry amplification, confirm recovery, and investigate using traces and Query Store after stabilization.</p><ol>
+<li>Declare and define customer impact, severity, and incident roles.</li>
+<li>Stop rollout or select the safest reversible mitigation.</li>
+<li>Protect dependencies from retry storms and monitor recovery indicators.</li>
+<li>Communicate status, preserve evidence, and schedule blameless follow-up actions.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Operational checklist:
+// 1. Declare incident; name incident lead and communications owner.
+// 2. Quantify affected routes, tenants, regions, errors, and SLO impact.
+// 3. Pause rollout / rollback / disable feature using the safest reversible control.
+// 4. Check retry volume, DB saturation, queue depth, and dependency health.
+// 5. Verify recovery, communicate status, preserve evidence, and assign follow-ups.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Clear roles and reversible mitigations reduce time to restore service.</li>
+<li>Evidence preservation enables durable fixes after recovery.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Incident coordination consumes engineering capacity and requires practiced runbooks.</li>
+<li>A mitigation can trade feature availability for system stability.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use a formal incident process for material customer impact, data integrity risk, or SLO breaches.</p><p><strong>Avoid:</strong> Avoid speculative changes, blame-focused reviews, or continuing retries that amplify a failing dependency.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Making multiple untracked changes during an outage.</li>
+<li>Retrying aggressively against an unhealthy database.</li>
+<li>Closing the incident when alerts clear without checking data integrity and backlog.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Practice runbooks and rollback procedures.</li>
+<li>Maintain explicit severity and escalation criteria.</li>
+<li>Communicate impact and next update cadence.</li>
+<li>Review systems and process, not individual blame.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Who owns decisions during an incident?</li>
+<li>Why prefer reversible mitigation?</li>
+<li>What should a post-incident review produce?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A database failover increases API timeouts and retry traffic. Pause deployment, set bounded retries/circuit breaking, communicate scope, verify connection recovery and queue drain, then review failover handling and load tests.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Incident handling is a structured process to reduce customer impact, preserve evidence, communicate status, restore service, and prevent recurrence. Uncoordinated debugging during an outage can increase blast radius, lose evidence, and delay a safe mitigation. A rollback or feature disable may be better than an immediate code fix.</p>
+</section>
+</div>

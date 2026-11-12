@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A lookup returns ActionResult&lt;ProductDto&gt; so the success schema is visible while the action can also return 404.</p><ol>
+<li>Action selects typed result</li>
+<li>MVC executes result and formatter</li>
+<li>Status, headers, and body are emitted</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>[HttpGet(&quot;{id:int}&quot;)]
+public async Task&lt;ActionResult&lt;ProductDto&gt;&gt; Get(int id, CancellationToken ct)
+{
+    var product = await service.FindAsync(id, ct);
+    return product is null ? NotFound() : Ok(product);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Typed success contracts clarify API output</li>
+<li>Action results express status and header behavior</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Broad IActionResult hides response schemas unless documented</li>
+<li>Implicit conversions can obscure response construction</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use ActionResult&lt;T&gt; for controller endpoints with a primary representation and a few explicit HTTP alternatives.</p><p><strong>Avoid:</strong> Avoid returning object or IActionResult everywhere without documenting possible status and body contracts.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Returning a DTO with an accidental 200 for a missing resource.</li>
+<li>Assuming a return type alone documents every error response.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Declare response metadata for success and relevant errors.</li>
+<li>Use CreatedAtAction for resource creation and NoContent when no representation is returned.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>When is ActionResult&lt;T&gt; useful?</li>
+<li>What does IActionResult represent?</li>
+<li>How do result types help OpenAPI?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A generated client cannot determine the success schema because actions return object; replace it with explicit DTO return types and document non-success responses.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Action return types communicate whether an endpoint returns a representation, several HTTP outcomes, or a framework-level result.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/web-api/action-return-types" target="_blank" rel="noopener noreferrer">Action return types in ASP.NET Core Web API</a></li></ul>
+</section>
+</div>

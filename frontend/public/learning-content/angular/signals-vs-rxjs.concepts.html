@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A signal always represents a current value readable synchronously. An Observable represents zero or more future emissions, with subscription, completion, error, and teardown semantics; it may be cold or hot.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Use signals for component/application state and pure derived values. Use RxJS for HTTP pipelines, user event timing, cancellation, retries, and combining streams; bridge at a clear boundary instead of converting reflexively.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>toSignal subscribes to an Observable and exposes its latest value, with lifecycle ownership and an initial-value/requireSync decision. toObservable emits signal changes asynchronously; neither conversion erases the underlying source’s semantics.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Identify semantics</strong><span>Ask whether the consumer needs a current snapshot or a sequence with timing and termination.</span></div></div>
+<div><span>2</span><div><strong>Choose native model</strong><span>Keep UI state and derivation in signals; keep temporal operators and cancellation in RxJS.</span></div></div>
+<div><span>3</span><div><strong>Bridge at boundary</strong><span>Convert once where a consumer genuinely needs the other abstraction and define its initial value.</span></div></div>
+<div><span>4</span><div><strong>Own lifecycle</strong><span>Ensure bridge subscriptions follow the intended injector/component lifetime and errors are handled.</span></div></div>
+</figure>
+<figcaption>Interop is a boundary choice; it does not change whether an HTTP source is cancellable or whether a signal is synchronous.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>A signal always represents a current value readable synchronously. An Observable represents zero or more future emissions, with subscription, completion, error, and teardown semantics; it may be cold or hot.</li>
+<li>Use signals for component/application state and pure derived values. Use RxJS for HTTP pipelines, user event timing, cancellation, retries, and combining streams; bridge at a clear boundary instead of converting reflexively.</li>
+<li>toSignal subscribes to an Observable and exposes its latest value, with lifecycle ownership and an initial-value/requireSync decision. toObservable emits signal changes asynchronously; neither conversion erases the underlying source’s semantics.</li>
+</ul>
+</section>
+</div>

@@ -1,0 +1,39 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Entity Framework Core (EF Core) is a .NET object-relational mapper (ORM): it maps .NET entity types and LINQ queries to relational schema and SQL through a database provider. DbContext is a unit-of-work and identity map that coordinates querying, change tracking, and saving.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>EF Core reduces repetitive data-access code while preserving access to relational capabilities, but the abstraction does not remove SQL, transaction, schema, or provider behavior.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Model entities and relationships, configure mappings and constraints, compose LINQ expressions, inspect translated SQL, and call SaveChangesAsync to persist tracked changes. Use migrations or a separately managed schema workflow and keep DbContext scoped to a unit of work.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Entity model</strong><span>CLR types, keys, relationships, and configuration define the object model.</span></div></div>
+<div><span>2</span><div><strong>LINQ expression</strong><span>Queryable operators build an expression tree; they are not ordinary in-memory enumeration yet.</span></div></div>
+<div><span>3</span><div><strong>Provider translation</strong><span>Database provider maps supported expressions and types into SQL.</span></div></div>
+<div><span>4</span><div><strong>Database execution</strong><span>SQL Server applies schema, constraints, transactions, indexes, and query planning.</span></div></div>
+<div><span>5</span><div><strong>Materialization / unit of work</strong><span>Results become entities/projections; SaveChanges emits writes for tracked changes.</span></div></div>
+</figure>
+<figcaption>Validate the behavior against the deployed EF Core/provider version, generated SQL, database schema, and production configuration.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>DbContext is a short-lived unit of work and identity map.</li>
+<li>LINQ query translation is provider- and version-dependent.</li>
+<li>EF Core does not eliminate SQL, database constraints, or transaction semantics.</li>
+<li>Review generated SQL and measure critical paths.</li>
+</ul>
+</section>
+</div>

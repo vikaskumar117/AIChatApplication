@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Decorator wraps an object behind the same contract and adds behavior before or after delegating to the wrapped object.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>It composes optional cross-cutting behavior without subclassing every implementation or embedding logging/caching/retry policy in domain logic.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Keep the same abstraction at the wrapper boundary, make ordering explicit, and ensure added behavior preserves the contract, errors, cancellation, and disposal semantics.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Client</strong><span>Depends only on the service contract.</span></div></div>
+<div><span>2</span><div><strong>Decorator</strong><span>Implements the same contract and adds one cohesive behavior.</span></div></div>
+<div><span>3</span><div><strong>Wrapped service</strong><span>Performs the original work and retains ownership of its domain result.</span></div></div>
+<div><span>4</span><div><strong>Composition order</strong><span>DI or explicit composition determines which policies wrap which others.</span></div></div>
+</figure>
+<figcaption>A decorator should be substitutable for the wrapped service; retry, caching, and authorization wrappers can alter semantics and need deliberate ordering.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Swallowing exceptions or changing return semantics silently.</li>
+<li>Caching mutable or sensitive results without policy.</li>
+<li>Creating recursive decoration through incorrect DI registration.</li>
+</ul>
+</section>
+</div>

@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>An extension method is a static method in a non-generic static class whose first parameter uses this. The receiver’s compile-time type determines whether it is available.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Extensions improve fluent APIs and add helpers to types you do not own. They remain static calls, not virtual members; overload resolution and namespace imports affect discoverability.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use extensions for stateless, broadly useful operations. Use instance methods when behavior owns state, must be overridden, or is central to the type contract.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Static declaration</strong><span>A static class holds the extension method.</span></div></div>
+<div><span>2</span><div><strong>Receiver parameter</strong><span>this string? marks which compile-time receiver type the helper extends.</span></div></div>
+<div><span>3</span><div><strong>Namespace import</strong><span>The caller must bring the extension’s namespace into scope.</span></div></div>
+<div><span>4</span><div><strong>Static invocation</strong><span>name.HasContent() compiles to a static helper call, not virtual dispatch.</span></div></div>
+</figure>
+<figcaption>Follow the labeled stages; each node names a concrete decision or runtime effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Extension syntax is convenience over a static method.</li>
+<li>Instance members take precedence over extensions.</li>
+<li>Extensions cannot add state or polymorphic override behavior.</li>
+</ul>
+</section>
+</div>

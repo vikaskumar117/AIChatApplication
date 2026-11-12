@@ -1,0 +1,69 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A 900 ms API budget allocates 250 ms to pricing, 400 ms to inventory, and leaves time for validation and response rather than granting each hop 900 ms.</p><ol>
+<li>Propagate cancellation and remaining time, not the original full budget.</li>
+<li>Leave budget for validation, persistence, and response.</li>
+<li>Record timeout location and elapsed duration.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>using var cts = CancellationTokenSource.CreateLinkedTokenSource(requestAborted);
+cts.CancelAfter(remainingBudget);
+var result = await client.GetAsync(uri, cts.Token);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Bounds latency and resource occupancy.</li>
+<li>A propagated budget discourages work that cannot affect the response in time.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Too-short budgets create avoidable failures; too-long budgets tie up capacity.</li>
+<li>Cancellation may not stop remote work already accepted by a downstream service.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Set budgets from user-facing SLOs and dependency latency distributions.</p><p><strong>Avoid:</strong> Avoid treating every OperationCanceledException as a dependency timeout.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid treating every OperationCanceledException as a dependency timeout.</li>
+<li>Assuming timeouts and deadlines guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use deadlines with bounded retries and idempotent mutations.</li>
+<li>Reconcile uncertain outcomes for commands with side effects.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does a deadline differ from a per-hop timeout?</li>
+<li>Why propagate cancellation?</li>
+<li>What does a client timeout tell you about server-side execution?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A mobile client disconnects while a report service is querying downstream systems. Propagate cancellation to safe reads and ensure accepted durable jobs are not accidentally discarded.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Deadlines bound the entire operation; per-hop timeouts and cancellation implement that budget at specific boundaries.</p>
+</section>
+</div>

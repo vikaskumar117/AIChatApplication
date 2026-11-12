@@ -1,0 +1,79 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Use Service Bus for an order-fulfillment command that needs settlement and a dead-letter queue, Event Hubs for replayable clickstream ingestion, and Event Grid to notify a handler that a resource changed.</p><ol>
+<li>Write down ordering scope, replay needs, expected throughput, and subscriber count.</li>
+<li>Pick a broker and configure retention, sessions/partitions, retry, and dead-letter behavior.</li>
+<li>Use managed identity and least-privilege sender/receiver roles; restrict network paths where supported.</li>
+<li>Test crash-before-commit and crash-after-commit cases; measure backlog, throttles, and recovery time.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Durable command -&gt; Service Bus PeekLock
+// High-volume retained stream -&gt; Event Hubs partition + checkpoint
+// Discrete state-change notification -&gt; Event Grid subscription
+// Consumer: validate, process idempotently, then settle/checkpoint.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Queues and subscriptions decouple producers from consumers</li>
+<li>Retention and replay support recovery and new stream readers</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>At-least-once delivery means duplicates must be expected</li>
+<li>Ordering, retry, retention, throughput, and cost differ by service</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Choose by required ordering scope, replay horizon, throughput, fan-out, and consumer ownership.</p><p><strong>Avoid:</strong> Avoid assuming a successful publish means a business transaction completed, or assuming a broker prevents duplicate side effects.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Calling a broker exactly-once and omitting idempotency for database or payment side effects.</li>
+<li>Checkpointing an Event Hubs offset before the corresponding work is durably complete.</li>
+<li>Increasing retries indefinitely, creating poison-message loops or retry storms.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use stable business idempotency keys and durable deduplication for non-repeatable effects.</li>
+<li>Set bounded exponential backoff with jitter, dead-letter thresholds, and an owned replay procedure.</li>
+<li>Monitor oldest message age, partition lag, delivery failures, and dead-letter growth.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does PeekLock protect, and when is a message completed?</li>
+<li>How do Event Hubs partitions constrain ordering and parallelism?</li>
+<li>What delivery and ordering expectations should an Event Grid handler implement?</li>
+<li>How do you make a consumer safe to retry?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A payment workflow receives a redelivered command after the worker crashes between charging and completing its message. Persist an idempotency key with the business operation, use bounded retries and a dead-letter recovery process, and reconcile uncertain external outcomes instead of charging again blindly.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Select the broker by message semantics and build consumers for redelivery, bounded recovery, and explicit replay.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/azure/service-bus-messaging/service-bus-queues-topics-subscriptions" target="_blank" rel="noopener noreferrer">Service Bus queues, topics, and subscriptions</a></li><li><a href="https://learn.microsoft.com/azure/service-bus-messaging/message-transfers-locks-settlement" target="_blank" rel="noopener noreferrer">Service Bus message transfers, locks, and settlement</a></li><li><a href="https://learn.microsoft.com/azure/event-hubs/event-hubs-features" target="_blank" rel="noopener noreferrer">Event Hubs features and concepts</a></li><li><a href="https://learn.microsoft.com/azure/event-grid/delivery-and-retry" target="_blank" rel="noopener noreferrer">Event Grid delivery and retry</a></li></ul>
+</section>
+</div>

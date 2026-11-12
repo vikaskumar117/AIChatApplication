@@ -1,0 +1,79 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A validation response provides field-level errors and a trace ID; the client displays corrections while support can find the correlated log entry.</p><ol>
+<li>Failure is classified</li>
+<li>Problem document is constructed safely</li>
+<li>Client acts on type, status, and trace context</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>return Results.Problem(
+    type: &quot;https://api.example/problems/order-conflict&quot;,
+    title: &quot;Order cannot be updated&quot;,
+    statusCode: StatusCodes.Status409Conflict,
+    extensions: new Dictionary&lt;string, object?&gt;
+    {
+        [&quot;traceId&quot;] = Activity.Current?.TraceId.ToString()
+    });</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Consistent client parsing across endpoints</li>
+<li>Safe trace correlation improves supportability</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Clients can become coupled to unstable prose or implementation codes</li>
+<li>Overly detailed errors can leak sensitive state</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use stable problem types and validation extensions with well-defined client recovery semantics.</p><p><strong>Avoid:</strong> Avoid returning raw exceptions, SQL messages, stack traces, access tokens, or arbitrary database fields.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Exposing exception.Message or stack traces as detail.</li>
+<li>Changing a stable error code while keeping the same prose and expecting clients to recover.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use RFC 9457 Problem Details and a documented validation shape.</li>
+<li>Localize user-facing prose in clients while treating server problem types as stable identifiers.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which fields are defined by Problem Details?</li>
+<li>Why should clients rely on problem type/code rather than title prose?</li>
+<li>How can a trace ID help without leaking internals?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An SDK parses inconsistent ad hoc error JSON; standardize on Problem Details, preserve status semantics, and add contract tests for validation, conflict, and server failures.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A standard error body gives clients stable machine-readable classification without exposing internal implementation details.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc9457" target="_blank" rel="noopener noreferrer">RFC 9457: Problem Details for HTTP APIs</a></li><li><a href="https://learn.microsoft.com/en-us/aspnet/core/web-api/handle-errors" target="_blank" rel="noopener noreferrer">ASP.NET Core error handling</a></li></ul>
+</section>
+</div>

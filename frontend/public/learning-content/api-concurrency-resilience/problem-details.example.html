@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A stale update returns 409 with a stable conflict type and safe guidance, while an unexpected server exception returns a generic 500 problem with a trace identifier.</p><ol>
+<li>Application identifies error outcome</li>
+<li>Framework serializes problem document</li>
+<li>Client interprets status and stable type</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>builder.Services.AddProblemDetails();
+
+return Conflict(new ProblemDetails
+{
+    Type = &quot;https://api.example/problems/version-conflict&quot;,
+    Title = &quot;The resource has changed&quot;,
+    Status = StatusCodes.Status409Conflict,
+    Detail = &quot;Reload the resource before applying this update.&quot;
+});</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Standardized error structure and framework support</li>
+<li>Extensible for validation and trace correlation</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Misleading detail or mismatched status can break clients</li>
+<li>Problem documents do not decide which errors are safe to reveal</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use ProblemDetails for API errors and maintain stable problem types for supported client behavior.</p><p><strong>Avoid:</strong> Avoid putting secrets, internal exception diagnostics, or sensitive resource snapshots in extensions.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming AddProblemDetails alone globally catches exceptions.</li>
+<li>Exposing internal detail because the standard has a detail field.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use RFC 9457-compatible response bodies and validation contracts.</li>
+<li>Integration-test status, content type, extensions, and sensitive-data redaction.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is the purpose of the type member?</li>
+<li>How does ValidationProblemDetails differ?</li>
+<li>Does AddProblemDetails automatically catch every exception?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A team enables AddProblemDetails but still sees inconsistent failures; configure exception and status-code handling explicitly, then test content type and body for all failure layers.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>ProblemDetails is ASP.NET Core’s model for producing interoperable error documents based on the Problem Details standard.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/web-api/handle-errors" target="_blank" rel="noopener noreferrer">Handle errors in ASP.NET Core APIs</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9457" target="_blank" rel="noopener noreferrer">RFC 9457 Problem Details</a></li></ul>
+</section>
+</div>

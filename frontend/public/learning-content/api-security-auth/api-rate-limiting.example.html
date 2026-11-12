@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Partition expensive search requests by authenticated customer and also apply a global concurrency cap on the database-intensive operation.</p><ol>
+<li>Identify caller and operation cost</li>
+<li>Apply partitioned limit or queue policy</li>
+<li>Allow request or reject with 429</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>builder.Services.AddRateLimiter(options =&gt;
+{
+    options.AddTokenBucketLimiter(&quot;search&quot;, limiter =&gt;
+    {
+        limiter.TokenLimit = 30;
+        limiter.TokensPerPeriod = 10;
+        limiter.ReplenishmentPeriod = TimeSpan.FromMinutes(1);
+        limiter.QueueLimit = 0;
+    });
+});
+app.UseRateLimiter();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Protects capacity from bursts and noisy clients</li>
+<li>Can enforce fairness and service tiers</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Poor limits reject legitimate bursts or enable identity evasion</li>
+<li>Per-instance memory limits are not automatically globally coordinated</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Limit expensive and abuse-prone operations with identity-aware partitions, global capacity bounds, and observable policy.</p><p><strong>Avoid:</strong> Avoid relying exclusively on source IP, which may be shared or rotated, or treating rate limiting as permission control.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Trusting a client-supplied identity header for rate-limit partitioning.</li>
+<li>Assuming fixed per-instance thresholds create a global quota.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Set explicit burst, queue, fairness, and retry behavior.</li>
+<li>Load-test limits and monitor false positives and downstream health.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How do fixed-window and token-bucket limits differ?</li>
+<li>Why may an in-memory limiter be insufficient across replicas?</li>
+<li>What response should a limit rejection use?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A public search API is distributed across ten replicas and IP-based limits are bypassed; add gateway/global protection and authenticated customer partitions, then measure legitimate rejection rates.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Rate limiting bounds request consumption to protect service capacity and fairness, but it does not replace authorization or broader abuse defenses.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/performance/rate-limit" target="_blank" rel="noopener noreferrer">Rate limiting middleware in ASP.NET Core</a></li></ul>
+</section>
+</div>

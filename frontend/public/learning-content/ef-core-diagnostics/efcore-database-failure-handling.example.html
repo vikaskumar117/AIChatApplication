@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A transient failover error on an idempotent read can retry within a short deadline; a unique-key conflict should be interpreted as a domain outcome, not retried blindly.</p><ol>
+<li>Classify provider exception and operation outcome.</li>
+<li>Check request cancellation, deadline, and idempotency.</li>
+<li>Use one bounded retry layer with provider-aware transient classification.</li>
+<li>Keep external effects outside replay or use outbox/idempotency and monitor attempts.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>options.UseSqlServer(connectionString, sql =&gt;
+    sql.EnableRetryOnFailure(
+        maxRetryCount: 3,
+        maxRetryDelay: TimeSpan.FromSeconds(5),
+        errorNumbersToAdd: null));
+
+// When using an execution strategy with an explicit transaction, execute
+// the whole transaction delegate through that strategy and ensure replay safety.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Bounded transient retries can ride through brief failover or network blips.</li>
+<li>Classification and idempotency protect data from duplicate effects.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Retries increase latency and load; stacked retry layers multiply attempts.</li>
+<li>Execution-strategy replay can repeat transaction work and requires idempotent boundaries.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use provider-aware bounded retry for classified transient failures within request deadlines.</p><p><strong>Avoid:</strong> Avoid retrying validation, foreign-key/unique conflicts, cancellation, or all exceptions indiscriminately.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Retrying all exceptions, including cancellation and constraint violations.</li>
+<li>Retrying a transaction that has already sent an email or charged a card.</li>
+<li>Combining several independent retry layers without an attempt budget.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use provider execution strategy and a bounded total deadline.</li>
+<li>Use idempotency keys for externally retried commands.</li>
+<li>Test failover and uncertain commit outcomes.</li>
+<li>Monitor retry counts, pool waits, and dependency health.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why are retries dangerous during a database outage?</li>
+<li>What makes a command safe to retry?</li>
+<li>How should explicit transactions interact with an EF execution strategy?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Database failover creates timeouts and retry storms. Cap retries and total deadline, remove duplicate retry layers, apply circuit/load shedding, verify writes are idempotent, and monitor recovery and duplicate request outcomes.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Database failure handling distinguishes transient connectivity/failover conditions, command timeouts, deadlocks, constraint conflicts, cancellation, and permanent configuration or schema errors. Retrying every failure can amplify outages, duplicate non-idempotent writes, and delay recovery. Some failures need a bounded retry; others require a caller correction or operator action.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency" target="_blank" rel="noopener noreferrer">Microsoft Learn: Connection resiliency</a></li></ul>
+</section>
+</div>

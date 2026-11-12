@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A unit test verifies a focused unit of behavior with controlled collaborators; a repository can provide a seam for application behavior, but it does not make database behavior correct by itself.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Tests should distinguish pure domain decisions, orchestration, and provider-specific query/transaction semantics; mocking an ORM can produce confidence without exercising real SQL behavior.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Unit-test domain rules directly, use fakes or mocks at owned boundaries for application orchestration, and add integration tests against the actual persistence provider for mappings, queries, and transactions.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Domain unit</strong><span>Test invariant and calculation without storage or network dependencies.</span></div></div>
+<div><span>2</span><div><strong>Application unit</strong><span>Fake a meaningful repository boundary and assert outcome/coordination.</span></div></div>
+<div><span>3</span><div><strong>Repository integration</strong><span>Run real provider queries, constraints, and transaction behavior.</span></div></div>
+<div><span>4</span><div><strong>Production confidence</strong><span>Use representative migrations and database semantics, not only mocks.</span></div></div>
+</figure>
+<figcaption>A test double isolates collaborators; only an integration test validates how a specific persistence provider behaves.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Mocking an entire ORM query pipeline.</li>
+<li>Using an in-memory substitute for database constraints and SQL translation.</li>
+<li>Asserting only that SaveChanges was called rather than that behavior is correct.</li>
+</ul>
+</section>
+</div>

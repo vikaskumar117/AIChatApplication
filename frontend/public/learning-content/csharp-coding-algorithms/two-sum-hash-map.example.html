@@ -1,0 +1,89 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An order service matches two ledger adjustments to a reconciliation total. The problem contract must define whether values can be reused, whether multiple answers exist, and what to return when no pair is found.</p><ol>
+<li>Input [3, 7, 4], target 10.</li>
+<li>At index 0, complement 7 is absent; store 3 → 0.</li>
+<li>At index 1, complement 3 is present; return [0, 1].</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>int[] TwoSum(int[] values, int target)
+{
+    var indexByValue = new Dictionary&lt;int, int&gt;();
+
+    for (int index = 0; index &lt; values.Length; index++)
+    {
+        int complement = target - values[index];
+        if (indexByValue.TryGetValue(complement, out int otherIndex))
+            return [otherIndex, index];
+
+        indexByValue[values[index]] = index;
+    }
+
+    return [];
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Expected O(n) time with one pass</li>
+<li>Returns original indices without sorting the input</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Uses O(n) auxiliary memory</li>
+<li>Integer overflow and no-solution behavior must match the problem contract</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use when extra memory is acceptable and the input is a one-shot search.</p><p><strong>Avoid:</strong> Avoid if memory is tightly bounded or sorted input allows a two-pointer approach that fits the required output.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Storing values but not indices when the answer requires positions.</li>
+<li>Inserting first can allow the same array element to satisfy its own complement.</li>
+<li>Ignoring integer overflow when target/value ranges are large.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Specify duplicate, no-answer, and multiple-answer behavior.</li>
+<li>Use wider arithmetic if the input domain can overflow int.</li>
+<li>Test negative values, duplicate values, and a single-element input.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why check the complement before inserting the current value?</li>
+<li>How do duplicate values work?</li>
+<li>What are the time and space complexities?</li>
+<li>What changes if the input is already sorted?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A reconciliation job processes large, untrusted batches with a 32-bit target. Define overflow behavior (for example, calculate in `long`), cap batch size, and test duplicates and missing matches before production.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A complement lookup turns the nested search into one expected-linear scan by trading extra memory for speed.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2" target="_blank" rel="noopener noreferrer">Microsoft: Dictionary&lt;TKey,TValue&gt;</a></li></ul>
+</section>
+</div>

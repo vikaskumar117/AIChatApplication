@@ -1,0 +1,92 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A search feature checks whether a user-supplied identifier is symmetric while ignoring spaces and punctuation. This sample compares UTF-16 char values and should be upgraded for grapheme-aware requirements.</p><ol>
+<li>Start at A and a; compare case-insensitively.</li>
+<li>Skip spaces and punctuation as required.</li>
+<li>Continue inward; return false immediately on a mismatch.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>bool IsPalindrome(string value)
+{
+    int left = 0;
+    int right = value.Length - 1;
+
+    while (left &lt; right)
+    {
+        while (left &lt; right &amp;&amp; !char.IsLetterOrDigit(value[left])) left++;
+        while (left &lt; right &amp;&amp; !char.IsLetterOrDigit(value[right])) right--;
+
+        if (char.ToUpperInvariant(value[left]) != char.ToUpperInvariant(value[right]))
+            return false;
+
+        left++;
+        right--;
+    }
+
+    return true;
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>One pass and constant auxiliary space</li>
+<li>Can ignore characters according to a clear normalization rule</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Normalization rules affect the answer</li>
+<li>char-based comparison is not full Unicode text-element comparison</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use when the input contract defines how to treat case and punctuation.</p><p><strong>Avoid:</strong> Avoid silently normalizing identifiers, passwords, or signed data; exact comparison may be required.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Comparing the middle character twice is harmless but unnecessary.</li>
+<li>Forgetting to skip punctuation on both sides leads to inconsistent comparisons.</li>
+<li>Applying normalization to data that must be compared exactly changes semantics.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Test empty, one-character, mixed-case, punctuation, and non-palindrome inputs.</li>
+<li>Document Unicode and normalization behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why compare from both ends?</li>
+<li>How do spaces and punctuation affect the result?</li>
+<li>What is the complexity?</li>
+<li>What Unicode limitation does char-based comparison have?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A product identifier is validated as a palindrome, but security-sensitive identifiers must remain exact. Apply normalization only to the intended display/search field, never to credentials or canonical keys without an explicit contract.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Two inward-moving pointers give an O(n), O(1)-space palindrome check when comparison rules are explicit.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/api/system.char.isletterordigit" target="_blank" rel="noopener noreferrer">Microsoft: Char.IsLetterOrDigit</a></li></ul>
+</section>
+</div>

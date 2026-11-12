@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A retry is another attempt after a classified transient failure; backoff spaces attempts, and jitter randomizes timing among callers.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Retries can improve success for short-lived faults, but multiply traffic, extend latency, and can repeat side effects when outcome is uncertain.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Retry only transient errors, cap attempts and total elapsed time, use exponential backoff with jitter, honor server guidance, and require idempotency or a deduplication key for mutations.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Classify fault</strong><span>Retry only likely transient conditions, not business rejection.</span></div></div>
+<div><span>2</span><div><strong>Wait safely</strong><span>Use capped exponential backoff plus jitter within a total deadline.</span></div></div>
+<div><span>3</span><div><strong>Repeat safely</strong><span>Use idempotent operation or stable deduplication identity.</span></div></div>
+<div><span>4</span><div><strong>Stop and surface</strong><span>Exhaustion returns an explicit failure for fallback or recovery.</span></div></div>
+</figure>
+<figcaption>A timeout says the response was not observed, not that the server did no work; retry correctness depends on operation semantics.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Retrying every status code.</li>
+<li>Starting nested retry policies at every layer and multiplying attempts.</li>
+<li>Creating a new idempotency key per attempt.</li>
+</ul>
+</section>
+</div>

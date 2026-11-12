@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An invalid model gets 400, an expired access token gets 401, an authenticated forbidden operation gets 403, a stale edit gets 409 or 412 according to its contract, and an outage gets 500.</p><ol>
+<li>Classify failure layer</li>
+<li>Choose semantically correct status</li>
+<li>Return stable safe error contract</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>return failure switch
+{
+    InvalidInput =&gt; BadRequest(problem),
+    MissingResource =&gt; NotFound(),
+    StaleVersion =&gt; Conflict(problem),
+    _ =&gt; StatusCode(StatusCodes.Status500InternalServerError, safeProblem)
+};</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Enables reliable client recovery and telemetry grouping</li>
+<li>Prevents normal business outcomes from masquerading as server faults</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Status semantics can leak resource existence</li>
+<li>Inconsistent mapping creates fragile clients</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Define each failure mapping with client recovery, security disclosure, and retry semantics in mind.</p><p><strong>Avoid:</strong> Avoid returning 500 for normal invalid input or 200 with an error-shaped body.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Returning 401 for every authorization denial.</li>
+<li>Using 500 for validation or concurrency conflicts.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Document status codes, challenge headers, and retry guidance per endpoint.</li>
+<li>Ensure unexpected errors do not expose internal details.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How do 401 and 403 differ?</li>
+<li>When is 412 more precise than 409?</li>
+<li>Which failures should clients retry?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A mobile client retries a stale edit and overloads an API; return a distinct conflict code and problem type so it can refresh rather than retrying unchanged input.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Status codes distinguish invalid input, missing authentication, denied access, stale state, and unexpected server failure.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener noreferrer">RFC 9110: HTTP Semantics</a></li></ul>
+</section>
+</div>

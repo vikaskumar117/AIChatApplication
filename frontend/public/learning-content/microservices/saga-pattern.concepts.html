@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A saga is a long-running business workflow made of local transactions, with forward actions and compensating actions to address later failure.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Independent service databases cannot generally share one ACID transaction; saga coordination accepts intermediate states and eventual completion or business cancellation.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Persist workflow state and step identity, make each participant idempotent, distinguish retryable failure from business rejection, and orchestrate centrally or react through choreography. Compensation is a new business action, not a time-travel rollback.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Start and persist</strong><span>Record saga identity, business key, and current state before advancing.</span></div></div>
+<div><span>2</span><div><strong>Local step</strong><span>A participant commits its own transaction and supports an idempotency key.</span></div></div>
+<div><span>3</span><div><strong>Next or compensate</strong><span>Continue on success; retry, reconcile, or invoke a business compensation.</span></div></div>
+<div><span>4</span><div><strong>Terminal state</strong><span>Complete, cancelled, or escalated state is observable and auditable.</span></div></div>
+</figure>
+<figcaption>Compensation changes business state to a valid alternative; it cannot erase history or guarantee the original side effect was undone.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Assuming a timeout means the step did not commit.</li>
+<li>Calling compensation an atomic rollback.</li>
+<li>Starting a new saga for each retry.</li>
+</ul>
+</section>
+</div>

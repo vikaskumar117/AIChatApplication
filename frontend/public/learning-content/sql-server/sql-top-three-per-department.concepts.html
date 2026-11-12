@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Top-N-per-group returns a limited or ranked set of employees independently within each department. A window function computes a rank without collapsing employee rows.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>A single global TOP (3) returns only three employees overall. Partitioning provides a scalable expression of the per-department requirement and allows the result to retain employee details.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use ROW_NUMBER when exactly three rows per department are required and ties need a deterministic tie-breaker. Use RANK or DENSE_RANK when salary ties should share a position; rank &lt;= 3 can return more than three employees. Define the policy explicitly.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Employee rows</strong><span>Retain the employee grain; do not aggregate away names or IDs.</span></div></div>
+<div><span>2</span><div><strong>Partition</strong><span>Start independent ranking sequences for each DepartmentId.</span><code>PARTITION BY DepartmentId</code></div></div>
+<div><span>3</span><div><strong>Order / rank</strong><span>Assign rank by salary descending; DENSE_RANK gives equal salary equal rank.</span></div></div>
+<div><span>4</span><div><strong>Filter rank</strong><span>Keep salary ranks 1 through 3, including all boundary ties.</span><code>salary_rank &lt;= 3</code></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Partitioning restarts rank per department.</li>
+<li>DENSE_RANK &lt;= 3 means three distinct salary values, not three employee rows.</li>
+<li>Window calculations are filtered in an outer query or CTE.</li>
+<li>Use actual plan data to assess sorting and indexing.</li>
+</ul>
+</section>
+</div>

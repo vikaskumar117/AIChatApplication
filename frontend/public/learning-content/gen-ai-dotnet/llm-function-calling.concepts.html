@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — A tool is an application-defined operation described to a model by name, purpose, and argument schema. The model emits a proposed call; the host application—not the model—executes the operation.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Tools connect language-model interactions to current data and controlled actions, but they expand the authorization, input-validation, side-effect, and prompt-injection attack surface.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Offer a small allowlist with strict schemas; parse and validate arguments; independently authenticate and authorize the user and resource; enforce business rules, quotas, deadlines, and idempotency; require confirmation for consequential actions; execute least-privileged code; return bounded, sanitized results. Treat tool output and retrieved documents as untrusted input to subsequent model turns.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Trusted tool registry</strong><span>Small allowlist of narrow operations with explicit argument schemas.</span></div></div>
+<div><span>2</span><div><strong>Model proposal</strong><span>Untrusted tool name and arguments; not executable code or authorization.</span></div></div>
+<div><span>3</span><div><strong>Host policy checks</strong><span>Schema, identity, resource ownership, business limits, consent, and idempotency.</span></div></div>
+<div><span>4</span><div><strong>Least-privilege execution</strong><span>Scoped credentials, timeout, bounded result, and side-effect audit.</span></div></div>
+<div><span>5</span><div><strong>Model continuation</strong><span>Sanitized result is still untrusted context; final output needs validation.</span></div></div>
+</figure>
+<figcaption>The trust boundary belongs in host code. A tool schema guides generation but does not authenticate the user or grant access.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>The model proposes; application code authenticates, authorizes, and executes.</li>
+<li>Every tool call is an untrusted request, including calls with schema-valid arguments.</li>
+<li>Prompt injection can originate in user input, retrieved documents, or tool results.</li>
+</ul>
+</section>
+</div>

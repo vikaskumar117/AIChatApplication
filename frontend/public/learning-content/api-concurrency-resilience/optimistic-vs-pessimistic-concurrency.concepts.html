@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Optimistic concurrency assumes simultaneous conflicts are uncommon and verifies a version or condition when writing; pessimistic concurrency locks relevant data before work proceeds.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>The choice trades throughput and lock contention against conflict frequency and the cost of retry or user resolution.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use row-version or conditional updates for ordinary edits and short transactions; choose an appropriate database lock only for a critical invariant that cannot be safely expressed otherwise, with bounded duration and deadlock-aware retry.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Select concurrency strategy</strong><span>Optimistic reads proceed without blocking and retain an original version for the later write.</span></div></div>
+<div><span>2</span><div><strong>Perform conditional write or acquire lock</strong><span>Pessimistic mode takes database locks, causing competing operations to wait, fail, or deadlock depending on policy.</span></div></div>
+<div><span>3</span><div><strong>Commit, detect conflict, or release lock</strong><span>The database confirms the result at commit; retry is safe only when operation semantics and side effects permit it.</span></div></div>
+</figure>
+<figcaption>A transaction provides atomicity and isolation according to its configured database level; it does not inherently solve every lost-update policy.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Optimistic detects; pessimistic blocks competitors.</li>
+<li>Choose based on contention, invariant, and recovery cost.</li>
+<li>Keep transactions and locks short.</li>
+</ul>
+</section>
+</div>

@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>SQL Server error numbers identify a failure category, but the constraint, statement, transaction state, and surrounding context explain the root cause. 2601 and 2627 indicate unique-key violations; 547 indicates a CHECK or FOREIGN KEY constraint conflict; 1205 means the transaction was selected as a deadlock victim.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Fixing the invariant or concurrency behavior is more reliable than memorizing numbers or retrying every database exception.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Capture structured exception number, constraint/index, operation, correlation ID, and safe parameter context. For 2601/2627, prevent conflicting writes or handle idempotent duplicate requests; for 547, correct parent/child order or business references; for 1205, inspect deadlock graph and retry only a safe whole transaction.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>2601 / 2627</strong><span>Unique index or PRIMARY KEY / UNIQUE constraint conflict; verify duplicate request versus invalid conflict.</span></div></div>
+<div><span>2</span><div><strong>547</strong><span>FOREIGN KEY or CHECK constraint conflict; correct relationship, order, or business input.</span></div></div>
+<div><span>3</span><div><strong>1205</strong><span>Deadlock victim rollback; analyze graph and safe transaction retry policy.</span></div></div>
+<div><span>4</span><div><strong>Fix root cause</strong><span>Preserve constraints and handle only known, semantically safe outcomes.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>2601/2627 are uniqueness conflicts; the constraint is protecting an invariant.</li>
+<li>547 is a constraint conflict, commonly FK or CHECK; fix relationship or input.</li>
+<li>1205 reports a deadlock victim, not a generic connection failure.</li>
+<li>Error number plus constraint, operation, transaction state, and correlation gives actionable diagnosis.</li>
+</ul>
+</section>
+</div>

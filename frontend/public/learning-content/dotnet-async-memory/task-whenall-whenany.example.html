@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Load independent profile and permissions concurrently with WhenAll; use WhenAny only when whichever endpoint responds first is acceptable and the loser is canceled or drained.</p><ol>
+<li>Start profile and flags tasks before awaiting either.</li>
+<li>Use WhenAll when both results are required.</li>
+<li>Alternatively await WhenAny and then await the returned task for its result.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>Task&lt;string&gt; profile = LoadProfileAsync(token);
+Task&lt;string&gt; flags = LoadFlagsAsync(token);
+string[] results = await Task.WhenAll(profile, flags);
+
+Task&lt;string&gt; first = await Task.WhenAny(profile, flags);
+string firstResult = await first;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Concurrent independent work can reduce wait time</li>
+<li>WhenAny supports race and fallback patterns</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Failures and cancellation require explicit policy</li>
+<li>Losing tasks may continue consuming resources</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use WhenAll for independent work that must all succeed or be accounted for.</p><p><strong>Avoid:</strong> Avoid unbounded fan-out and abandoning WhenAny losers.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Starting one task, awaiting it, then starting the next and expecting overlap.</li>
+<li>Discarding tasks that lost a WhenAny race without observing errors.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Propagate cancellation tokens.</li>
+<li>Bound concurrent operations.</li>
+<li>Define partial failure and timeout behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Does WhenAny return the result?</li>
+<li>How are WhenAll results ordered?</li>
+<li>What should happen to losing tasks after a race?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A dashboard loads independent data sources. Use bounded concurrency and WhenAll if all sections are mandatory; otherwise define timeout, fallback, and loser cancellation policy.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>WhenAll joins all operations; WhenAny selects a completed task, while the caller remains responsible for all outcomes and cleanup.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

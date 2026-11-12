@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A signature identifies a method by name and parameter list; overloads differ in parameters. An override has a matching virtual/abstract base signature and supplies derived behavior.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Overloads provide convenient operations for different input shapes. Overrides provide polymorphism: callers can use a base contract and receive behavior from the actual derived type.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>The compiler resolves overloads from compile-time argument types and conversions. Virtual dispatch resolves an override from the runtime type of the receiver.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Overload candidates</strong><span>Compiler examines method name, argument count, and conversion compatibility.</span></div></div>
+<div><span>2</span><div><strong>Compile-time choice</strong><span>The best matching parameter signature is selected before execution.</span></div></div>
+<div><span>3</span><div><strong>Virtual slot</strong><span>An override provides derived behavior for a base virtual member.</span></div></div>
+<div><span>4</span><div><strong>Runtime dispatch</strong><span>Actual receiver type selects the override implementation.</span></div></div>
+</figure>
+<figcaption>Follow the labeled stages; each node names a concrete decision or runtime effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Overload resolution is compile-time.</li>
+<li>Override dispatch is runtime polymorphism.</li>
+<li>They solve different design problems.</li>
+</ul>
+</section>
+</div>

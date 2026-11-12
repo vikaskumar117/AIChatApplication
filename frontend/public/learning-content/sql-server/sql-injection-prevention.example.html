@@ -1,0 +1,88 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A search term is passed as a parameter; the chosen sort column is selected from a fixed server-side mapping.</p><ol>
+<li>Use parameterized APIs/ORM interpolation for all scalar values.</li>
+<li>For identifiers or sort directions, map a finite enum to known SQL fragments.</li>
+<li>Give the application DB identity only required permissions.</li>
+<li>Test inputs containing quotes, comments, encodings, and unexpected sort keys; log safely.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>using var command = new SqlCommand(
+    &quot;SELECT UserId, DisplayName FROM dbo.Users WHERE Email = @email&quot;,
+    connection);
+command.Parameters.Add(&quot;@email&quot;, SqlDbType.NVarChar, 320).Value = email;
+
+// For an identifier (not a value), select only from a server-side allowlist:
+var sortColumn = sortKey switch
+{
+    &quot;name&quot; =&gt; &quot;[DisplayName]&quot;,
+    &quot;created&quot; =&gt; &quot;[CreatedAt]&quot;,
+    _ =&gt; &quot;[UserId]&quot;
+};
+var sql = $&quot;SELECT UserId, DisplayName FROM dbo.Users ORDER BY {sortColumn}&quot;;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Parameters separate data values from SQL code.</li>
+<li>Allowlisting provides a safe finite vocabulary for dynamic identifiers.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Identifiers and SQL structure cannot generally be supplied as ordinary value parameters.</li>
+<li>Dynamic query shapes need careful plan and authorization review.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use typed parameters for every untrusted value and strict allowlists for unavoidable structural choices.</p><p><strong>Avoid:</strong> Avoid string concatenation for values, blacklists, “escaping” as a substitute for parameters, and excessive database privileges.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Interpolating user values into raw SQL strings.</li>
+<li>Assuming an ORM makes manually constructed raw SQL safe.</li>
+<li>Allowing user-provided table or column names without strict mapping.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use typed parameters and ORM parameter APIs.</li>
+<li>Keep dynamic query structure finite and allowlisted.</li>
+<li>Use least-privilege database credentials and avoid leaking error details.</li>
+<li>Review raw SQL and test injection boundaries.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why can a parameter represent a value but not a table name?</li>
+<li>How should a dynamic ORDER BY column be selected?</li>
+<li>Why is least privilege part of injection defense?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A search endpoint accepts free text and a sort option. Bind search text, map sort options to fixed identifiers, restrict database principal permissions, and test adversarial inputs without exposing SQL or credentials.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>SQL injection occurs when untrusted input is concatenated into SQL syntax, allowing input to alter the intended command or predicate. Injection can bypass authorization filters, expose or modify data, and execute unintended statements. Escaping ad hoc is fragile, especially for encoding, quoting, and multiple SQL dialect details.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/sql/relational-databases/security/sql-injection" target="_blank" rel="noopener noreferrer">Microsoft Learn: SQL injection</a></li></ul>
+</section>
+</div>

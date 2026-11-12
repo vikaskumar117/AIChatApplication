@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — The first non-repeating character is the earliest character whose total frequency in the input equals one.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — This problem teaches why frequency information and original ordering are separate requirements.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Build a frequency dictionary in O(n), then scan the string again in O(n). Return an index or nullable character according to the API contract; use O(k) memory for distinct characters.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Input</strong><span>swiss</span></div></div>
+<div><span>2</span><div><strong>Frequency pass</strong><span>s → 3, w → 1, i → 1.</span></div></div>
+<div><span>3</span><div><strong>Order pass</strong><span>s repeats; next character w has count 1.</span></div></div>
+<div><span>4</span><div><strong>Return</strong><span>w is the first non-repeating character.</span></div></div>
+</figure>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>A set loses occurrence counts.</li>
+<li>The second pass preserves input order.</li>
+<li>Define the no-result behavior explicitly.</li>
+</ul>
+</section>
+</div>

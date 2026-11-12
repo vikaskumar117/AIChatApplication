@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — Binary search is a divide-and-conquer lookup over data ordered by a consistent comparison.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — It reduces comparisons from O(n) linear search to O(log n), but only when the sorted-order precondition is true.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Keep an inclusive low/high range, inspect the midpoint, and retain only the half that could contain the target. Use `low + (high - low) / 2` to avoid midpoint addition overflow.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Sorted input</strong><span>[2, 5, 8, 12, 16, 23, 38], target = 16</span></div></div>
+<div><span>2</span><div><strong>Inspect middle</strong><span>Middle is 12; target is larger, so discard the left half.</span></div></div>
+<div><span>3</span><div><strong>Inspect remaining middle</strong><span>Middle is 23; target is smaller, so discard the right half.</span></div></div>
+<div><span>4</span><div><strong>Match</strong><span>16 is found; each comparison removed about half the search range.</span></div></div>
+</figure>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>The input must be sorted under the same comparison used by the search.</li>
+<li>The search interval shrinks every iteration.</li>
+<li>Use a loop invariant and test empty and boundary cases.</li>
+</ul>
+</section>
+</div>

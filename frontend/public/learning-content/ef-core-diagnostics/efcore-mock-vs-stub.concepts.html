@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A stub supplies predefined answers; a mock records or verifies expected interactions; a fake is a working simplified implementation (for example, an in-memory repository) that preserves a useful contract.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Choosing the least complex test double keeps tests readable and avoids mistaking a mock’s configured behavior for production correctness.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use a stub to control collaborator output, a mock when an interaction itself is part of the contract, and a fake when a lightweight working implementation improves confidence. Prefer real pure components; use real database integration tests when provider semantics matter.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Stub</strong><span>Returns configured values to drive a branch or outcome.</span></div></div>
+<div><span>2</span><div><strong>Mock</strong><span>Records/verifies a meaningful expected interaction.</span></div></div>
+<div><span>3</span><div><strong>Fake</strong><span>Runs a simplified working implementation of a dependency contract.</span></div></div>
+<div><span>4</span><div><strong>Real boundary test</strong><span>Use the actual relational provider for translation and constraint semantics.</span></div></div>
+</figure>
+<figcaption>Validate the behavior against the deployed EF Core/provider version, generated SQL, database schema, and production configuration.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Stub supplies answers; mock verifies interaction; fake provides simplified working behavior.</li>
+<li>Prefer the simplest test double that tests behavior.</li>
+<li>Test doubles do not prove production database semantics.</li>
+<li>Do not mock internal EF Core implementation details.</li>
+</ul>
+</section>
+</div>

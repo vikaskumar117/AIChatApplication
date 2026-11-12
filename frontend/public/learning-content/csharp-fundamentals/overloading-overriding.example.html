@@ -1,0 +1,85 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Format(string) and Format(DateTime) overloads are chosen by argument type; a derived formatter override is selected when called through a base reference.</p><ol>
+<li>Call Format with a string and inspect the chosen overload.</li>
+<li>Call Format with DateTime through a base-typed variable.</li>
+<li>Observe that the variable type does not suppress virtual override dispatch.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>class Formatter
+{
+    public string Format(string value) =&gt; value.Trim();
+    public virtual string Format(DateTime value) =&gt; value.ToString(&quot;O&quot;);
+}
+sealed class LocalFormatter : Formatter
+{
+    public override string Format(DateTime value) =&gt; value.ToLocalTime().ToString(&quot;O&quot;);
+}
+
+Formatter formatter = new LocalFormatter();
+string text = formatter.Format(DateTime.UtcNow); // override dispatches at runtime
+string trimmed = formatter.Format(&quot;  hi &quot;);      // overload selected at compile time</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Overloads offer ergonomic signatures</li>
+<li>Overrides enable substitutable runtime behavior</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Ambiguous overloads can surprise</li>
+<li>Overriding changes behavior for all base-typed callers</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use overloads for the same operation on meaningfully different inputs; use virtual dispatch for intentional extension points.</p><p><strong>Avoid:</strong> Avoid overload sets whose implicit conversions make calls ambiguous.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Expecting overload selection to depend on runtime argument type.</li>
+<li>Calling an override “overloading” because it shares a method name.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep overloads semantically consistent.</li>
+<li>Use virtual members only for supported extension behavior.</li>
+<li>Test through base contracts.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>When is an overload chosen?</li>
+<li>What makes an override possible?</li>
+<li>How does the receiver runtime type affect an override?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A serialization framework has format-specific inputs and customer-specific output policy. Keep input overloads clear and make only stable extension points virtual.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Overloads vary parameter signatures and resolve statically; overrides replace inherited virtual behavior and dispatch dynamically.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

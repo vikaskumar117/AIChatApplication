@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Dependency injection supplies an object’s required collaborators from outside rather than having the object construct or locate them itself.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>It separates policy from concrete construction, supports substitution, and makes object lifetime composition explicit; a container is one DI mechanism, not the pattern itself.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Prefer constructor injection for required dependencies, compose implementations at the application boundary, and choose transient/scoped/singleton lifetimes according to state and ownership.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Consumer contract</strong><span>Class declares required abstractions in its constructor.</span></div></div>
+<div><span>2</span><div><strong>Composition root</strong><span>Application registers concrete implementations and lifecycle.</span></div></div>
+<div><span>3</span><div><strong>Container resolution</strong><span>Container builds the object graph and detects some scope errors.</span></div></div>
+<div><span>4</span><div><strong>Operation</strong><span>Consumer uses the dependency without knowing how it was created.</span></div></div>
+</figure>
+<figcaption>DI is a design technique; a container automates composition but does not choose correct boundaries or lifetimes for you.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Calling IServiceProvider as a hidden service locator.</li>
+<li>Injecting a scoped service into a singleton.</li>
+<li>Adding an interface for every class without a substitutability need.</li>
+</ul>
+</section>
+</div>

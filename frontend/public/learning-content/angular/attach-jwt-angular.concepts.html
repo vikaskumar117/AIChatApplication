@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A JWT is a signed claims container, not encrypted by default; its claims can be read by anyone holding it. A bearer token grants authority to whoever possesses it until expiry or revocation policy takes effect.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>A functional interceptor can read an access token from an injected authentication abstraction and clone a request with an Authorization: Bearer header. Restrict attachment by trusted origin and exclude token/refresh endpoints as appropriate.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Prefer short-lived access tokens and a backend-for-frontend or secure, HttpOnly, SameSite cookie strategy when architecture allows. Local storage exposes tokens to successful XSS; cookie approaches require deliberate CSRF protections. Never treat client-side JWT decoding as authorization.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Resolve destination</strong><span>Normalize relative URLs and compare the resulting origin against an allowlist.</span></div></div>
+<div><span>2</span><div><strong>Apply auth policy</strong><span>Skip public routes and authentication endpoints that must not receive the current bearer token.</span></div></div>
+<div><span>3</span><div><strong>Attach credential</strong><span>Clone the immutable request and set the standard Authorization Bearer header.</span></div></div>
+<div><span>4</span><div><strong>Enforce server-side</strong><span>The API validates signature, issuer, audience, expiry, and authorization on every protected request.</span></div></div>
+</figure>
+<figcaption>Origin validation must account for relative URLs, absolute URLs, and any supported API base paths.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>A JWT is a signed claims container, not encrypted by default; its claims can be read by anyone holding it. A bearer token grants authority to whoever possesses it until expiry or revocation policy takes effect.</li>
+<li>A functional interceptor can read an access token from an injected authentication abstraction and clone a request with an Authorization: Bearer header. Restrict attachment by trusted origin and exclude token/refresh endpoints as appropriate.</li>
+<li>Prefer short-lived access tokens and a backend-for-frontend or secure, HttpOnly, SameSite cookie strategy when architecture allows. Local storage exposes tokens to successful XSS; cookie approaches require deliberate CSRF protections. Never treat client-side JWT decoding as authorization.</li>
+</ul>
+</section>
+</div>

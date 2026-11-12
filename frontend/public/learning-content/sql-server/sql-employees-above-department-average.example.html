@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Return employees whose salary is strictly greater than their department’s average non-NULL salary.</p><ol>
+<li>Define which employees contribute to the average.</li>
+<li>Calculate AVG over each DepartmentId partition.</li>
+<li>Keep the employee-level rows and filter in the outer query.</li>
+<li>Validate NULL and decimal precision behavior.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>WITH scored AS (
+  SELECT e.EmployeeId, e.Name, e.DepartmentId, e.Salary,
+         AVG(CAST(e.Salary AS decimal(19, 4))) OVER (
+           PARTITION BY e.DepartmentId
+         ) AS DepartmentAverage
+  FROM dbo.Employee AS e
+)
+SELECT EmployeeId, Name, DepartmentId, Salary, DepartmentAverage
+FROM scored
+WHERE Salary &gt; DepartmentAverage
+ORDER BY DepartmentId, Salary DESC;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Window aggregate avoids a separate self-join and preserves employee detail.</li>
+<li>The comparison uses each department’s own cohort.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>The query must read enough rows to calculate averages.</li>
+<li>NULL salaries are ignored by AVG; a department with all NULL salaries has no qualifying comparisons.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use a window aggregate when both employee details and a department statistic are required.</p><p><strong>Avoid:</strong> Do not compare to a company-wide AVG or silently coalesce an undefined all-NULL group average to zero.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Comparing against the overall company average.</li>
+<li>Using integer arithmetic or unintended salary conversion precision.</li>
+<li>Forgetting that filtering employees before the window changes the cohort.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Make population eligibility and NULL handling explicit.</li>
+<li>Use an appropriate decimal type for the aggregate.</li>
+<li>Test small departments and all-NULL salary groups.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why use PARTITION BY here?</li>
+<li>How does AVG treat NULL salaries?</li>
+<li>Why filter the computed average in an outer query?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A compensation audit flags employees above their group mean. Confirm whether salary components and inactive employees belong in the cohort, then validate the group and NULL policy with HR before reporting.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A per-department comparison evaluates each employee salary against an aggregate calculated for that employee’s department. A single overall average answers a different question. A windowed average keeps employee detail while computing a group-level benchmark.</p>
+</section>
+</div>

@@ -1,0 +1,87 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Find duplicate normalized emails while retaining full row details for review.</p><ol>
+<li>Agree on the normalized business key and NULL treatment.</li>
+<li>Use GROUP BY / HAVING to identify repeated key values.</li>
+<li>Join the duplicate keys back to the base table and review every candidate.</li>
+<li>Record a retention or merge rule before changing data.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>SELECT NormalizedEmail, COUNT_BIG(*) AS DuplicateCount
+FROM dbo.Customer
+WHERE NormalizedEmail IS NOT NULL
+GROUP BY NormalizedEmail
+HAVING COUNT_BIG(*) &gt; 1
+ORDER BY DuplicateCount DESC, NormalizedEmail;
+
+-- Review all rows for the duplicate keys before taking any action.
+SELECT c.*
+FROM dbo.Customer AS c
+JOIN (
+  SELECT NormalizedEmail
+  FROM dbo.Customer
+  WHERE NormalizedEmail IS NOT NULL
+  GROUP BY NormalizedEmail
+  HAVING COUNT_BIG(*) &gt; 1
+) AS dup ON dup.NormalizedEmail = c.NormalizedEmail
+ORDER BY c.NormalizedEmail, c.CreatedAt, c.CustomerId;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Groups expose frequency and duplicate-key distribution.</li>
+<li>The review query makes candidate records visible before remediation.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Grouping may scan and aggregate a large table.</li>
+<li>Incorrect key normalization can merge distinct people or miss equivalent values.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for profiling, data-quality monitoring, and reviewed duplicate remediation.</p><p><strong>Avoid:</strong> Do not define duplicates by a convenient single column if the business key is composite or NULLs have special meaning.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Deleting records based on a non-unique or incomplete key.</li>
+<li>Ignoring case, whitespace, collation, or NULL semantics.</li>
+<li>Assuming identical displayed values mean no dependent records need merging.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Normalize keys consistently at ingestion and comparison boundaries.</li>
+<li>Capture candidate counts and sample rows for review.</li>
+<li>Add a unique invariant after all existing conflicting data is resolved.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which columns determine logical uniqueness?</li>
+<li>How should case and whitespace be normalized?</li>
+<li>Why inspect full rows after grouping duplicate keys?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A CRM import reports duplicate customer emails. Confirm canonicalization and NULL rules with product owners, count duplicate groups, review their histories and references, and plan a reversible merge policy.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A duplicate is a repeated business key, not necessarily a byte-for-byte identical database row. The key might be a normalized email, external reference, or composite of several columns. Reliable duplicate detection requires agreeing on equality rules, including case, whitespace, collation, NULL behavior, and which columns define one logical entity.</p>
+</section>
+</div>

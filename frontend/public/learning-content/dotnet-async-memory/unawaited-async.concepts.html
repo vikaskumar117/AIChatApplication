@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Calling an async Task-returning method starts it and returns its Task. If the caller discards that Task, it cannot reliably know when work finished or observe its failure.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Fire-and-forget work can outlive request scopes, lose cancellation, fail after a response succeeded, or disappear during process shutdown. async void is even less observable and should be reserved for event handlers.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Await the Task, return it to a caller, or transfer ownership to a durable background-work system that captures errors, retries safely, and manages shutdown.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Task starts</strong><span>Calling an async method starts its synchronous prefix and produces a Task.</span></div></div>
+<div><span>2</span><div><strong>Task discarded</strong><span>Caller loses completion, ordering, cancellation, and direct exception observation.</span></div></div>
+<div><span>3</span><div><strong>Failure or shutdown</strong><span>Work can fault after the response or be interrupted when process ends.</span></div></div>
+<div><span>4</span><div><strong>Owned background work</strong><span>Queue and worker provide monitoring, retry, and shutdown policy.</span></div></div>
+</figure>
+<figcaption>Follow each labeled stage to see the concrete scheduling, ownership, or memory effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Unawaited Task does not mean work never starts.</li>
+<li>Discarding a Task discards coordination and observation.</li>
+<li>Fire-and-forget is an ownership decision, not a syntax trick.</li>
+</ul>
+</section>
+</div>

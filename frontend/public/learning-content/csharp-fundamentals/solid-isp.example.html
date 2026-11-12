@@ -1,0 +1,87 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A reporting job needs read access, not repository writes. Depend on IReadStore rather than implementing a broad store interface with dummy methods.</p><ol>
+<li>List the operations a report job actually calls.</li>
+<li>Inject IReader rather than the full read/write contract.</li>
+<li>Combine IReader and IWriter only in a client needing both.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IReader&lt;T&gt;
+{
+    Task&lt;T?&gt; FindAsync(Guid id, CancellationToken token);
+}
+public interface IWriter&lt;T&gt;
+{
+    Task SaveAsync(T value, CancellationToken token);
+}
+public sealed class ReportJob
+{
+    private readonly IReader&lt;Report&gt; reader;
+    public ReportJob(IReader&lt;Report&gt; reader) =&gt; this.reader = reader;
+    public Task&lt;Report?&gt; LoadAsync(Guid id, CancellationToken token)
+        =&gt; reader.FindAsync(id, token);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Clients depend on fewer unrelated operations</li>
+<li>Implementations avoid dummy members</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Too many interfaces fragment the model</li>
+<li>Composition can obscure genuinely cohesive APIs</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Split contracts when clients or implementations have distinct capability needs.</p><p><strong>Avoid:</strong> Avoid tiny interfaces that only mirror implementation methods with no independent client value.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Making all consumers implement unsupported methods.</li>
+<li>Creating dozens of one-method interfaces without useful separation.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Derive interfaces from client usage.</li>
+<li>Name contracts by capability.</li>
+<li>Compose capabilities at application boundaries.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does ISP protect clients?</li>
+<li>Why is a no-op implementation a design smell?</li>
+<li>When should related interfaces remain combined?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An export worker only reads reports, while administration also writes. Give each service the minimal contract it needs and compose capabilities for administration.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Focused capability interfaces prevent clients from depending on operations they do not use.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

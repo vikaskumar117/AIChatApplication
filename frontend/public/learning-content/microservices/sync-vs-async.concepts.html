@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Synchronous request/response keeps the caller waiting for a result; asynchronous messaging lets sender and receiver progress at different times.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>The choice changes user-visible latency, coupling, backpressure, outage propagation, and whether the caller can know completion immediately.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use sync when a decision is needed now and the dependency can meet the caller’s deadline. Use async when work can be deferred, buffered, or processed independently; model pending status and eventual results explicitly.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Immediate need</strong><span>If caller must decide now, request/response returns a result or bounded error.</span></div></div>
+<div><span>2</span><div><strong>Deferred intent</strong><span>A message records work that may be handled after the producer returns.</span></div></div>
+<div><span>3</span><div><strong>Consumer outcome</strong><span>Async consumers acknowledge, retry, or dead-letter and report eventual status.</span></div></div>
+</figure>
+<figcaption>Asynchronous does not mean “no waiting anywhere”: it moves the wait and makes completion state explicit.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Calling an async method is not itself asynchronous decoupling.</li>
+<li>Do not promise immediate completion for queued work.</li>
+<li>A queue buffers work but cannot create unlimited capacity.</li>
+</ul>
+</section>
+</div>

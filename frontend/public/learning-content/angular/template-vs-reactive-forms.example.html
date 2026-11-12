@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A multi-step application with conditional sections and cross-field validation is easier to model explicitly with typed reactive forms.</p><ol>
+<li>Use typed reactive forms when the schema is dynamic or deeply validated.</li>
+<li>Keep validation messages associated with controls and usable by assistive technology.</li>
+<li>Disable duplicate submission while a request is pending and report server errors.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>readonly form = new FormGroup({
+  email: new FormControl(&#39;&#39;, {
+    nonNullable: true,
+    validators: [Validators.required, Validators.email]
+  })
+});
+
+submit(): void {
+  if (this.form.valid) this.save(this.form.getRawValue());
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Reactive forms make dynamic structure and tests explicit</li>
+<li>Template-driven forms reduce setup for simple forms</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Reactive form models add boilerplate</li>
+<li>Template-driven structure can become hard to reason about as complexity grows</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use reactive forms for dynamic, typed, or cross-field-heavy workflows; use template-driven forms for small static cases.</p><p><strong>Avoid:</strong> Avoid relying exclusively on client validation or disabling feedback until submission without accessibility review.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Treating client validators as a security boundary.</li>
+<li>Using template-driven forms for a highly dynamic nested schema without a clear model.</li>
+<li>Submitting raw form state without considering disabled controls and payload shape.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep validation rules close to the form model appropriate to the chosen style.</li>
+<li>Test invalid, pending, disabled, and server-error states.</li>
+<li>Separate presentation state from trusted server decisions.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Where is the form model defined in each approach?</li>
+<li>Why are reactive forms suitable for dynamic controls?</li>
+<li>What validation must still happen on the server?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A form contains conditional dependents and needs deterministic tests for validation transitions. Model it with FormGroup/FormArray and keep API validation authoritative.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Template-driven forms infer controls and much of their structure from directives in the template. Reactive forms construct an explicit FormControl/FormGroup/FormArray model in TypeScript and bind the template to it. Reactive forms suit dynamic schemas, complex cross-field validation, typed form models, and deterministic testing. Template-driven forms can be concise for small, mostly static forms with simple validation.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/guide/forms" target="_blank" rel="noopener noreferrer">Angular forms overview</a></li><li><a href="https://angular.dev/guide/forms/reactive-forms" target="_blank" rel="noopener noreferrer">Reactive forms</a></li></ul>
+</section>
+</div>

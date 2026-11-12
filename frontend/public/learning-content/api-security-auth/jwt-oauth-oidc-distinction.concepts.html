@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>JWT (JSON Web Token) describes a compact token representation, OAuth 2.0 describes delegated access to protected resources, and OpenID Connect (OIDC) defines interoperable user authentication on top of OAuth.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Separating format, authorization protocol, and authentication protocol prevents confusing a readable token with proof of sign-in or permission.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>An identity provider may issue JWT or opaque access tokens through OAuth; an OIDC client validates an ID token for its own audience, while the API validates an access token intended for that API.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>OIDC client signs user in</strong><span>OIDC adds authentication semantics and ID tokens for the relying client; an ID token is not an API credential.</span></div></div>
+<div><span>2</span><div><strong>OAuth authorization obtains API access</strong><span>OAuth grants scoped access and does not prescribe that the access token be a JWT.</span></div></div>
+<div><span>3</span><div><strong>API validates its intended access token</strong><span>A resource API accepts a token addressed to it, validating JWT locally or using the issuer’s opaque-token mechanism.</span></div></div>
+</figure>
+<figcaption>A token’s meaning comes from the protocol, issuer, audience, and resource contract—not simply its three-part appearance.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>JWT is a format; OAuth is delegated authorization; OIDC adds authentication.</li>
+<li>ID tokens are for the OIDC client; access tokens are for a resource.</li>
+<li>Access tokens may be JWT or opaque.</li>
+</ul>
+</section>
+</div>

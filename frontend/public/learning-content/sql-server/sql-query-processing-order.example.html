@@ -1,0 +1,97 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Count active employees per department, retain departments with more than ten, then return the highest counts. The sample input is deliberately small; the result table represents a larger data set.</p><ol>
+<li>Join employee to department on the key, establishing row grain.</li>
+<li>WHERE removes inactive employee rows before grouping.</li>
+<li>GROUP BY forms one group per department; HAVING removes small groups.</li>
+<li>SELECT computes count and alias; ORDER BY can bind that alias; OFFSET-FETCH selects a page.</li>
+</ol>
+</section>
+<section>
+<p><small>DATA EXAMPLE</small></p>
+<h2>Example data</h2>
+<h3>Employee input (illustrative subset)</h3><div><table><thead><tr><th>EmployeeId</th><th>DepartmentId</th><th>IsActive</th></tr></thead><tbody><tr><td>1</td><td>10</td><td>1</td></tr><tr><td>2</td><td>10</td><td>1</td></tr><tr><td>3</td><td>20</td><td>1</td></tr><tr><td>4</td><td>30</td><td>0</td></tr></tbody></table></div>
+<h3>Department input</h3><div><table><thead><tr><th>DepartmentId</th><th>Name</th></tr></thead><tbody><tr><td>10</td><td>Engineering</td></tr><tr><td>20</td><td>Finance</td></tr><tr><td>30</td><td>Operations</td></tr></tbody></table></div>
+<h3>Result (larger illustrative data set, threshold &gt; 10)</h3><div><table><thead><tr><th>DepartmentName</th><th>ActiveEmployees</th></tr></thead><tbody><tr><td>Engineering</td><td>25</td></tr><tr><td>Finance</td><td>18</td></tr><tr><td>Sales</td><td>12</td></tr></tbody></table></div>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>SELECT d.Name AS DepartmentName, COUNT(e.EmployeeId) AS ActiveEmployees
+FROM dbo.Employee AS e
+INNER JOIN dbo.Department AS d ON d.DepartmentId = e.DepartmentId
+WHERE e.IsActive = 1
+GROUP BY d.Name
+HAVING COUNT(e.EmployeeId) &gt; 10
+ORDER BY ActiveEmployees DESC, DepartmentName
+OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY;</code></pre>
+</section>
+<section>
+<p><small>WHAT THE ENGINE MAY DO</small></p>
+<h2>Example execution plan</h2>
+<ol><li><strong>Illustrative: Index Seek / Scan</strong> ? Read Employee and Department according to available indexes and estimated selectivity.</li><li><strong>Illustrative: Filter</strong> ? Apply the active-row predicate; the optimizer may push it toward the access operator.</li><li><strong>Illustrative: Nested Loops / Hash Match</strong> ? Join on DepartmentId; chosen based on estimates, indexes, and row counts.</li><li><strong>Illustrative: Hash or Stream Aggregate</strong> ? Group joined active rows by department and compute count.</li><li><strong>Illustrative: Filter</strong> ? Apply HAVING count &gt; 10 after aggregate semantics.</li><li><strong>Illustrative: Sort + Top</strong> ? Order by count and apply the requested page. This is not a guaranteed plan.</li></ol><figcaption>Illustrative only: the optimizer chooses a plan from the schema, statistics, indexes, and parameter values.</figcaption>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Predictable name and aggregate scope makes queries easier to reason about.</li>
+<li>Separating logical meaning from physical operators helps diagnose correctness and performance independently.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Logical ordering does not guarantee a particular operator, access path, or fast runtime.</li>
+<li>A legal query can still multiply rows or sort a large input expensively.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use logical binding order to debug aliases, joins, filters, grouping, and paging; use the actual plan and runtime statistics to diagnose cost.</p><p><strong>Avoid:</strong> Do not assume the engine physically executes each clause in this exact order, or use HAVING for ordinary row predicates. Do not page without a deterministic order.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Treating the logical order as a required physical execution sequence.</li>
+<li>Using HAVING instead of WHERE for a non-aggregate predicate.</li>
+<li>Filtering a nullable side of a LEFT JOIN in WHERE when unmatched rows must survive.</li>
+<li>Using TOP or pagination without a stable ORDER BY and unique tie-breaker.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>State the intended grain and join keys before aggregating.</li>
+<li>Use WHERE for row predicates and HAVING for aggregate predicates.</li>
+<li>Use aliases in ORDER BY, not as if SELECT had already run in WHERE.</li>
+<li>Compare actual versus estimated rows and inspect the actual plan for performance.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is a SELECT alias usually unavailable to WHERE but available to ORDER BY?</li>
+<li>How do WHERE and HAVING differ?</li>
+<li>Does logical binding order prescribe physical operator order?</li>
+<li>How can an outer join change the effect of a predicate in WHERE?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A department report counts too many employees. Verify join cardinality and duplicate keys, place row-level active filtering in WHERE, group at the intended grain, and apply thresholds in HAVING. Compare actual and estimated row counts and inspect the plan; do not infer execution order from the written query.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A SELECT statement has a logical binding order: FROM, ON, JOIN, WHERE, GROUP BY, GROUPING SETS/CUBE/ROLLUP, HAVING, SELECT, DISTINCT, ORDER BY, then TOP/OFFSET-FETCH. FROM establishes input rowsets; ON evaluates the join predicate; JOIN combines matches (and preserves unmatched rows for outer joins); WHERE filters individual rows; GROUP BY forms groups; HAVING filters groups; SELECT computes output expressions and aliases; DISTINCT removes duplicate projected rows; ORDER BY orders output; TOP limits it. Logical binding explains why a SELECT alias is generally unavailable in WHERE but available in ORDER BY, why WHERE and HAVING are not interchangeable, and where join multiplication occurs. It describes meaning and scope, not a mandatory physical sequence of CPU operations.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/sql/t-sql/queries/select-transact-sql" target="_blank" rel="noopener noreferrer">Microsoft Learn: SELECT (Transact-SQL)</a></li></ul>
+</section>
+</div>

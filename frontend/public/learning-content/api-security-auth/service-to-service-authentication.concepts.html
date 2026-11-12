@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Service-to-service authentication establishes a workload principal, commonly through client credentials, managed identity, workload federation, or mutual TLS.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Machine identities make service access auditable and avoid sharing a human user password; narrow resource permissions limit the impact of a compromised workload.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Prefer managed identity or federation where available, request a short-lived token for the specific downstream audience, validate TLS and destination, and enforce app permission and resource policy at the receiver.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Workload proves application identity</strong><span>A workload identity is distinct from a delegated user identity and should not impersonate an interactive user.</span></div></div>
+<div><span>2</span><div><strong>Issuer returns audience-scoped credential</strong><span>The identity provider issues a token or certificate based on workload trust and configured permissions.</span></div></div>
+<div><span>3</span><div><strong>Target validates identity and application permission</strong><span>The receiving API validates the credential and applies application-level permissions; network location alone does not establish trust.</span></div></div>
+</figure>
+<figcaption>mTLS authenticates a transport peer; OAuth access tokens can represent application permissions. They may be combined but solve different protocol concerns.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Machine identity is not a user identity.</li>
+<li>Use short-lived and audience-specific credentials.</li>
+<li>The target service still makes an authorization decision.</li>
+</ul>
+</section>
+</div>

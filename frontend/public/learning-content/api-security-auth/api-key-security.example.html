@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A partner webhook uses a rotated, partner-specific key for initial client identification, while signed payload verification and resource authorization protect business operations.</p><ol>
+<li>Client retrieves protected key</li>
+<li>Request presents key over TLS</li>
+<li>Gateway/API checks key and applies limits</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Prefer an authorization header, not a URL query parameter.
+request.Headers.Authorization = new AuthenticationHeaderValue(&quot;ApiKey&quot;, apiKey);
+// Server stores a verifier/hash where feasible; redact the credential from logs.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Simple integration and client metering</li>
+<li>Supports independent revocation for partner credentials</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Bearer secret theft enables replay</li>
+<li>Weak identity and authorization semantics if used alone</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use API keys for bounded client identification or low-risk integration access with rotation and abuse controls.</p><p><strong>Avoid:</strong> Avoid using a single static API key as sole authorization for sensitive user data or embedding a secret in public browser/mobile code.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Logging or committing API keys.</li>
+<li>Assuming API-key authentication grants per-user permission.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Issue per-client keys with revocation, expiration, and least privilege.</li>
+<li>Use a secrets manager, TLS, redaction, monitoring, and planned rotation.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does an API key establish?</li>
+<li>Why should a key not be placed in a URL?</li>
+<li>How should key rotation avoid an integration outage?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A public JavaScript bundle exposes a key; revoke it, review usage, assume it was public, move privileged access behind a trusted backend, and issue independently revocable partner credentials.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>An API key identifies or gates a client integration but is a bearer secret and usually does not provide end-user identity or fine-grained authorization.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP REST Security Cheat Sheet</a></li></ul>
+</section>
+</div>

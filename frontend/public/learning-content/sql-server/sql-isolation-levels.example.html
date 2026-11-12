@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>For a transfer, protect the debit/credit invariant with an atomic transaction and appropriate concurrency control; do not use READ UNCOMMITTED for balances.</p><ol>
+<li>Describe the correctness invariant and possible anomalies.</li>
+<li>Choose isolation and transaction boundaries that protect it.</li>
+<li>Check database options for RCSI/SNAPSHOT and understand statement versus transaction snapshots.</li>
+<li>Load-test blocking, update conflicts, and version-store capacity.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>SET TRANSACTION ISOLATION LEVEL SNAPSHOT;
+BEGIN TRANSACTION;
+  SELECT AccountId, Balance
+  FROM dbo.Account
+  WHERE AccountId IN (@fromId, @toId);
+  -- Validate and update both accounts atomically; handle snapshot update conflicts.
+COMMIT TRANSACTION;
+-- SNAPSHOT must be enabled for the database; verify operations policy first.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Versioned reads can reduce reader/writer blocking.</li>
+<li>Higher isolation can protect multi-statement invariants from anomalies.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Serializable range locks may reduce concurrency.</li>
+<li>Snapshot/RCSI consume version-store resources; snapshot transactions can encounter update conflicts.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use the lowest isolation that preserves the actual invariant; consider versioned reads for workloads where blocking is costly and capacity is monitored.</p><p><strong>Avoid:</strong> Avoid READ UNCOMMITTED for correctness-sensitive data and avoid changing database-wide RCSI or transaction isolation without workload testing.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming READ COMMITTED means one consistent snapshot across a multi-statement transaction.</li>
+<li>Enabling row versioning without monitoring version-store capacity.</li>
+<li>Using NOLOCK to “fix” blocking while accepting inconsistent results unknowingly.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Choose isolation from explicit business correctness requirements.</li>
+<li>Keep transaction scopes short and use constraints/conditional updates.</li>
+<li>Monitor lock waits, deadlocks, snapshot conflicts, and version-store growth.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which level can allow dirty reads?</li>
+<li>How do SNAPSHOT and RCSI differ?</li>
+<li>What anomaly does SERIALIZABLE prevent that REPEATABLE READ may allow?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A balance report blocks writers while occasional reports need a consistent view. Evaluate RCSI for statement-level consistency or SNAPSHOT for transaction-level view, check tempdb/version-store headroom, and preserve atomic conditional updates for invariant enforcement.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Isolation defines what changes a transaction can observe and which concurrent anomalies are prevented. SQL Server offers READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE, and SNAPSHOT; READ COMMITTED SNAPSHOT (RCSI) is a database option that provides statement-level versioned reads. Isolation is a correctness and concurrency decision: stronger guarantees can increase locking, blocking, or row-version storage. Snapshot and RCSI use row versions rather than making readers wait for many writers.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-locking-and-row-versioning-guide" target="_blank" rel="noopener noreferrer">Microsoft Learn: Transaction locking and row versioning guide</a></li></ul>
+</section>
+</div>

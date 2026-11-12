@@ -1,0 +1,84 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>OrderService depends on IOrderStore, not SqlOrderStore; the application composition root provides the SQL adapter.</p><ol>
+<li>Declare the capability the policy needs.</li>
+<li>Implement it with an infrastructure adapter.</li>
+<li>Wire the adapter at the application boundary.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IOrderStore
+{
+    Task SaveAsync(Order order, CancellationToken token);
+}
+public sealed class OrderService
+{
+    private readonly IOrderStore store;
+    public OrderService(IOrderStore store) =&gt; this.store = store;
+    public Task PlaceAsync(Order order, CancellationToken token)
+        =&gt; store.SaveAsync(order, token);
+}
+// Startup composition: services.AddScoped&lt;IOrderStore, SqlOrderStore&gt;();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Policy isolated from infrastructure changes</li>
+<li>Simpler focused tests</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Abstractions add indirection</li>
+<li>Poorly owned generic abstractions become leaky</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Invert dependencies across boundaries where infrastructure churn or test isolation matters.</p><p><strong>Avoid:</strong> Avoid abstractions that expose provider-specific concepts or exist only to mock trivial code.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Let business logic depend directly on provider-specific APIs.</li>
+<li>Calling every interface DIP even if it is merely a mock seam.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep persistence and transport details at system edges.</li>
+<li>Test policy with focused fakes and adapters with integration tests.</li>
+<li>Use constructor injection for required dependencies.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How is DIP different from dependency injection?</li>
+<li>Where should the interface live?</li>
+<li>What is a composition root?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A domain service must switch database providers and remain testable. Keep its dependency on a domain-facing store contract and bind the chosen adapter at application startup.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>DIP keeps policy independent of infrastructure contracts; dependency injection composes concrete implementations at runtime.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

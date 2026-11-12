@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A profile update accepts display name and phone number but never accepts IsAdmin, TenantId, or approval status.</p><ol>
+<li>Receive a narrow request DTO</li>
+<li>Validate allowed fields</li>
+<li>Authorize the requested change</li>
+<li>Map explicitly to domain state</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public sealed record UpdateProfileRequest(
+    string DisplayName,
+    string? PhoneNumber);
+
+var profile = await profiles.GetForUserAsync(userId, cancellationToken);
+if (profile is null) return NotFound();
+
+profile.ChangeDisplayName(request.DisplayName);
+profile.ChangePhoneNumber(request.PhoneNumber);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Makes the writable API surface explicit</li>
+<li>Prevents new internal entity properties from being implicitly exposed</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Requires deliberate mapping and DTO maintenance</li>
+<li>A DTO does not replace authorization or domain validation</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Create separate input contracts for create, update, and privileged operations; map only authorized fields.</p><p><strong>Avoid:</strong> Avoid binding HTTP request bodies directly to EF entities or using broad reflection-based property copying for sensitive updates.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using one entity as both persistence model and public API contract.</li>
+<li>Copying every matching property from request to entity.</li>
+<li>Assuming client-side forms prevent crafted requests.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use separate DTOs and commands for privileged state changes.</li>
+<li>Reject or ignore unexpected fields consistently and test the behavior.</li>
+<li>Add domain and database constraints for critical invariants.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is an EF entity a risky request model?</li>
+<li>How does a DTO reduce over-posting?</li>
+<li>What other checks are still required after using a DTO?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A user can change an approval flag through an update endpoint. Remove entity binding, constrain the request DTO, add an authorized approval command, review audit logs, and test that privileged fields in extra JSON properties are ignored or rejected.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Mass assignment occurs when an API binds untrusted request fields directly to a domain or persistence object, allowing callers to set fields they should not control.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP Mass Assignment Cheat Sheet</a></li></ul>
+</section>
+</div>

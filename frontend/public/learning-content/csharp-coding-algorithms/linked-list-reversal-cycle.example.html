@@ -1,0 +1,101 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A batch importer accepts a serialized chain of dependency records. Before processing, detect a malformed loop so one corrupt record cannot keep a worker traversing forever; reverse a valid chain only when ownership permits mutation.</p><ol>
+<li>Trace A → B → C with previous = null.</li>
+<li>Save B.Next, set B.Next = A, then advance.</li>
+<li>Repeat until current is null; return C.</li>
+<li>For a cycle, stop when the two references are identical.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>Node? Reverse(Node? head)
+{
+    Node? previous = null;
+    Node? current = head;
+    while (current is not null)
+    {
+        Node? next = current.Next; // Preserve the rest of the chain.
+        current.Next = previous;
+        previous = current;
+        current = next;
+    }
+    return previous;
+}
+
+bool HasCycle(Node? head)
+{
+    Node? slow = head;
+    Node? fast = head;
+    while (fast?.Next is not null)
+    {
+        slow = slow!.Next;
+        fast = fast.Next.Next;
+        if (ReferenceEquals(slow, fast)) return true;
+    }
+    return false;
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>One pass; constant extra space</li>
+<li>No node allocation is required</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>In-place reversal mutates the chain</li>
+<li>Pointer ordering and null boundaries are easy to get wrong</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use when nodes are exclusively owned and memory efficiency matters.</p><p><strong>Avoid:</strong> Avoid mutating shared or immutable structures; copy or use an immutable representation instead.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Overwriting Next before saving it loses the unprocessed suffix.</li>
+<li>Checking node values instead of references can report a false cycle when values repeat.</li>
+<li>Reversing a structure still in use can break concurrent readers.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>State the loop invariant: previous is reversed and current begins the untouched suffix.</li>
+<li>Test null, singleton, two-node, cycle-at-head, and self-loop inputs.</li>
+<li>Make ownership and mutation expectations explicit at the API boundary.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why must `next` be saved before changing `current.Next`?</li>
+<li>Why can two pointers detect a cycle without storing visited nodes?</li>
+<li>What are the time and space costs of each algorithm?</li>
+<li>How would you return the cycle entry rather than only report that a cycle exists?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A worker stops completing imported dependency jobs because a chain loops. Validate for a cycle at the ingestion boundary, record the source record ID for repair, and cover empty, single-node, acyclic, and cyclic cases without silently mutating shared input.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Rewire links carefully for reversal; use two-speed identity comparison to detect loops without extra storage.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.linkedlist-1" target="_blank" rel="noopener noreferrer">Microsoft: LinkedList&lt;T&gt;</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/reference-types" target="_blank" rel="noopener noreferrer">Microsoft: Reference types</a></li></ul>
+</section>
+</div>

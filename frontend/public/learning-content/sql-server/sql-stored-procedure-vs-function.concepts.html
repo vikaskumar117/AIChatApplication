@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A stored procedure is an executable database routine that can accept parameters, return result sets/output parameters, and perform data modifications. A function returns a scalar or table value and is designed to participate in expressions or FROM clauses, subject to SQL Server function restrictions.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>The choice affects composability, side effects, result shape, permissions, and optimizer visibility. It is not simply “procedure is faster” or “function is reusable.”</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use procedures for command/workflow boundaries, transactional operations, and multiple result sets. Use inline table-valued functions for composable relational logic where appropriate; scalar and multi-statement functions have distinct optimizer/performance characteristics that require version-aware measurement.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Stored procedure</strong><span>Command-oriented invocation; can return result sets and output values, with data modifications.</span></div></div>
+<div><span>2</span><div><strong>Function</strong><span>Returns scalar or table value and can participate in expressions/query clauses subject to restrictions.</span></div></div>
+<div><span>3</span><div><strong>Composition</strong><span>Inline TVF can be part of a relational query; procedure result sets are invoked separately.</span></div></div>
+<div><span>4</span><div><strong>Measure</strong><span>Evaluate optimizer behavior, permissions, deployment, and maintainability.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Procedures are command routines; functions return values usable in expressions or table contexts.</li>
+<li>Procedures can return multiple result sets; functions have stricter side-effect rules.</li>
+<li>Inline and multi-statement table-valued functions have different optimization behavior.</li>
+<li>Choose based on composition, transaction boundary, ownership, and measured performance.</li>
+</ul>
+</section>
+</div>

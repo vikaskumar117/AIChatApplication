@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>For a public .NET API with steady traffic, compare App Service with a minimum-capacity Container App. Put bursty queue work in Functions when its execution and timeout model fits; test idle-to-first-request latency before accepting scale-to-zero.</p><ol>
+<li>Measure request rate, burst, duration, and first-request SLO.</li>
+<li>Inventory runtime, container, sidecar, and private-network requirements.</li>
+<li>Compare an equivalent load test on candidate plans, including idle and peak cost.</li>
+<li>Deploy with health checks, bounded scale, managed identity, and rollback path.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Selection checklist
+// Managed web API / deployment slots -&gt; App Service
+// Triggered, bounded event work -&gt; Functions
+// Existing container / sidecars / scale rules -&gt; Container Apps
+// Then set min/max capacity, identity, network access, and alerts.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Managed platforms offload host patching and orchestration</li>
+<li>Each platform offers a different deployment and scaling model</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Plan, region, minimum replicas, and workload profile drive cost</li>
+<li>Scale-out does not remove cold starts, quotas, or downstream bottlenecks</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use App Service for conventional web workloads, Functions for event-oriented units of work, and Container Apps when container packaging or replica-level control matters.</p><p><strong>Avoid:</strong> Avoid selecting solely by headline price or assuming every plan scales to zero, has identical startup behavior, or provides the same network controls.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming scale-to-zero is free of cold starts or available on every plan.</li>
+<li>Comparing prices without including minimum capacity, logs, network egress, and dependent services.</li>
+<li>Allowing autoscale to exceed database connection or API quotas.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Load-test startup and scale behavior against the actual latency objective.</li>
+<li>Use managed identity, health probes, deployment slots or revisions, and bounded autoscale.</li>
+<li>Monitor cost per request alongside latency, errors, and replica count.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is the difference between an app and its App Service plan?</li>
+<li>Why can a scale-to-zero workload have a cold start?</li>
+<li>When does a Container App need a minimum replica?</li>
+<li>How would you compare steady-state and burst cost?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A customer-facing API has low overnight traffic but a strict first-request latency SLO. Load-test cold and warm starts, compare a warm minimum replica or always-on plan with true utilization, validate outbound dependencies and private ingress, then set alerts for latency, replica limits, and spend.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Choose a hosting model from workload shape, then prove its scale, networking, latency, and cost under representative load.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/azure/app-service/overview" target="_blank" rel="noopener noreferrer">App Service overview</a></li><li><a href="https://learn.microsoft.com/azure/azure-functions/functions-scale" target="_blank" rel="noopener noreferrer">Azure Functions hosting options</a></li><li><a href="https://learn.microsoft.com/azure/container-apps/scale-app" target="_blank" rel="noopener noreferrer">Container Apps scale</a></li><li><a href="https://learn.microsoft.com/azure/app-service/networking-features" target="_blank" rel="noopener noreferrer">App Service networking features</a></li></ul>
+</section>
+</div>

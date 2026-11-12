@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An expired bearer credential yields 401; an authenticated user lacking the required permission gets 403; a stale version update gets 409.</p><ol>
+<li>Classify outcome</li>
+<li>Select status and safe body</li>
+<li>Client follows status-specific recovery</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>return product is null
+    ? NotFound()
+    : Ok(ProductDto.From(product));
+// A stale write may return Conflict(problemDetails); an unexpected exception is 500.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Predictable machine-readable client behavior</li>
+<li>Clear distinction between authentication, permission, and state conflicts</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>A status can leak resource existence if policy requires concealment</li>
+<li>Poorly defined client retries can amplify transient failures</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use the most specific status consistent with the HTTP contract and security disclosure policy.</p><p><strong>Avoid:</strong> Avoid returning 200 for failures or using 401 and 403 interchangeably without a deliberate concealment policy.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using 401 when the caller is authenticated but lacks permission.</li>
+<li>Returning stack traces or sensitive resource details in error bodies.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Define status, headers, and error body for every endpoint outcome.</li>
+<li>Test client retry behavior separately from status classification.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How do 401 and 403 differ?</li>
+<li>When is 409 appropriate?</li>
+<li>Should validation errors return 500?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A client retries all non-200 responses and creates load; publish a status contract distinguishing correctable 400, authentication 401, forbidden 403, conflict 409, and retryable server failures.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Status codes classify success, client-side request problems, and server failures; 400, 401, 403, 404, 409, and 500 have distinct meanings.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener noreferrer">RFC 9110: HTTP Semantics</a></li></ul>
+</section>
+</div>

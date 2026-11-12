@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A message broker accepts messages and routes or stores them for consumers; RabbitMQ commonly uses exchanges, bindings, and queues, while Azure Service Bus provides queues and topics/subscriptions as managed messaging primitives.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Brokers decouple producer and consumer timing, buffer load, and support competing consumers or fan-out, but introduce delivery, ordering, capacity, and operations concerns.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Choose queue for competing work and topic/subscriptions for independent subscribers; define acknowledgements, retention, dead-letter handling, ordering scope, and duplicate detection for the actual broker and tier.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Producer</strong><span>Sends a versioned message with stable identity and required metadata.</span></div></div>
+<div><span>2</span><div><strong>Routing</strong><span>Exchange/binding or queue/topic subscription routes to intended work.</span></div></div>
+<div><span>3</span><div><strong>Consumer</strong><span>Processes with bounded concurrency and acknowledges after durable outcome.</span></div></div>
+<div><span>4</span><div><strong>Recovery</strong><span>Retry, dead-letter, inspect, and safely replay failed messages.</span></div></div>
+</figure>
+<figcaption>Broker-level acceptance, delivery to a consumer, and completion of the business effect are separate milestones.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Acknowledging before committing the business effect.</li>
+<li>Assuming queues preserve global order at scale.</li>
+<li>Treating dead-letter queues as automatically repaired.</li>
+</ul>
+</section>
+</div>

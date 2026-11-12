@@ -1,0 +1,84 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>OrderService receives IOrderStore through its constructor so tests can supply a fake and production can supply a database-backed store.</p><ol>
+<li>Declare required collaborators in the constructor.</li>
+<li>Register implementations and lifetimes in startup.</li>
+<li>Use a fake in a test and the SQL adapter in production.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>      public sealed class OrderService
+{
+          private readonly IOrderStore store;
+          public OrderService(IOrderStore store) =&gt; this.store = store;
+          public Task PlaceAsync(Order order, CancellationToken token)
+        =&gt; store.SaveAsync(order, token);
+}
+
+// ASP.NET Core composition:
+services.AddScoped&lt;IOrderStore, SqlOrderStore&gt;();
+services.AddScoped&lt;OrderService&gt;();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Dependencies are explicit and replaceable</li>
+<li>Composition policy stays at startup</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Lifetime mistakes can retain state or dispose too early</li>
+<li>Container overuse can hide dependency graphs</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Inject required services through constructors and align lifetime with ownership.</p><p><strong>Avoid:</strong> Avoid service locator patterns, captive scoped dependencies, and needless interfaces.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Resolving arbitrary services from IServiceProvider inside business logic.</li>
+<li>Capturing scoped services in singletons.</li>
+<li>Registering every class behind an interface without reason.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep composition at the application boundary.</li>
+<li>Prefer immutable singleton services and scoped request data as appropriate.</li>
+<li>Validate service registration and disposal behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does DI improve testing?</li>
+<li>What does scoped mean in a web request?</li>
+<li>Why avoid injecting IServiceProvider broadly?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A request service uses a scoped database context. Register both with compatible scoped lifetimes and do not capture the context inside a singleton background service.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Dependency injection externalizes construction so collaborators and lifetimes can be composed and substituted explicitly.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

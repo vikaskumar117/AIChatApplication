@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A List&lt;int&gt; prevents inserting a string and returns an int without casting; ArrayList accepts both and fails when the caller assumes the wrong type.</p><ol>
+<li>Add integers to List&lt;int&gt; and consume them without conversion.</li>
+<li>Add mixed values to ArrayList.</li>
+<li>Cast each value and observe the runtime risk.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var typed = new List&lt;int&gt; { 1, 2 };
+int total = typed[0] + typed[1];
+
+var untyped = new System.Collections.ArrayList { 1, &quot;two&quot; };
+int first = (int)untyped[0]; // runtime cast required
+// int second = (int)untyped[1]; // InvalidCastException</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Compile-time guarantees</li>
+<li>No casts at typed call sites</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Object collections can represent mixed data</li>
+<li>Casts and value boxing add risk and possible overhead</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Prefer generic collections and APIs when a collection has a known element type.</p><p><strong>Avoid:</strong> Avoid object as a shortcut for missing domain modeling.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Casting every object without validating its runtime type.</li>
+<li>Using object to avoid designing a stable message contract.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Choose generic collections for homogeneous data.</li>
+<li>Represent variants explicitly and validate at boundaries.</li>
+<li>Keep object-based interop isolated.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What error is detected earlier by List&lt;T&gt;?</li>
+<li>Why can object store an int but require a cast?</li>
+<li>When is heterogeneity a real requirement?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An event pipeline handles several message types. Prefer a shared message contract or explicit tagged variants rather than object payloads that consumers blindly cast.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Generic APIs preserve element type and catch errors early; object APIs defer correctness to runtime casts.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

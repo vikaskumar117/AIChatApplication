@@ -1,0 +1,89 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Discount calculation varies by campaign. A strategy contract lets a new campaign implement its rule without expanding a checkout switch.</p><ol>
+<li>Define policy behavior required by checkout.</li>
+<li>Implement one discount strategy.</li>
+<li>Add another strategy via composition rather than another checkout branch.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IDiscountPolicy { decimal Apply(decimal subtotal); }
+public sealed class NoDiscount : IDiscountPolicy
+{
+    public decimal Apply(decimal subtotal) =&gt; subtotal;
+}
+public sealed class PercentageDiscount : IDiscountPolicy
+{
+    private readonly decimal rate;
+    public PercentageDiscount(decimal rate) =&gt; this.rate = rate;
+    public decimal Apply(decimal subtotal) =&gt; subtotal * (1 - rate);
+}
+public sealed class Checkout
+{
+    private readonly IDiscountPolicy discount;
+    public Checkout(IDiscountPolicy discount) =&gt; this.discount = discount;
+    public decimal Total(decimal subtotal) =&gt; discount.Apply(subtotal);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>New variants have localized implementation</li>
+<li>Stable client code changes less</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Abstraction has upfront cost</li>
+<li>Configuration/plugin systems can become opaque</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Apply OCP where variation is real and recurring.</p><p><strong>Avoid:</strong> Avoid building speculative plugin architectures for a single stable branch.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>A large type switch that grows with every variant.</li>
+<li>An abstract framework for variants that do not exist.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use observed change pressure to select extension points.</li>
+<li>Keep invariants and validation explicit.</li>
+<li>Test each strategy and the composition boundary.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Does OCP forbid modifying code?</li>
+<li>When should a switch become a strategy?</li>
+<li>How can extension points become over-engineering?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A promotion platform adds campaign rules monthly. Register validated discount strategies and keep checkout stable; do not make payment invariants pluggable without a requirement.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>OCP localizes expected variation behind stable contracts without pretending existing code must never change.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

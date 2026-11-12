@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A local value used after an HTTP await must be available to the continuation, so generated state captures what is needed.</p><ol>
+<li>Set multiplier before the await.</li>
+<li>If the HTTP Task is incomplete, preserve multiplier and continuation state.</li>
+<li>Resume, obtain body, then calculate the result.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>static async Task&lt;int&gt; ReadLengthAsync(HttpClient client, CancellationToken token)
+{
+    int multiplier = 2;
+    string body = await client.GetStringAsync(&quot;/data&quot;, token);
+    return body.Length * multiplier;
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Readable sequential control flow</li>
+<li>No blocked worker during incomplete await</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>State and continuation have overhead</li>
+<li>Captured locals can extend object lifetimes</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Await returned asynchronous operations and keep state lifetimes short.</p><p><strong>Avoid:</strong> Avoid unnecessary async state machines when a method only returns an existing Task and needs no transformation.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming one thread remains parked with the local stack.</li>
+<li>Capturing large object graphs across long waits unnecessarily.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep async methods composable and cancellation-aware.</li>
+<li>Minimize long-lived references across awaits.</li>
+<li>Profile before removing async/await for micro-optimization.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is stored in the generated state machine?</li>
+<li>What does the awaiter do?</li>
+<li>When can await continue synchronously?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A high-volume parser’s allocation profile shows many tiny completed async operations. Preserve async where needed for composition; optimize measured hot paths without losing exception or cancellation semantics.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>The compiler-generated state machine saves the necessary state at incomplete awaits and resumes through an awaiter continuation.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

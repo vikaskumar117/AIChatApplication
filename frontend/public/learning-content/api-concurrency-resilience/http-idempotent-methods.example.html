@@ -1,0 +1,76 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Deleting an already-deleted resource can return 404 on a later call yet remain idempotent because the resource stays absent.</p><ol>
+<li>Issue request once</li>
+<li>Repeat same request</li>
+<li>Intended final state remains equivalent</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>PUT /api/profiles/42
+{ &quot;displayName&quot;: &quot;Mina&quot;, &quot;locale&quot;: &quot;en-GB&quot; }
+
+DELETE /api/profiles/42
+// Repeating either request does not create an additional intended state change.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Supports safer retries for defined operations</li>
+<li>Aligns endpoint behavior with standard HTTP semantics</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Ancillary side effects can accidentally make repeated calls harmful</li>
+<li>Idempotence is often misread as identical responses or writes</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use safe/idempotent method semantics to guide client retries and design repeatable resource state transitions.</p><p><strong>Avoid:</strong> Avoid mutating data on GET or assuming POST is retry-safe without a deduplication contract.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Putting analytics-triggering or payment side effects in GET.</li>
+<li>Assuming returning the same status code is required for idempotence.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Document retry semantics and side effects per operation.</li>
+<li>Test repeated requests, including timeouts and concurrent delivery.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which standard methods are idempotent?</li>
+<li>Can an idempotent request return different status codes on retry?</li>
+<li>Is zero database writes required by idempotence?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A gateway retries DELETE after a timeout; ensure repeat deletion does not trigger a second refund or notification, even if the response to a later call differs.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>HTTP defines PUT and DELETE as idempotent in intended effect, and GET, HEAD, OPTIONS, and TRACE as safe and therefore idempotent.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc9110#section-9.2" target="_blank" rel="noopener noreferrer">RFC 9110: Safe and Idempotent Methods</a></li></ul>
+</section>
+</div>

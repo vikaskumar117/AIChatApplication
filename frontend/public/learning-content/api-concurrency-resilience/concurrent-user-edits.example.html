@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Two support agents edit a customer address; the second save reports a conflict rather than silently erasing the first agent’s changes.</p><ol>
+<li>Editor A and B load same version</li>
+<li>A commits a change</li>
+<li>B submits stale version and conflict is detected</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Update only if the submitted version is still current.
+var affected = await db.Customers
+    .Where(c =&gt; c.Id == id &amp;&amp; c.Version == request.Version)
+    .ExecuteUpdateAsync(setters =&gt; setters
+        .SetProperty(c =&gt; c.Address, request.Address), ct);
+return affected == 0 ? Conflict() : NoContent();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Protects user intent and exposes stale work</li>
+<li>Allows deliberate reload, merge, or conflict resolution</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Users may need to resolve conflicts</li>
+<li>Version tokens and client contracts require coordination</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use conflict detection for collaborative or long-lived edits where overwriting another user’s work is unacceptable.</p><p><strong>Avoid:</strong> Avoid last-write-wins unless the data and product explicitly accept discarded updates.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Checking a version in application memory and saving later without a conditional write.</li>
+<li>Automatically merging fields without understanding business meaning.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Include an opaque version or ETag in editable representations.</li>
+<li>Test simultaneous updates and verify that no successful write is silently lost.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is a lost update?</li>
+<li>Why should the API detect rather than guess a merge?</li>
+<li>What recovery choices can a client offer?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An editor submits a form open for twenty minutes while another agent changed the record; return the current representation/version safely and offer a user-reviewed merge.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A lost update occurs when a later save overwrites changes made after the editor loaded its original copy.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/ef/core/saving/concurrency" target="_blank" rel="noopener noreferrer">EF Core concurrency handling</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Controller inherits ControllerBase and adds view-related functionality such as ViewData, ViewBag, and view rendering support.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>A JSON API normally does not render server-side views, so inheriting ControllerBase keeps its intent and available surface focused.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use Controller when actions genuinely return MVC views; use ControllerBase for API actions, typically paired with [ApiController] where its conventions are wanted.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Choose response style</strong><span>A server-rendered MVC action returns HTML view results; an API action generally returns serialized data or an HTTP result.</span></div></div>
+<div><span>2</span><div><strong>Select matching MVC base class</strong><span>ControllerBase provides the common MVC context and HTTP response helpers; Controller adds view abstractions.</span></div></div>
+<div><span>3</span><div><strong>Keep controller responsibilities explicit</strong><span>The selected base class does not choose authentication policy, model contract, or API validation convention.</span></div></div>
+</figure>
+<figcaption>Both are MVC controller base classes; neither is a replacement for middleware or an authorization policy.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Controller inherits ControllerBase.</li>
+<li>Use the smaller API-oriented base for API-only controllers.</li>
+<li>Choose based on response responsibility, not assumed security.</li>
+</ul>
+</section>
+</div>

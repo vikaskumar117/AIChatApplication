@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A type parameter such as T stands for a type selected by a caller; a generic definition can constrain which types are legal. A closed type such as List&lt;string&gt; fixes T to string. Variance is a declared safe conversion for generic interfaces and delegates.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Generics let APIs express their real input/output types, catch mismatches at compile time, and avoid repeated casts. They also support reusable collections, algorithms, and service contracts.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>The compiler and runtime retain generic type information. Constraints such as where T : IEntity state required capabilities; covariance and contravariance are available only in safe interface/delegate positions.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Open generic contract</strong><span>IRepository&lt;T&gt; states the shape before a concrete entity is selected.</span></div></div>
+<div><span>2</span><div><strong>Constraint check</strong><span>where T : IEntity requires an Id capability at compile time.</span></div></div>
+<div><span>3</span><div><strong>Closed implementation</strong><span>IRepository&lt;Customer&gt; carries Customer types end-to-end without casts.</span></div></div>
+</figure>
+<figcaption>Follow the labeled stages; each node names a concrete decision or runtime effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Type parameters preserve the caller’s useful type.</li>
+<li>Constraints are compile-time guarantees.</li>
+<li>Generic reuse should represent real common behavior.</li>
+</ul>
+</section>
+</div>

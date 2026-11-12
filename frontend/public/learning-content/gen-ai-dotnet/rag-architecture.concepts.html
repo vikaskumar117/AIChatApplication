@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — RAG combines document ingestion, chunking, embeddings, an index, retrieval, and generation. An embedding is a numeric representation used to find semantically similar text; a chunk is a bounded portion of a source document.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — It can ground answers in private or changing content without retraining the model and can expose source references. Retrieval improves evidence access, not factual guarantees.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Extract and normalize documents; chunk with useful metadata; embed with a compatible model and index; retrieve candidates using query, hybrid/vector search, and tenant/ACL filters; optionally rerank; pass a bounded set to the model; return citations only for retrieved passages actually used. Re-index or remove content when sources, permissions, or embedding models change.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Source documents</strong><span>Versioned content and permissions; changes and deletions must propagate to the index.</span></div></div>
+<div><span>2</span><div><strong>Ingestion pipeline</strong><span>Extract, chunk, attach ACL/tenant metadata, embed, and index.</span></div></div>
+<div><span>3</span><div><strong>Authorized retrieval</strong><span>Filter by caller permissions before selecting top candidates; rerank if useful.</span></div></div>
+<div><span>4</span><div><strong>Grounded generation</strong><span>Send bounded evidence with clear untrusted-source boundaries and instructions.</span></div></div>
+<div><span>5</span><div><strong>Answer and citations</strong><span>Return references to evidence actually included; measure quality and leakage.</span></div></div>
+</figure>
+<figcaption>RAG is an evidence pipeline, not a truth guarantee. Authorization must constrain retrieval before private chunks enter model context.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Retrieval authorization is a data-security boundary.</li>
+<li>A high similarity score means related text, not necessarily a correct answer.</li>
+<li>Index updates, permission changes, and deletion require a defined synchronization path.</li>
+</ul>
+</section>
+</div>

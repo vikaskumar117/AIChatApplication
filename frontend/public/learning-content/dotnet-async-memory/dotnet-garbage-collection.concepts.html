@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Garbage collection (GC) traces references from roots to determine reachability. Finalization, pinning, and large objects have specialized behavior beyond ordinary small-object reclamation.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Automatic collection simplifies memory safety and generational collection exploits the fact that many objects die young. Excess allocation, long-lived retention, pinning, or large allocations can still cause pauses and memory pressure.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>The GC may reclaim and compact movable objects; references are updated as needed. Do not force collection in ordinary flow. Use runtime counters, traces, and heap snapshots to diagnose allocation and retention.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Roots</strong><span>Runtime begins with active roots and follows references.</span></div></div>
+<div><span>2</span><div><strong>Reachable objects</strong><span>Objects with a reference path remain live for this collection.</span></div></div>
+<div><span>3</span><div><strong>Unreachable objects</strong><span>Objects without root paths become reclaimable.</span></div></div>
+<div><span>4</span><div><strong>Reclaim or compact</strong><span>GC reuses dead space and may move eligible objects while fixing references.</span></div></div>
+</figure>
+<figcaption>Follow each labeled stage to see the concrete scheduling, ownership, or memory effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>GC decides liveness by reachability.</li>
+<li>GC does not reclaim objects merely because they are old or unused by intent.</li>
+<li>Forced collection rarely fixes root causes.</li>
+</ul>
+</section>
+</div>

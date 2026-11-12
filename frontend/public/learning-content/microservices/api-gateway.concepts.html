@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>An API gateway is a controlled client-facing entry point that routes requests and may handle cross-cutting edge concerns such as authentication, rate limiting, and protocol translation.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>It hides internal topology from clients and can compose or tailor APIs, while centralizing edge traffic policy.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Keep business invariants and authoritative authorization in services; keep gateway policies narrow, versioned, observable, and highly available. A backend-for-frontend is a gateway tailored to a client experience.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Client edge</strong><span>Authenticate the client and apply coarse rate or request-size limits.</span></div></div>
+<div><span>2</span><div><strong>Route / compose</strong><span>Map stable public routes to internal APIs or a client-specific response.</span></div></div>
+<div><span>3</span><div><strong>Service authority</strong><span>Service validates business rules and resource-level authorization.</span></div></div>
+<div><span>4</span><div><strong>Edge telemetry</strong><span>Track route, status, latency, and downstream correlation.</span></div></div>
+</figure>
+<figcaption>The gateway is a policy and routing boundary, not a replacement for domain ownership or service-level access checks.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Putting all business orchestration in one gateway.</li>
+<li>Trusting gateway authentication alone for object-level authorization.</li>
+<li>Assuming a gateway can hide every internal failure.</li>
+</ul>
+</section>
+</div>

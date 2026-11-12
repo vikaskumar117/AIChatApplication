@@ -1,0 +1,76 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>The web client uses a validated ID token to complete sign-in and sends a distinct Orders access token to the Orders API.</p><ol>
+<li>Client initiates OIDC request</li>
+<li>Provider authenticates and returns code</li>
+<li>Client validates ID token and establishes session</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Prefer maintained ASP.NET Core OIDC middleware.
+options.ResponseType = &quot;code&quot;;
+options.UsePkce = true;
+// Validate callback state and ID-token nonce through the middleware;
+// do not accept arbitrary tokens or account-link by email alone.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Standard discovery, sign-in flow, and identity claims</li>
+<li>Integrates with established identity providers and middleware</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Client must protect protocol state and local session</li>
+<li>ID tokens are frequently confused with API access tokens</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use OIDC when an application needs standards-based user authentication.</p><p><strong>Avoid:</strong> Avoid sending an ID token to an API or trusting unvalidated email or profile claims for account linking.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using an ID token as a bearer credential to an API.</li>
+<li>Using email as a permanent external identity key.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use maintained OIDC middleware and discovery metadata.</li>
+<li>Use (`iss`, `sub`) for federated identity linkage and secure the resulting session.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does the openid scope indicate?</li>
+<li>What is an ID token audience?</li>
+<li>What do state and nonce protect?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A callback receives a signed ID token intended for a different client; reject it, retain callback state validation, and establish no local session until protocol validation succeeds.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>OpenID Connect adds an interoperable identity layer to OAuth 2.0 so a client can validate a user authentication result.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://openid.net/specs/openid-connect-core-1_0.html" target="_blank" rel="noopener noreferrer">OpenID Connect Core 1.0</a></li><li><a href="https://learn.microsoft.com/en-us/entra/identity-platform/v2-protocols-oidc" target="_blank" rel="noopener noreferrer">Microsoft identity platform OIDC</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A legacy action may execute with invalid ModelState unless it checks ModelState.IsValid or adopts the API controller convention.</p><ol>
+<li>Request matches controller route</li>
+<li>MVC binds parameters and records errors</li>
+<li>Action or explicit convention handles outcome</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>if (!ModelState.IsValid)
+    return ValidationProblem(ModelState);
+var result = await service.CreateAsync(request, ct);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Allows explicit legacy or specialized MVC behavior</li>
+<li>Useful where the API controller conventions are intentionally not desired</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>More repeated validation and binding decisions</li>
+<li>Clients may see inconsistent errors between controllers</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use an unadorned controller when you intentionally own binding and validation response behavior.</p><p><strong>Avoid:</strong> Avoid assuming that data annotations alone guarantee an automatic 400 response on an ordinary controller.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Equating missing [ApiController] with no model binding.</li>
+<li>Assuming invalid annotations always stop an ordinary controller action.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Test malformed JSON, missing values, and annotation failures at the HTTP boundary.</li>
+<li>Document deliberate exceptions to shared validation conventions.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Can a controller route work without [ApiController]?</li>
+<li>What should the action do with invalid ModelState?</li>
+<li>How would you migrate legacy behavior safely?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A service returns 200 for invalid request objects in one legacy controller; add explicit validation handling and integration tests before moving it to shared API conventions.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A controller without [ApiController] can still serve an API, but it does not receive that attribute’s API-specific conventions automatically.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/web-api/#apicontroller-attribute" target="_blank" rel="noopener noreferrer">API controller behavior</a></li></ul>
+</section>
+</div>

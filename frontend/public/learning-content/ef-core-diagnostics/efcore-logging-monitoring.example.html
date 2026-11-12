@@ -1,0 +1,81 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An API trace has an EF database span linked to a request ID, while route-level histograms show the p99 regression.</p><ol>
+<li>Define service SLOs and the metrics that signal user impact.</li>
+<li>Instrument route and dependency spans with propagated trace context.</li>
+<li>Emit structured event logs linked by trace/correlation ID.</li>
+<li>Review labels, redaction, sampling, access, and retention policies.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>using var activity = ActivitySource.StartActivity(&quot;orders.create&quot;);
+logger.LogInformation(&quot;Creating order {OrderId} TraceId={TraceId}&quot;,
+    orderId, Activity.Current?.TraceId);
+
+// Record low-cardinality metrics such as route, result, and dependency duration.
+// Do not use user IDs, raw SQL, tokens, or arbitrary query strings as metric labels.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Three telemetry signals answer complementary diagnostic questions.</li>
+<li>Correlation IDs connect API activity to dependencies and logs.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Telemetry volume, cardinality, retention, and sampling require governance.</li>
+<li>Sensitive data can leak through log scopes, SQL, headers, or exception messages.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use structured, correlated telemetry aligned with SLOs and incident questions.</p><p><strong>Avoid:</strong> Avoid high-cardinality metric labels, unredacted secrets, and unbounded verbose production logging.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using logs as the only source for fleet-wide latency trends.</li>
+<li>Adding user IDs or arbitrary strings as metric dimensions.</li>
+<li>Enabling sensitive EF logging in production without strict controls.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use OpenTelemetry-compatible instrumentation and context propagation.</li>
+<li>Keep metric dimensions bounded and stable.</li>
+<li>Redact personal data, credentials, and sensitive query values.</li>
+<li>Define retention and access controls for telemetry.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>When do you use logs versus metrics versus traces?</li>
+<li>Why are user IDs bad metric labels?</li>
+<li>How does trace context improve SQL/API diagnosis?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A latency alert cannot identify which dependency is slow. Add trace propagation and bounded dependency spans, correlate EF command metrics by route/build, and use redaction and low-cardinality tags.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Logs record discrete events, metrics aggregate numerical time series, and traces connect spans across a request and its dependencies. Together they describe what happened, how often, and where latency accumulated. Logs alone are difficult to aggregate; metrics lack per-request context; traces show causal timing but may be sampled. Correlation across all three improves diagnosis.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-with-otel" target="_blank" rel="noopener noreferrer">Microsoft Learn: .NET observability with OpenTelemetry</a></li></ul>
+</section>
+</div>

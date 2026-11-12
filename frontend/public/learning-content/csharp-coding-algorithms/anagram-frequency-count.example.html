@@ -1,0 +1,94 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A deduplication import compares labels independent of character order, ignoring case and spaces. The sample uses UTF-16 chars and should be adapted if grapheme clusters define a character.</p><ol>
+<li>Count &quot;aab&quot;: a → 2, b → 1.</li>
+<li>Consume &quot;aba&quot;: a → 1, b → 0, a → 0.</li>
+<li>All counts are zero, so the strings match as anagrams.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>bool AreAnagrams(string first, string second)
+{
+    var counts = new Dictionary&lt;char, int&gt;();
+
+    foreach (char value in first.ToUpperInvariant())
+    {
+        if (char.IsWhiteSpace(value)) continue;
+        counts[value] = counts.GetValueOrDefault(value) + 1;
+    }
+
+    foreach (char value in second.ToUpperInvariant())
+    {
+        if (char.IsWhiteSpace(value)) continue;
+        if (!counts.TryGetValue(value, out int count) || count == 0)
+            return false;
+        counts[value] = count - 1;
+    }
+
+    return counts.Values.All(count =&gt; count == 0);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Expected O(n) time without sorting</li>
+<li>Makes duplicate character counts explicit</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Dictionary memory grows with distinct characters</li>
+<li>Correctness depends on matching normalization rules for both inputs</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for moderate text under a defined character and normalization contract.</p><p><strong>Avoid:</strong> Avoid assuming char counts are equivalent to human-perceived characters for all Unicode text.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Checking membership alone misses different duplicate counts.</li>
+<li>Normalizing only one side makes results inconsistent.</li>
+<li>Forgetting whitespace/case requirements changes expected answers.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Reject unequal normalized lengths early when normalization is available.</li>
+<li>Test repeated letters, empty input, casing, and punctuation rules.</li>
+<li>For strict Unicode behavior, count text elements rather than UTF-16 code units.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why must duplicate characters be counted?</li>
+<li>Why is checking only that every character exists insufficient?</li>
+<li>When would sorting be simpler?</li>
+<li>What should normalization include?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A customer-data merge compares names without case or spaces, but the canonical record must preserve the original text. Compare normalized copies only for matching; never overwrite source data with the normalized form.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Count and consume character frequencies to compare anagrams in expected linear time.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2" target="_blank" rel="noopener noreferrer">Microsoft: Dictionary&lt;TKey,TValue&gt;</a></li></ul>
+</section>
+</div>

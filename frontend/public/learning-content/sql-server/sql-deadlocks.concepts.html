@@ -1,0 +1,39 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A deadlock is a cycle of transactions, each holding a resource needed by another. SQL Server detects the cycle and chooses a victim; error 1205 means that victim transaction was rolled back.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Deadlocks differ from ordinary blocking: a wait may resolve when its holder commits, while a deadlock cycle cannot progress without aborting a participant.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Capture the deadlock graph (extended events/system_health), identify statements, lock modes, indexes, and access order, then shorten transactions, standardize resource order, and improve selective access. Retry the entire database unit only when safe, bounded, and idempotent.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Transaction A</strong><span>Holds resource 1 and requests resource 2.</span></div></div>
+<div><span>2</span><div><strong>Transaction B</strong><span>Holds resource 2 and requests resource 1.</span></div></div>
+<div><span>3</span><div><strong>Cycle detection</strong><span>The lock manager detects a wait-for cycle and chooses a victim.</span></div></div>
+<div><span>4</span><div><strong>1205 rollback</strong><span>Victim transaction is rolled back; caller must decide whether safe retry applies.</span></div></div>
+<div><span>5</span><div><strong>Root-cause fix</strong><span>Use graph evidence to correct order, duration, indexes, and retry boundary.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>1205 means SQL Server selected and rolled back a deadlock victim.</li>
+<li>Blocking alone is not a deadlock; a cycle is required.</li>
+<li>Deadlock graphs are stronger evidence than guessing from application logs.</li>
+<li>Retries complement, not replace, concurrency design fixes.</li>
+</ul>
+</section>
+</div>

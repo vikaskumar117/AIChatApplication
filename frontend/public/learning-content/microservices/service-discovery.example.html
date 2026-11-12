@@ -1,0 +1,68 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A client calls `inventory` by logical name; Kubernetes DNS and a Service route to healthy replicas without embedding pod addresses.</p><ol>
+<li>Use stable service identity and platform-native discovery.</li>
+<li>Test endpoint turnover and connection draining.</li>
+<li>Monitor resolution failures and unhealthy-instance routing.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var client = httpClientFactory.CreateClient(&quot;inventory&quot;);
+var response = await client.GetAsync(&quot;/v1/items/42&quot;, deadlineToken);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Decouples callers from ephemeral instance addresses.</li>
+<li>Enables scale-out and instance replacement without client redeployment.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Stale DNS, health checks, and client connection pools can delay convergence.</li>
+<li>A registry adds operational state and can itself become a dependency.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use the discovery mechanism already supported by the deployment platform where possible.</p><p><strong>Avoid:</strong> Avoid hand-maintained endpoint lists or assuming discovery proves business health.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid hand-maintained endpoint lists or assuming discovery proves business health.</li>
+<li>Assuming service discovery guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Coordinate discovery with rollout and graceful shutdown.</li>
+<li>Avoid custom registries unless platform needs justify their complexity.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is the difference between service naming and discovery?</li>
+<li>Why can DNS changes take time to affect a client?</li>
+<li>What should health-aware routing check?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>After rolling deployment, clients retain connections to removed instances. Tune connection lifetime and drain behavior, and observe discovery and readiness convergence.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Service discovery replaces fixed addresses with a dynamic resolution mechanism whose caching and health semantics must be understood.</p>
+</section>
+</div>

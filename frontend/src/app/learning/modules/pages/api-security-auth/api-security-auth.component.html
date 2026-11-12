@@ -1,0 +1,54 @@
+<div class="module-page" [class.topic-open]="!!selectedTopic()">
+  <aside class="module-topic-nav" aria-label="Topics in this module">
+    <button class="module-back-link" type="button" (click)="backToModules()">? All modules</button>
+    <p class="module-kicker">LEARNING MODULE</p>
+    <h2>{{ module.title }}</h2>
+    <nav>
+      @for (topic of module.topics; track topic.id) {
+        <button class="module-topic-link" [class.active]="topicId() === topic.id" [attr.aria-current]="topicId() === topic.id ? 'page' : null" type="button" (click)="openTopic(topic.id)">
+          <span class="module-topic-indicator" aria-hidden="true"></span><span>{{ topic.title }}</span>
+        </button>
+      }
+    </nav>
+  </aside>
+  <main class="module-main" aria-live="polite">
+    @if (selectedTopic(); as topic) {
+      <header class="module-lesson-header">
+        <button class="module-mobile-back" type="button" (click)="backToTopics()">? Topics</button>
+        <p class="module-kicker">{{ topic.priority }} PRIORITY</p>
+        <h1>{{ topic.title }}</h1>
+        <p class="module-topic-summary">{{ topic.summary }}</p>
+        <nav class="module-page-switcher" aria-label="Lesson pages">
+          <button type="button" [class.active]="activeTab() === 'concepts'" [attr.aria-pressed]="activeTab() === 'concepts'" (click)="selectTab('concepts')">1 ? Concepts</button>
+          <button type="button" [class.active]="activeTab() === 'example'" [attr.aria-pressed]="activeTab() === 'example'" (click)="selectTab('example')">2 ? Example &amp; practice</button>
+        </nav>
+      </header>
+      <div class="module-lesson-scroll" [attr.aria-label]="activeTab() === 'concepts' ? 'Concepts page' : 'Example and practice page'">
+        @if (loading()) {
+          <p class="module-load-state" role="status">Loading lesson?</p>
+        } @else if (error(); as message) {
+          <section class="module-load-error" role="alert"><p>{{ message }}</p><button type="button" (click)="backToTopics()">Back to topics</button></section>
+        } @else if (lessonHtml(); as html) {
+          <article class="lesson-document" [innerHTML]="html"></article>
+        }
+      </div>
+    } @else {
+      <section class="module-overview">
+        <header class="module-overview-header">
+          <button class="module-back-link" type="button" (click)="backToModules()">? All modules</button>
+          <p class="module-kicker">LEARNING MODULE</p><h1>{{ module.title }}</h1>
+          <p class="module-topic-summary">{{ module.description }}</p>
+        </header>
+        <div class="module-topic-grid">
+          @for (topic of module.topics; track topic.id; let index = $index) {
+            <button class="module-topic-card" type="button" (click)="openTopic(topic.id)">
+              <span class="module-topic-number">{{ (index + 1).toString().padStart(2, '0') }}</span>
+              <span class="module-topic-copy"><strong>{{ topic.title }}</strong><small>{{ topic.summary }}</small></span>
+              <span class="module-priority" [class.module-priority-high]="topic.priority === 'Very High'">{{ topic.priority }}</span>
+            </button>
+          }
+        </div>
+      </section>
+    }
+  </main>
+</div>

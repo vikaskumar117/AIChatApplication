@@ -1,0 +1,79 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An App Service reads a database credential using its system-assigned identity. Its role permits only the needed secret read in the chosen vault; private DNS and outbound routing are tested from the app environment.</p><ol>
+<li>Enable managed identity on the app and choose its lifecycle boundary.</li>
+<li>Assign a narrowly scoped Key Vault data-plane role.</li>
+<li>Configure firewall or private endpoint, private DNS, and outbound network routes.</li>
+<li>Use the SDK credential chain, cache appropriately, and test rotation and throttling behavior.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var credential = new DefaultAzureCredential();
+var client = new SecretClient(new Uri(vaultUri), credential);
+var response = await client.GetSecretAsync(&quot;DatabasePassword&quot;, cancellationToken);
+var password = response.Value.Value;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Avoids storing a long-lived application credential</li>
+<li>Centralizes access control, versioning, and audit events</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Mis-scoped identity or role still grants excessive access</li>
+<li>Vault requests add latency, quota, availability, and transaction cost</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use separate identities and vault scopes for meaningful workload boundaries; grant the minimum data-plane role and restrict network access where feasible.</p><p><strong>Avoid:</strong> Avoid broad subscription-owner permissions, embedding secrets in source/configuration, or fetching a secret on every request.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Granting broad vault access to make deployment succeed instead of diagnosing the exact missing data action.</li>
+<li>Adding a private endpoint without validating DNS from the workload subnet.</li>
+<li>Logging secret values or treating every failed request as safe to retry indefinitely.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Prefer managed identity and least-privilege data roles; separate identities across trust boundaries.</li>
+<li>Use private networking where required and verify DNS, egress, and role assignments in deployment tests.</li>
+<li>Use bounded exponential retry for transient throttling, cache secrets with an intentional rotation window, and alert on access anomalies.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does a managed identity obtain a Key Vault token?</li>
+<li>When is a user-assigned identity useful across resource lifecycles?</li>
+<li>Why can a private endpoint still fail to provide access?</li>
+<li>How should a rotated secret reach existing connections?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A service suddenly fails after a vault private endpoint is added. Verify identity token acquisition, data-plane role scope, private DNS resolution, route/firewall policy, and vault throttling separately; use bounded retry for transient failures, alert on access errors, and rotate credentials with an overlap period.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Secure Key Vault access by proving identity, least-privilege authorization, private network reachability, and rotation behavior together.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/entra/identity/managed-identities-azure-resources/overview" target="_blank" rel="noopener noreferrer">Managed identities overview</a></li><li><a href="https://learn.microsoft.com/azure/key-vault/general/tutorial-net-create-vault-azure-web-app" target="_blank" rel="noopener noreferrer">Authenticate to Key Vault with a managed identity</a></li><li><a href="https://learn.microsoft.com/azure/key-vault/general/network-security" target="_blank" rel="noopener noreferrer">Key Vault network security</a></li><li><a href="https://learn.microsoft.com/azure/key-vault/general/overview-throttling" target="_blank" rel="noopener noreferrer">Key Vault throttling guidance</a></li></ul>
+</section>
+</div>

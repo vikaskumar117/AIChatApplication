@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — A gateway validates requests, selects an approved model/deployment, invokes it, and returns a controlled response. Microsoft.Extensions.AI supplies .NET abstractions such as IChatClient, but it does not automatically provide routing, governance, or resilience.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Central control can enforce budgets, telemetry, quotas, model allowlists, and provider-specific details. It also adds a critical service boundary whose availability, privacy, and latency must be managed.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Classify data and request capability first; route by policy, not solely by lowest price. Use managed identity and private connectivity where supported, enforce per-user and per-model quotas, and collect token/latency/error metrics. Retry only transient failures within a deadline; do not blindly repeat non-idempotent tool effects or send sensitive prompts to an unapproved fallback. Account for prompt and completion tokens, embeddings, cache/storage, and regional deployment quota.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Caller and policy</strong><span>Authenticate, classify data, validate capability, and enforce tenant budget.</span></div></div>
+<div><span>2</span><div><strong>Route decision</strong><span>Allowlisted deployment by region, model capability, quota, and privacy policy.</span></div></div>
+<div><span>3</span><div><strong>Resilient invocation</strong><span>Deadline, concurrency cap, transient-only bounded retry, and cancellation.</span></div></div>
+<div><span>4</span><div><strong>Model deployment</strong><span>Private or approved network path, identity, quota, and token-metered usage.</span></div></div>
+<div><span>5</span><div><strong>Governed response</strong><span>Normalize supported fields; record redacted telemetry, quality, latency, and spend.</span></div></div>
+</figure>
+<figcaption>The gateway can centralize controls, but it cannot erase differences in model capabilities, provider data handling, or failure semantics.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>A shared client abstraction is not a complete gateway or policy engine.</li>
+<li>Fallback changes data destination, capability, cost, and sometimes safety behavior.</li>
+<li>Retries can increase token spend and worsen throttling if they are unbounded.</li>
+</ul>
+</section>
+</div>

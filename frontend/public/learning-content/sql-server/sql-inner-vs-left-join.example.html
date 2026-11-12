@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>List all departments, including those with no employees, and count employee matches.</p><ol>
+<li>Decide whether unmatched left rows belong in output.</li>
+<li>Join using the relationship key in ON.</li>
+<li>Put optional-side qualification in ON if left rows should remain.</li>
+<li>Use COUNT(right-side key) for matched-row counts and inspect row multiplicity.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>SELECT d.DepartmentId, d.Name,
+       COUNT(e.EmployeeId) AS EmployeeCount
+FROM dbo.Department AS d
+LEFT JOIN dbo.Employee AS e
+  ON e.DepartmentId = d.DepartmentId
+ AND e.IsActive = 1
+GROUP BY d.DepartmentId, d.Name
+ORDER BY d.DepartmentId;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>INNER JOIN returns only valid matches.</li>
+<li>LEFT JOIN preserves the parent set for optional relationships and zero-count reporting.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Outer joins introduce NULLs and require correct aggregate/filter behavior.</li>
+<li>Incorrect join keys or one-to-many cardinality can multiply output rows.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use LEFT JOIN when every left row must appear even if no right-side match exists.</p><p><strong>Avoid:</strong> Avoid moving right-side qualification into WHERE when unmatched left rows must remain; avoid joining without understanding cardinality.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Filtering the nullable side in WHERE while expecting all left rows.</li>
+<li>Using COUNT(*) to count matches after a LEFT JOIN.</li>
+<li>Assuming a join produces one row per left entity without checking cardinality.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Write down which side must be preserved.</li>
+<li>Keep match predicates in ON and reason about post-join WHERE separately.</li>
+<li>Test unmatched rows, duplicate matches, and NULL join keys.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does LEFT JOIN represent no match?</li>
+<li>Why can a WHERE predicate on the right table remove unmatched rows?</li>
+<li>Why count a nullable right-side key instead of COUNT(*)?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A department report omits empty departments after an employee filter was added. Move the employee qualification into ON, count a non-nullable employee key, and verify one output row per department.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>INNER JOIN returns rows with matching join keys on both sides. LEFT JOIN preserves every left-side row and returns NULLs for right-side columns when no match exists. Join type encodes whether unmatched left entities matter. A predicate on the nullable right side in WHERE can remove unmatched rows and make a LEFT JOIN behave like an inner join for that predicate.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/sql/t-sql/queries/from-transact-sql" target="_blank" rel="noopener noreferrer">Microsoft Learn: FROM and JOIN (Transact-SQL)</a></li></ul>
+</section>
+</div>

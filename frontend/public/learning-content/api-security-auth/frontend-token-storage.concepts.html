@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Frontend token storage is the mechanism by which a browser client retains an access or session credential between requests.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Any credential available to JavaScript can be exfiltrated by successful XSS; cookies marked HttpOnly reduce script access but are automatically attached by the browser and therefore require CSRF defenses.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Prefer a backend-for-frontend with a server-side token store and secure HttpOnly, Secure, SameSite cookies for high-risk browser applications; otherwise use provider-recommended in-memory token handling, short lifetimes, CSP/XSS controls, and never place credentials in URLs or logs.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Choose browser credential architecture</strong><span>LocalStorage persists across page loads and is readable by same-origin script; sessionStorage is also script-readable.</span></div></div>
+<div><span>2</span><div><strong>Protect token from script or ambient abuse</strong><span>HttpOnly cookies cannot be read by JavaScript but browsers attach them automatically according to cookie rules.</span></div></div>
+<div><span>3</span><div><strong>Attach credential to intended requests</strong><span>BFF keeps provider tokens server-side and gives the browser a protected session cookie; all designs still require XSS defenses and suitable CSRF controls.</span></div></div>
+</figure>
+<figcaption>No browser storage choice makes an application immune to active same-origin XSS; architecture reduces exposure but does not replace prevention.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>JavaScript-readable storage is vulnerable to token theft through XSS.</li>
+<li>HttpOnly cookies reduce script access but are ambient credentials.</li>
+<li>BFF, CSRF, XSS, and session lifecycle must be designed together.</li>
+</ul>
+</section>
+</div>

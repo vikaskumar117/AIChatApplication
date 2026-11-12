@@ -1,0 +1,86 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>With override, a Base variable referencing a Derived object calls Derived.Run; with new, the same base variable calls Base.Run.</p><ol>
+<li>Create a Derived instance and store it in a Base variable.</li>
+<li>Call virtual Run and observe derived implementation.</li>
+<li>Call hidden Name and observe base member due to static type.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>class Base
+{
+    public virtual string Run() =&gt; &quot;base&quot;;
+    public string Name() =&gt; &quot;base name&quot;;
+}
+class Derived : Base
+{
+    public override string Run() =&gt; &quot;derived&quot;;
+    public new string Name() =&gt; &quot;derived name&quot;;
+}
+
+Base value = new Derived();
+Console.WriteLine(value.Run());  // derived: virtual override
+Console.WriteLine(value.Name()); // base name: member hidden with new</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Override preserves polymorphic contract</li>
+<li>new can intentionally separate APIs</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Hiding makes behavior depend on static type</li>
+<li>Broad virtual surfaces constrain future changes</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use override when substituting a base behavior; use new only for deliberate hiding with clear reason.</p><p><strong>Avoid:</strong> Avoid virtualizing members indiscriminately or suppressing hiding warnings blindly.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Adding new to silence a warning without checking behavior.</li>
+<li>Assuming new overrides all base-typed calls.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Prefer override for genuine substitutability.</li>
+<li>Keep base classes and virtual surface small.</li>
+<li>Test behavior through public abstractions.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does override require?</li>
+<li>Does new replace virtual dispatch?</li>
+<li>Why can a base reference call a different hidden member?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A framework base class gains a member with the same name as a derived API. Resolve compiler warnings consciously and test calls through both declared types before release.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>virtual opens a runtime dispatch slot, override replaces it, and new hides a name according to compile-time type.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>An API version identifies a contract generation, selected through a documented mechanism such as a URL segment, query value, or header.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Explicit compatibility and retirement policies let old clients continue functioning while the provider adds breaking behavior in a new contract.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Prefer compatible additive evolution where possible; version truly breaking changes, route each version to deliberate DTO and behavior, monitor usage, and communicate deprecation and sunset dates.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Client selects contract version</strong><span>The API contract may select version via URI, query, header, or media type; each mechanism has caching and operational trade-offs.</span></div></div>
+<div><span>2</span><div><strong>Routing resolves compatible endpoint</strong><span>The server must consistently route and serialize the chosen contract, not just label a route.</span></div></div>
+<div><span>3</span><div><strong>Versioned response follows documented schema</strong><span>Deprecation information and adoption telemetry guide a measured retirement rather than abrupt removal.</span></div></div>
+</figure>
+<figcaption>Version the contract deliberately; framework package choice and version selection syntax depend on the application architecture.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Prefer compatible evolution; version breaking contracts.</li>
+<li>Each version requires routing, tests, and support ownership.</li>
+<li>Deprecation should be observable and communicated.</li>
+</ul>
+</section>
+</div>

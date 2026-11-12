@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Encapsulation protects state behind operations; abstraction exposes essential behavior while hiding detail; inheritance derives a specialized type; polymorphism lets callers invoke behavior through a shared contract.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Together they make invariants enforceable and implementations replaceable, but inheritance is not required for every form of reuse and can create tight coupling.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>A payment example encapsulates balance rules, abstracts payment behind an interface, derives provider adapters only when a real “is-a” relation exists, and dispatches to implementations through the contract.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Encapsulation</strong><span>Checkout validates total and hides its internal workflow behind CompleteAsync.</span></div></div>
+<div><span>2</span><div><strong>Abstraction</strong><span>IPaymentMethod publishes only the pay capability needed by checkout.</span></div></div>
+<div><span>3</span><div><strong>Polymorphism</strong><span>A call through the interface dispatches to the supplied implementation.</span></div></div>
+<div><span>4</span><div><strong>Inheritance</strong><span>Use only for a genuine specialization that preserves the base contract.</span></div></div>
+</figure>
+<figcaption>Follow the labeled stages; each node names a concrete decision or runtime effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Encapsulation protects invariants.</li>
+<li>Abstraction is about essential contract, not simply hiding code.</li>
+<li>Inheritance is one tool; composition often provides safer reuse.</li>
+</ul>
+</section>
+</div>

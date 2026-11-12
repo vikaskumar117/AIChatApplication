@@ -1,0 +1,76 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Two shoppers read stock quantity 1; each tries to reserve the final item, so a conditional update must ensure only one reservation succeeds.</p><ol>
+<li>Actors read shared state</li>
+<li>Operations overlap in time</li>
+<li>Persistence policy preserves invariant or detects conflict</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var changed = await db.Products
+    .Where(p =&gt; p.Id == id &amp;&amp; p.AvailableQuantity &gt; 0)
+    .ExecuteUpdateAsync(setters =&gt; setters
+        .SetProperty(p =&gt; p.AvailableQuantity, p =&gt; p.AvailableQuantity - 1), ct);
+if (changed == 0) return Conflict();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Explicit concurrency policy preserves business invariants</li>
+<li>Conflict detection gives clients a safe recovery path</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Coordination adds storage and application complexity</li>
+<li>Overly broad locking can reduce throughput and cause deadlocks</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Identify the invariant at risk and choose the narrowest database-supported mechanism that protects it.</p><p><strong>Avoid:</strong> Avoid assuming that a request-scoped DbContext or transaction automatically prevents every lost update.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming application-level validation remains true at write time.</li>
+<li>Using locks across network calls or long user interactions.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Document invariants and identify race windows explicitly.</li>
+<li>Use constraints, atomic operations, or version checks and test simultaneous requests.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is a lost update?</li>
+<li>Why is a read followed by a write unsafe under concurrency?</li>
+<li>Which invariants need a database-level constraint?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Flash-sale requests oversell the last items; encode inventory availability in an atomic conditional database operation and observe contention under load.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Data concurrency is the behavior of overlapping operations that read or change shared state.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/ef/core/saving/concurrency" target="_blank" rel="noopener noreferrer">EF Core concurrency handling</a></li></ul>
+</section>
+</div>

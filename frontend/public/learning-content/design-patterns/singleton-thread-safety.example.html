@@ -1,0 +1,69 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A singleton token cache uses ConcurrentDictionary for independent entries but still coordinates expiration updates that span multiple operations.</p><ol>
+<li>Minimize shared mutable state.</li>
+<li>Use synchronization around the entire invariant, not isolated field access.</li>
+<li>Stress-test concurrent creation, update, and eviction paths.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>private readonly ConcurrentDictionary&lt;string, Token&gt; _tokens = new();
+public Token GetOrAdd(string key, Func&lt;string, Token&gt; create) =&gt;
+    _tokens.GetOrAdd(key, create);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Safe shared state avoids races and inconsistent cross-request behavior.</li>
+<li>Thread-safe collections support common concurrent access patterns.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Locks, concurrent collections, and atomicity can add contention or complexity.</li>
+<li>A thread-safe collection does not make multi-step business invariants atomic.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use immutable data or proven synchronization appropriate to the invariant.</p><p><strong>Avoid:</strong> Avoid mutable singleton state when request-scoped or distributed state is the real requirement.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid mutable singleton state when request-scoped or distributed state is the real requirement.</li>
+<li>Assuming singleton thread safety guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Document concurrency assumptions and ownership.</li>
+<li>Choose distributed coordination only when cross-process consistency is required.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Does ConcurrentDictionary make every operation atomic?</li>
+<li>How do thread safety and singleton lifetime relate?</li>
+<li>When is Lazy&lt;T&gt; useful in a DI application?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Concurrent cache misses create duplicate expensive tokens. Use an appropriate single-flight or lazy-value strategy, then define expiry, failure caching, and memory bounds.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Singleton safety depends on concurrent state access and invariant design, not just registration lifetime.</p>
+</section>
+</div>

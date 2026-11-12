@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>The transactional outbox stores the intent to publish alongside the business state change in the same local database transaction.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Writing a database row and sending a broker message separately creates a dual-write gap: either action can succeed while the other fails.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Commit business data and an outbox record atomically; a dispatcher or change-data-capture pipeline publishes committed records. Expect repeats and make consumers idempotent; monitor backlog and poison records.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Local transaction</strong><span>Business state and serialized outbox intent commit atomically.</span></div></div>
+<div><span>2</span><div><strong>Dispatcher / CDC</strong><span>A worker or log reader finds only committed event records.</span></div></div>
+<div><span>3</span><div><strong>Broker publish</strong><span>Publisher retries safely; publish status can be uncertain after a crash.</span></div></div>
+<div><span>4</span><div><strong>Idempotent consumer</strong><span>Consumer handles repeat delivery and commits its own effect safely.</span></div></div>
+</figure>
+<figcaption>The outbox guarantees durable publish intent with the local update, not atomic broker delivery or exactly-once consumer effects.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Publishing inside the DB transaction and assuming the broker joins it.</li>
+<li>Marking published before send and losing the event.</li>
+<li>Ignoring duplicate delivery after an uncertain publish result.</li>
+</ul>
+</section>
+</div>

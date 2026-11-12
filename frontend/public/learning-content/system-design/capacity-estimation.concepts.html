@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — Capacity estimation approximates the scale of reads, writes, data, and network traffic using explicit assumptions.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Rough arithmetic reveals bottlenecks, order-of-magnitude costs, and when batching, partitioning, caching, or asynchronous processing may be needed.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Convert daily active users and actions per user into average requests per second, apply a peak factor, estimate bytes per request and retention, then compare those rates with database, queue, and downstream limits. Label assumptions and add headroom; do not treat estimates as measured capacity.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Usage assumptions</strong><span>Users, actions/user, payload sizes, retention, and peak factor.</span></div></div>
+<div><span>2</span><div><strong>Rates</strong><span>Average and peak RPS; split reads, writes, retries, and background work.</span></div></div>
+<div><span>3</span><div><strong>Data + bandwidth</strong><span>Daily growth, retention, replication, indexes, and network transfer.</span></div></div>
+<div><span>4</span><div><strong>Capacity limits</strong><span>Compare app, database, queue, and provider throughput.</span></div></div>
+<div><span>5</span><div><strong>Validate</strong><span>Load-test realistic bursts and revise with observed telemetry.</span></div></div>
+</figure>
+<figcaption>These are estimates with uncertainty. Add explicit overhead and test at the target workload before committing to capacity.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Always state units and assumptions.</li>
+<li>Average traffic is not a peak-capacity target.</li>
+<li>Include downstream limits, data overhead, and operational headroom.</li>
+</ul>
+</section>
+</div>

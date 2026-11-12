@@ -1,0 +1,81 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A cart total is derived from cart items and discount; a computed value stays consistent without an effect copying the total into mutable state.</p><ol>
+<li>Keep signal state minimal and derive values with computed.</li>
+<li>Use update for transitions based on the previous value.</li>
+<li>Use effect cleanup for timers, listeners, or other owned resources.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>readonly items = signal&lt;Item[]&gt;([]);
+readonly total = computed(() =&gt;
+  this.items().reduce((sum, item) =&gt; sum + item.price, 0)
+);
+
+add(item: Item): void {
+  this.items.update(items =&gt; [...items, item]);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Synchronous reads and derived values are straightforward</li>
+<li>Template consumers receive fine-grained notifications</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Effects can form cycles or leak external resources</li>
+<li>Signals alone do not provide time-based stream operators</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use signals for synchronous state and computed for pure derivation; use effects only for imperative boundaries.</p><p><strong>Avoid:</strong> Avoid duplicating derived state or starting unmanaged async work inside effects.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Creating an effect that writes a mirror of another signal.</li>
+<li>Assuming effects run synchronously in every context or can replace RxJS cancellation.</li>
+<li>Mutating arrays/objects in place without setting an updated value.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep effects at integration boundaries, not in the middle of ordinary data flow.</li>
+<li>Avoid side effects in computed functions.</li>
+<li>Use interop APIs deliberately when converting between signals and observables.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does computed differ from effect?</li>
+<li>When is a signal read tracked?</li>
+<li>Why should derived state usually not be copied through an effect?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A filter panel maintains local selections and a derived result count. Signals model selections and computed derives the count; an Observable remains responsible for debounced server search.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A signal is a getter/setter-style reactive value: reading it tracks a dependency in a reactive context, while set/update changes its value and notifies consumers. computed creates a lazy, memoized derived signal; effect runs imperative work when tracked dependencies change. Signals make local UI state and derived state explicit and integrate with Angular rendering. They do not automatically make arbitrary asynchronous work cancellable, nor are effects a replacement for every stream transformation.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/guide/signals" target="_blank" rel="noopener noreferrer">Angular signals</a></li><li><a href="https://angular.dev/api/core/effect" target="_blank" rel="noopener noreferrer">effect API</a></li></ul>
+</section>
+</div>

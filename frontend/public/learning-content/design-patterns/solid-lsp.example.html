@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A read-only storage implementation should not implement an interface promising deletion; split read and write capabilities rather than throwing NotSupportedException.</p><ol>
+<li>Document semantics and error behavior in contracts.</li>
+<li>Test implementations against shared contract tests.</li>
+<li>Use composition or narrower capabilities for divergent behavior.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IOrderReader
+{
+    Task&lt;Order?&gt; FindAsync(Guid id, CancellationToken ct);
+}
+public interface IOrderWriter
+{
+    Task SaveAsync(Order order, CancellationToken ct);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Reliable substitution reduces type-specific branches in callers.</li>
+<li>Clear contracts encourage correct abstraction and composition.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Broad base types can be hard to design without accidental promises.</li>
+<li>Replacing inheritance with excessive tiny interfaces can also fragment the design.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use inheritance when derived types honor the same observable contract.</p><p><strong>Avoid:</strong> Avoid subclasses that reject valid base operations or change their meaning unexpectedly.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid subclasses that reject valid base operations or change their meaning unexpectedly.</li>
+<li>Assuming solid: liskov substitution principle guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Prefer small truthful abstractions over broad speculative base classes.</li>
+<li>Test all implementations against the same behavioral expectations.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is throwing NotSupportedException from an override suspicious?</li>
+<li>How do preconditions and postconditions relate to LSP?</li>
+<li>When is composition preferable to inheritance?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A fake repository rejects writes even though the contract promises them. Split the capability or use a test double that fulfills the same behavior.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A subtype must honor the base abstraction’s behavior, not just its method shapes.</p>
+</section>
+</div>

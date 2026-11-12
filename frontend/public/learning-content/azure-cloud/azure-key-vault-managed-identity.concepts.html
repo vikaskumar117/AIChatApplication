@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — A managed identity is a Microsoft Entra identity provisioned for an Azure resource. Key Vault is a protected service for secrets, cryptographic keys, and certificates.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Workload identity removes application-managed client secrets, while centralized authorization, audit, and rotation reduce exposure and simplify response.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — The workload obtains a short-lived Entra token through the Azure identity platform; Key Vault validates it and authorizes the operation through its configured authorization model, commonly Azure RBAC. A private endpoint can provide private network access, but private DNS, routing, firewall rules, and identity authorization must all be correct.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Azure workload</strong><span>System-assigned identity follows the resource lifecycle; user-assigned identity is independently managed.</span></div></div>
+<div><span>2</span><div><strong>Entra token</strong><span>DefaultAzureCredential requests a short-lived token; no app-held client secret is needed.</span></div></div>
+<div><span>3</span><div><strong>Network path</strong><span>Public endpoint restrictions or private endpoint plus private DNS and valid routes.</span></div></div>
+<div><span>4</span><div><strong>Key Vault authorization</strong><span>RBAC or configured access policy grants specific secret, key, or certificate operations.</span></div></div>
+<div><span>5</span><div><strong>Consumer and audit</strong><span>Cache within rotation bounds, handle throttles, and monitor access without logging values.</span></div></div>
+</figure>
+<figcaption>Successful access requires identity, authorization, and network reachability; a private endpoint does not itself grant permission.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Authentication proves the workload identity; authorization decides what it may do.</li>
+<li>Private networking and RBAC are independent controls that must both work.</li>
+<li>Key Vault is not a high-throughput per-request configuration database.</li>
+</ul>
+</section>
+</div>

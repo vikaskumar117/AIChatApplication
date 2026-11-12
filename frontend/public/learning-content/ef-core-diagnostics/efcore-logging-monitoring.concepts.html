@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Logs record discrete events, metrics aggregate numerical time series, and traces connect spans across a request and its dependencies. Together they describe what happened, how often, and where latency accumulated.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Logs alone are difficult to aggregate; metrics lack per-request context; traces show causal timing but may be sampled. Correlation across all three improves diagnosis.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use structured logs with stable event IDs and trace IDs, low-cardinality metrics for latency/error/saturation, and distributed tracing for request/dependency spans. Redact secrets and personal data; avoid SQL parameter logging unless explicitly approved and protected.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Metrics</strong><span>Aggregate latency, errors, traffic, and saturation for alerts and trends.</span></div></div>
+<div><span>2</span><div><strong>Trace</strong><span>Connect request and dependency spans to explain per-request latency.</span></div></div>
+<div><span>3</span><div><strong>Structured logs</strong><span>Record detailed events with stable fields and correlation IDs.</span></div></div>
+<div><span>4</span><div><strong>Governance</strong><span>Redact sensitive fields and control cardinality, sampling, and retention.</span></div></div>
+</figure>
+<figcaption>Validate the behavior against the deployed EF Core/provider version, generated SQL, database schema, and production configuration.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Metrics detect and quantify; traces localize latency; logs explain events.</li>
+<li>Trace correlation connects EF/database activity to API requests.</li>
+<li>High-cardinality labels increase cost and harm aggregation.</li>
+<li>Never log secrets or unrestricted production SQL parameter values.</li>
+</ul>
+</section>
+</div>

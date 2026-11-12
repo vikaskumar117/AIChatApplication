@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A SPA signs in with OIDC, obtains an OAuth access token for Orders, and sends that access token—not the ID token—to the Orders API.</p><ol>
+<li>OIDC client signs user in</li>
+<li>OAuth authorization obtains API access</li>
+<li>API validates its intended access token</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Conceptual roles; token formats are independent:
+OIDC: client validates ID token where aud == client_id
+OAuth: client obtains access token for api://orders
+API: validates that access token where aud == api://orders</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Clear role separation improves protocol choices</li>
+<li>Works with either JWT or opaque access tokens</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Terminology and similarly named tokens confuse implementers</li>
+<li>Incorrect audience or token-type handling can expose APIs</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use OIDC for user sign-in, OAuth access tokens for delegated or application API access, and treat JWT only as one possible token format.</p><p><strong>Avoid:</strong> Avoid treating OAuth alone as an identity protocol or assuming every access token is a JWT.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Calling every JWT an access token.</li>
+<li>Using an ID token as authorization to an API because it is signed.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use protocol libraries and issuer metadata rather than parsing tokens to infer purpose.</li>
+<li>Validate token audience and expected token type at each boundary.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which item is a format rather than a protocol?</li>
+<li>What is the purpose and audience of an ID token?</li>
+<li>Can an OAuth access token be opaque?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A client sends its ID token to a microservice because both are JWTs; reject the wrong token type and audience, configure an API access-token acquisition flow, and verify resource server validation.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>JWT is a token format, OAuth 2.0 is an authorization framework, and OpenID Connect is an authentication layer built on OAuth 2.0.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc6749" target="_blank" rel="noopener noreferrer">OAuth 2.0 RFC 6749</a></li><li><a href="https://openid.net/specs/openid-connect-core-1_0.html" target="_blank" rel="noopener noreferrer">OpenID Connect Core 1.0</a></li></ul>
+</section>
+</div>

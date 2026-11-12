@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A valid employee token authenticates the caller, but the API denies access to a payroll record outside that caller’s authorized division.</p><ol>
+<li>Credential is presented</li>
+<li>Authentication establishes principal</li>
+<li>Authorization permits or denies requested action</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>[Authorize(Policy = &quot;Payroll.Read&quot;)]
+[HttpGet(&quot;{id:int}&quot;)]
+public async Task&lt;ActionResult&lt;PayrollDto&gt;&gt; Get(int id)
+{
+    var record = await repository.FindAsync(id);
+    if (record is null) return NotFound();
+    return await authorization.AuthorizeAsync(User, record, &quot;DivisionAccess&quot;)
+        ? Ok(PayrollDto.From(record)) : Forbid();
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Clear separation makes policy and identity independently testable</li>
+<li>Resource checks support least privilege</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Valid credentials alone do not ensure correct data isolation</li>
+<li>Policy drift across endpoints can create gaps</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Authenticate every protected request and authorize every sensitive operation and target resource.</p><p><strong>Avoid:</strong> Avoid treating a successful login or token signature as blanket data permission.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Checking only that User.Identity.IsAuthenticated is true.</li>
+<li>Trusting client-provided user or tenant IDs as identity evidence.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Apply default-deny policies to protected route groups.</li>
+<li>Test authorization with realistic cross-tenant and role combinations.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does authentication establish?</li>
+<li>When is resource-based authorization needed?</li>
+<li>What is the normal distinction between 401 and 403?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A user can retrieve another tenant’s record by changing an identifier; add resource/tenant authorization after authentication and test guessed IDs across tenants.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Authentication establishes a trusted identity; authorization decides what that identity may do to a specific operation or resource.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/security/authorization/introduction" target="_blank" rel="noopener noreferrer">Authorization in ASP.NET Core</a></li></ul>
+</section>
+</div>

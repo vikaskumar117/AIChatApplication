@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Token expiration is the validity limit enforced by the issuer and resource server, while key rotation changes the cryptographic material used to sign or verify tokens.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Shorter validity limits exposure but increases renewal traffic and may disrupt long-running work; planned key rollover avoids dependence on one permanent key.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Validate exp and nbf with tightly bounded clock skew, consume trusted key-set updates, support overlapping old/new signing keys during planned rollover, and revoke or deny credentials when compromise requires immediate action.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Issuer signs with current key</strong><span>The exp and nbf claims define token acceptance times; systems need synchronized clocks and deliberate skew limits.</span></div></div>
+<div><span>2</span><div><strong>API validates time and trusted key set</strong><span>APIs trust only configured issuer metadata and keys, refreshing keys safely when a key identifier changes.</span></div></div>
+<div><span>3</span><div><strong>Rotation overlaps keys and retires old key</strong><span>During planned rollover, old verification keys may remain available until prior tokens expire; a compromised key may require accelerated revocation and reauthentication.</span></div></div>
+</figure>
+<figcaption>A self-contained JWT generally remains valid until expiry unless the API uses additional revocation or session-state checks.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Expiry bounds normal acceptance; it is not immediate revocation.</li>
+<li>Planned key rotation needs trusted metadata and overlap.</li>
+<li>Compromised credentials require an incident response beyond waiting for expiry.</li>
+</ul>
+</section>
+</div>

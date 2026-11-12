@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Strategy defines a family of interchangeable algorithms behind a common contract so a caller can select behavior without embedding each algorithm in its own conditional logic.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>It localizes policy variation and makes alternatives independently testable; one class per trivial branch can still be needless indirection.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Represent each rate calculation as a strategy, select by explicit eligibility/context, and keep each strategy responsible for its own rules. Decide how ties, no-match, configuration, and fallback behave.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Shipment context</strong><span>Caller supplies destination, dimensions, and required delivery speed.</span></div></div>
+<div><span>2</span><div><strong>Eligible strategies</strong><span>Each carrier declares supported input and constraints.</span></div></div>
+<div><span>3</span><div><strong>Selection rule</strong><span>Application policy resolves one valid match or an explicit no-match result.</span></div></div>
+<div><span>4</span><div><strong>Quote result</strong><span>Chosen algorithm returns amount plus currency, expiry, and assumptions.</span></div></div>
+</figure>
+<figcaption>Strategy isolates calculations; deciding which policy is valid remains an explicit business rule.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Selecting the first strategy with registration-order-dependent behavior.</li>
+<li>Hiding business eligibility inside an untestable selector.</li>
+<li>Treating estimates as guaranteed prices.</li>
+</ul>
+</section>
+</div>

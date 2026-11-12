@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — Rate limiting admits or rejects requests according to a policy and identity key. A token bucket has a capacity, a refill rate, and a cost per request; it permits bounded bursts while limiting sustained throughput.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Local counters multiply allowances when a service has multiple replicas. Shared enforcement helps protect a tenant’s fairness and backend capacity, at the cost of coordination latency and a dependency that needs its own failure policy.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Choose trusted keys (such as authenticated tenant plus route), algorithm, quota, burst, and response semantics. Consume quota atomically at the gateway or in a shared store; return HTTP 429 with useful retry guidance when rejected. Keep a separate global safety limit for expensive downstream resources.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Trusted identity</strong><span>Resolve an authenticated tenant or principal; do not trust a caller-chosen quota identity.</span></div></div>
+<div><span>2</span><div><strong>Policy bucket</strong><span>Capacity and refill rate define allowed burst and sustained request rate.</span></div></div>
+<div><span>3</span><div><strong>Atomic consume</strong><span>One coordinated decision prevents replicas from independently granting full quota.</span></div></div>
+<div><span>4</span><div><strong>Allow or 429</strong><span>Reject with a clear response and retry guidance where calculable.</span></div></div>
+<div><span>5</span><div><strong>Backend safety limit</strong><span>A separate global budget protects the scarce downstream resource.</span></div></div>
+</figure>
+<figcaption>A tenant quota is a fairness policy; a global downstream limit is a capacity guard. They solve different problems and may both be necessary.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Token bucket permits controlled bursts while bounding long-term rate.</li>
+<li>Distributed replicas need shared or consistently partitioned accounting.</li>
+<li>429 is a policy response, not a generic server failure.</li>
+</ul>
+</section>
+</div>

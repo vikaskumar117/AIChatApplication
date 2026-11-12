@@ -1,0 +1,39 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A scalable API bounds work per request, isolates failures, manages concurrency and resources, and supports horizontal growth without relying on process-local state.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Unbounded queries, payloads, synchronous I/O, shared mutable state, and retry amplification make traffic growth translate directly into database saturation and tail latency.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use DTO projections, bounded pagination, async I/O and cancellation, short DbContext/transaction scopes, connection-pool awareness, rate limits, caching where consistency permits, and background queues/outbox for long-running work. Design idempotent writes and observe SLOs.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Bounded contract</strong><span>Cap page size, payload, request deadline, and fan-out.</span></div></div>
+<div><span>2</span><div><strong>Efficient data access</strong><span>Project DTOs, paginate deterministically, and keep DbContext/transactions short.</span></div></div>
+<div><span>3</span><div><strong>Resilience</strong><span>Use rate limits, bounded retries, idempotency, and queues for deferred work.</span></div></div>
+<div><span>4</span><div><strong>Horizontal capacity</strong><span>Keep API instances stateless and understand shared database/pool bottlenecks.</span></div></div>
+<div><span>5</span><div><strong>SLO feedback</strong><span>Use latency, error, traffic, and saturation telemetry to scale or tune safely.</span></div></div>
+</figure>
+<figcaption>Validate the behavior against the deployed EF Core/provider version, generated SQL, database schema, and production configuration.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Scale requires bounded work and explicit resource budgets.</li>
+<li>Database capacity and connection pools remain shared constraints when API replicas grow.</li>
+<li>Idempotency and outbox patterns support reliable retries and asynchronous work.</li>
+<li>SLOs and load tests guide capacity decisions.</li>
+</ul>
+</section>
+</div>

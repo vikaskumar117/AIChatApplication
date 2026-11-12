@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A create request accepts ProductName and Price, while the response adds server-assigned Id and CreatedAt without exposing EF navigation properties.</p><ol>
+<li>Deserialize request DTO</li>
+<li>Map and enforce application rules</li>
+<li>Project authorized response DTO</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public sealed record CreateProductRequest(string Name, decimal Price);
+public sealed record ProductResponse(int Id, string Name, decimal Price);
+
+var response = new ProductResponse(entity.Id, entity.Name, entity.Price);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Stable, explicit, reviewable API contracts</li>
+<li>Reduces over-posting and sensitive field leakage</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Requires mapping and contract maintenance</li>
+<li>Duplicated shapes can drift if boundaries are poorly designed</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use distinct DTOs for externally visible request and response contracts, particularly when data is privileged or versioned.</p><p><strong>Avoid:</strong> Avoid serializing tracked ORM entities directly or accepting server-managed fields from clients.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Binding a persistence entity directly from an untrusted request.</li>
+<li>Returning every entity property by default.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Version and document DTOs as public contracts.</li>
+<li>Keep mapping explicit for sensitive or permission-dependent fields.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How do DTOs prevent over-posting?</li>
+<li>Why should a response be projected?</li>
+<li>When should request and response types differ?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A new database column stores a fraud-review flag; DTO projection ensures it remains private while the API evolves its public response deliberately.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>DTOs define intentional API input and output contracts, decoupled from persistence entities and internal domain models.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/web-api/" target="_blank" rel="noopener noreferrer">Create web APIs with ASP.NET Core</a></li></ul>
+</section>
+</div>

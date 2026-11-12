@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An EF Core update uses the original rowversion; if another transaction changed the row first, the API returns a stale-write conflict rather than overwriting.</p><ol>
+<li>Read entity and rowversion</li>
+<li>EF writes with original version condition</li>
+<li>Zero affected rows throws concurrency exception</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public sealed class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = &quot;&quot;;
+    public byte[] RowVersion { get; set; } = [];
+}
+modelBuilder.Entity&lt;Product&gt;().Property(p =&gt; p.RowVersion).IsRowVersion();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Database-generated token simplifies row-level optimistic checks</li>
+<li>EF Core provides a dedicated concurrency exception</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Rowversion is SQL Server-specific and changes on any row update</li>
+<li>It detects a conflict but does not merge or resolve business intent</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use rowversion for SQL Server row-level optimistic concurrency where any row update should invalidate prior representations.</p><p><strong>Avoid:</strong> Avoid interpreting rowversion as wall-clock time or exposing it as a mutable, user-selected value.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Calling it a timestamp and assuming it expresses chronological time.</li>
+<li>Catching the exception and saving stale values over the newer row.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Treat rowversion as opaque and encode it safely for API use.</li>
+<li>Handle deleted, changed, and authorized-reload paths explicitly.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Is SQL Server rowversion a timestamp?</li>
+<li>What happens when the original token no longer matches?</li>
+<li>How should an API expose the token to clients?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An EF Core SaveChangesAsync throws DbUpdateConcurrencyException; reload current values only when authorized, distinguish deleted versus modified rows, and return a conflict without leaking protected values.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>SQL Server rowversion is an automatically changing binary version stamp that EF Core can use to detect a stale update.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/ef/core/saving/concurrency" target="_blank" rel="noopener noreferrer">EF Core concurrency handling</a></li><li><a href="https://learn.microsoft.com/en-us/sql/t-sql/data-types/rowversion-transact-sql" target="_blank" rel="noopener noreferrer">SQL Server rowversion data type</a></li></ul>
+</section>
+</div>

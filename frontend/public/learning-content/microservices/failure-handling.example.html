@@ -1,0 +1,72 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An inventory conflict is returned to the user; a temporary network error on a read may be retried once; a failed event is parked for diagnosis.</p><ol>
+<li>Define error taxonomy at each contract.</li>
+<li>Set one overall time budget across nested work.</li>
+<li>Give every failed durable item an owner and replay path.</li>
+<li>Record correlation IDs without logging secrets.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>if (response.StatusCode == HttpStatusCode.Conflict)
+    return OrderResult.Rejected(&quot;Inventory changed&quot;);
+if ((int)response.StatusCode &gt;= 500)
+    throw new TransientDependencyException();
+return await response.Content.ReadFromJsonAsync&lt;StockResult&gt;(ct);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Correct classification avoids useless work and makes recovery understandable.</li>
+<li>Durable failure paths support investigation and safe replay.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>More failure states require deliberate contracts and operational ownership.</li>
+<li>Dead-letter queues can become silent data graveyards without monitoring and replay controls.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Model expected business rejection separately from transient infrastructure failure.</p><p><strong>Avoid:</strong> Avoid catching all exceptions and retrying or returning success-shaped defaults.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid catching all exceptions and retrying or returning success-shaped defaults.</li>
+<li>Assuming failure handling across services guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Make recovery bounded and observable.</li>
+<li>Make manual replay idempotent and access-controlled.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which failures are safe to retry?</li>
+<li>How should a permanent rejection differ from a transient failure?</li>
+<li>What operational process is needed for dead-lettered messages?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A malformed event repeatedly fails a consumer. Stop automatic redelivery, dead-letter with context, alert an owner, fix or transform the event, then replay under controlled deduplication.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Reliable failure handling combines classification, containment, truthful outcomes, and a recovery process.</p>
+</section>
+</div>

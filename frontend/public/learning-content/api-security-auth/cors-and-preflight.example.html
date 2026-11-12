@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A browser sends JSON with an Authorization header, so its OPTIONS preflight asks whether https://app.example may use POST and Authorization; the API separately validates the resulting bearer token.</p><ol>
+<li>Browser evaluates cross-origin call</li>
+<li>OPTIONS preflight checks policy</li>
+<li>Allowed call proceeds; browser gates response</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>builder.Services.AddCors(options =&gt; options.AddPolicy(&quot;Frontend&quot;, policy =&gt;
+    policy.WithOrigins(&quot;https://app.example&quot;)
+          .WithMethods(&quot;GET&quot;, &quot;POST&quot;)
+          .WithHeaders(&quot;Content-Type&quot;, &quot;Authorization&quot;)));
+
+app.UseRouting();
+app.UseCors(&quot;Frontend&quot;);
+app.UseAuthentication();
+app.UseAuthorization();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Enables controlled browser cross-origin access</li>
+<li>Keeps browser response exposure policy explicit</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Does not block direct clients or replace authorization</li>
+<li>Credentialed CORS and wildcard origins are easy to misconfigure</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Configure exact trusted origins and only required methods and headers for browser clients.</p><p><strong>Avoid:</strong> Avoid wildcard origins with credentials and avoid claiming CORS prevents unauthorized requests.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using CORS as the only defense for a sensitive endpoint.</li>
+<li>Reflecting arbitrary Origin values or combining wildcard origins with credentials.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Test preflight for each required method and custom header in a real browser.</li>
+<li>Keep CORS rules narrow and independently test authentication and authorization.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>When does a browser send preflight?</li>
+<li>What can CORS not protect against?</li>
+<li>Why is wildcard origin unsafe with credentials?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A frontend engineer reports that a browser blocks a call while a command-line client succeeds; inspect OPTIONS routing and CORS headers, while separately verifying the API’s actual authorization policy.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>CORS is a browser-enforced cross-origin response-sharing policy, not authentication or protection against non-browser clients.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/security/cors" target="_blank" rel="noopener noreferrer">Enable Cross-Origin Requests (CORS) in ASP.NET Core</a></li><li><a href="https://fetch.spec.whatwg.org/#cors-protocol" target="_blank" rel="noopener noreferrer">Fetch Standard: CORS protocol</a></li></ul>
+</section>
+</div>

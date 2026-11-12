@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A SPA calls its own API and a third-party image service; the bearer token is attached only to the API origin.</p><ol>
+<li>Use HTTPS everywhere and short-lived, least-privilege access tokens.</li>
+<li>Keep token acquisition behind an injectable auth abstraction.</li>
+<li>Have the server validate claims and permissions; client decoding is not trust.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>export const authInterceptor: HttpInterceptorFn = (req, next) =&gt; {
+  const trusted = new URL(req.url, location.origin).origin === &#39;https://api.example.com&#39;;
+  const token = inject(AuthSession).accessToken();
+  return next(trusted &amp;&amp; token
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req);
+};</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Centralized attachment prevents per-service omissions</li>
+<li>Origin checks reduce accidental credential disclosure</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>XSS can steal JavaScript-readable tokens</li>
+<li>Bearer tokens remain usable if leaked until policy expires them</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use an explicit trusted-origin allowlist and a narrowly scoped token provider.</p><p><strong>Avoid:</strong> Avoid storing long-lived tokens in browser storage or attaching credentials to arbitrary URLs.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Sending the token to every host because an interceptor sees every HttpClient request.</li>
+<li>Assuming JWT payload encryption or trusting decoded claims client-side.</li>
+<li>Logging or persisting bearer credentials unnecessarily.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Prefer secure server-managed session patterns where feasible.</li>
+<li>If using cookies, design CSRF defenses and SameSite policy deliberately.</li>
+<li>Redact authorization headers from logs, traces, and error reports.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why must an interceptor restrict token destinations?</li>
+<li>Is a JWT encrypted?</li>
+<li>What are the main trade-offs between bearer storage and HttpOnly cookies?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A feature introduces a third-party upload endpoint. Test that its origin never receives Authorization, and ensure decoded client claims only influence UX while the server enforces permissions.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A JWT is a signed claims container, not encrypted by default; its claims can be read by anyone holding it. A bearer token grants authority to whoever possesses it until expiry or revocation policy takes effect. A functional interceptor can read an access token from an injected authentication abstraction and clone a request with an Authorization: Bearer header. Restrict attachment by trusted origin and exclude token/refresh endpoints as appropriate.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/guide/http/interceptors" target="_blank" rel="noopener noreferrer">Angular interceptors</a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP JWT Cheat Sheet</a></li></ul>
+</section>
+</div>

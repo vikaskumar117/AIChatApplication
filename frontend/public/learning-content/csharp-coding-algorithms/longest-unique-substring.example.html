@@ -1,0 +1,96 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A validation tool reports the longest unique segment of a bounded input string. For user-perceived Unicode characters, replace char indexing with text-element tokens while preserving the same sliding-window invariant.</p><ol>
+<li>Read a, b, c: the window is &quot;abc&quot;, best = 3.</li>
+<li>Read the next a; its old index is inside the window.</li>
+<li>Move start past the old a; window becomes &quot;bca&quot;.</li>
+<li>Continue; no later window exceeds length 3.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>int LongestUniqueLength(string value)
+{
+    var lastSeen = new Dictionary&lt;char, int&gt;();
+    int windowStart = 0;
+    int best = 0;
+
+    for (int index = 0; index &lt; value.Length; index++)
+    {
+        char current = value[index];
+        if (lastSeen.TryGetValue(current, out int previous) &amp;&amp;
+            previous &gt;= windowStart)
+        {
+            windowStart = previous + 1;
+        }
+
+        lastSeen[current] = index;
+        best = Math.Max(best, index - windowStart + 1);
+    }
+
+    return best;
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Expected O(n) time without checking every substring</li>
+<li>Stores only last-seen positions</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Uses O(k) memory</li>
+<li>The definition of a character affects indexing and correctness</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for contiguous-substring uniqueness under a clearly defined character model.</p><p><strong>Avoid:</strong> Avoid a char-based implementation when the requirement is based on grapheme clusters or when input size is unbounded without limits.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Setting start to previous + 1 even when previous is before the current window moves it backward.</li>
+<li>Using indexOf on every suffix can make the solution quadratic.</li>
+<li>Confusing substring (contiguous) with subsequence (can skip characters).</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Test repeated runs such as &quot;bbbbb&quot;, all-unique input, and &quot;abba&quot;.</li>
+<li>Use the exact character model required by the product.</li>
+<li>Bound input length when processing user-controlled text.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is this a sliding window?</li>
+<li>Why must the previous index be inside the current window?</li>
+<li>What is the time complexity?</li>
+<li>How does the algorithm differ for a subsequence?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A request validator scans arbitrarily large submitted text for a longest unique segment. Apply a request-size limit and consider Unicode text elements; otherwise, memory and CPU cost grow with attacker-controlled input.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A last-seen map and monotonic window boundary find the longest unique contiguous substring in expected linear time.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2" target="_blank" rel="noopener noreferrer">Microsoft: Dictionary&lt;TKey,TValue&gt;</a></li></ul>
+</section>
+</div>

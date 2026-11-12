@@ -1,0 +1,76 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A BFF stores OAuth tokens server-side and returns an HttpOnly Secure session cookie; unsafe browser requests also carry a validated antiforgery token.</p><ol>
+<li>Choose browser credential architecture</li>
+<li>Protect token from script or ambient abuse</li>
+<li>Attach credential to intended requests</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Cookie-based BFF session: tune for deployment and browser requirements.
+options.Cookie.HttpOnly = true;
+options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+options.Cookie.SameSite = SameSiteMode.Lax;
+// Add antiforgery protection to state-changing requests.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>HttpOnly/BFF designs keep long-lived provider tokens out of JavaScript</li>
+<li>In-memory access tokens reduce persistent exposure compared with localStorage</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Cookie sessions create CSRF considerations</li>
+<li>BFF adds server state, proxying, and operational complexity</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Choose storage based on the client architecture, threat model, and provider guidance; for sensitive browser apps strongly consider a BFF.</p><p><strong>Avoid:</strong> Avoid putting refresh tokens or privileged credentials in localStorage, URLs, source bundles, or telemetry.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Calling localStorage secure because it is not a cookie.</li>
+<li>Assuming HttpOnly prevents CSRF or prevents malicious same-origin actions.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use short-lived, least-privilege tokens and avoid persistent browser secrets.</li>
+<li>Apply CSP, safe rendering, cookie flags, antiforgery validation, and session revocation.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why does HttpOnly reduce but not eliminate browser risk?</li>
+<li>How does a cookie-based design affect CSRF?</li>
+<li>What does a BFF change about token exposure?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A security review finds long-lived refresh tokens in localStorage; revoke active tokens, migrate to a BFF or supported safer browser pattern, add XSS and CSRF controls, and plan session reauthentication.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Browser token storage is a threat-model trade-off: script-readable storage exposes tokens to XSS, while cookie-based sessions require CSRF protections.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://datatracker.ietf.org/doc/draft-ietf-oauth-browser-based-apps/" target="_blank" rel="noopener noreferrer">OAuth 2.0 for Browser-Based Applications (IETF draft)</a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP Session Management Cheat Sheet</a></li></ul>
+</section>
+</div>

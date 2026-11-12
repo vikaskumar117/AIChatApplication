@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A web request awaits a database query so the worker can serve other requests while the database responds.</p><ol>
+<li>Compare synchronous blocking with awaiting the same I/O operation.</li>
+<li>Pass cancellation to the asynchronous API.</li>
+<li>Handle the result only after completion.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Synchronous wait occupies the caller:
+var text = client.GetStringAsync(url).GetAwaiter().GetResult();
+
+// Asynchronous wait yields while I/O is pending:
+var asyncText = await client.GetStringAsync(url, cancellationToken);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Improves I/O concurrency and responsiveness</li>
+<li>Cancellation and composition are explicit</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Adds state-machine and task overhead</li>
+<li>Does not reduce dependency latency or CPU cost</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use async APIs for naturally asynchronous I/O and keep the call chain async.</p><p><strong>Avoid:</strong> Avoid sync-over-async and async wrappers around already synchronous tiny operations.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using Task.Run around asynchronous I/O.</li>
+<li>Assuming async alone makes CPU-bound code faster.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Propagate async through API boundaries.</li>
+<li>Pass cancellation and set sensible timeouts.</li>
+<li>Measure throughput, latency, and resource use.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Does async mean parallel?</li>
+<li>Why can async improve server throughput?</li>
+<li>Does await make a database query faster?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A highly concurrent API spends most time waiting on downstream I/O. Use async drivers and cancellation, then measure queueing and latency rather than adding threads.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Async lets a caller yield during incomplete operations; it improves responsiveness and I/O scalability, not intrinsic operation speed.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A reusable date picker receives the selected date and emits a selection; unrelated pages do not couple themselves to its internal state.</p><ol>
+<li>Keep reusable components controlled by explicit inputs and outputs.</li>
+<li>Choose provider scope to match state lifetime.</li>
+<li>Use readonly state interfaces and intentional update methods in shared services.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>@Component({ selector: &#39;app-date-picker&#39;, template: &#39;&#39; })
+export class DatePicker {
+  readonly value = input&lt;Date | null&gt;(null);
+  readonly valueChange = output&lt;Date&gt;();
+
+  select(date: Date): void {
+    this.valueChange.emit(date);
+  }
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Inputs/outputs make local contracts visible</li>
+<li>Scoped services support sibling or cross-route coordination</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Global buses obscure causality</li>
+<li>Shared mutable objects make ownership and updates unclear</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Prefer input-down/event-up for direct relationships and a scoped service/store for shared lifetimes.</p><p><strong>Avoid:</strong> Avoid reaching into child internals or using a global event bus for routine parent-child state.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Mutating an input object inside a child without an emitted intent.</li>
+<li>Creating a root singleton event bus for unrelated features.</li>
+<li>Using view queries as a substitute for a stable component API.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep state local until a real sharing requirement appears.</li>
+<li>Document event meaning and payload semantics.</li>
+<li>Test component contracts independently from the store implementation.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Who owns the authoritative state in a parent-child interaction?</li>
+<li>When is a service better than outputs?</li>
+<li>Why should child outputs express intent rather than hidden mutation?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Two distant workflow steps need the same draft for the duration of one route. Provide a route-scoped state service and clear it with the workflow lifetime instead of creating permanent root-level mutable state.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A parent supplies state through inputs and receives child intent through outputs; this keeps ownership explicit. Content/view queries and model inputs have narrower purposes, while sibling or cross-route coordination often requires a shared service/store. Signals, Observable streams, and immutable input values can carry state; outputs should express events or intent rather than let a child mutate parent-owned objects invisibly. Avoid using a global event bus for tightly related components.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/guide/components/inputs" target="_blank" rel="noopener noreferrer">Angular component interaction</a></li><li><a href="https://angular.dev/guide/components/outputs" target="_blank" rel="noopener noreferrer">Outputs</a></li></ul>
+</section>
+</div>

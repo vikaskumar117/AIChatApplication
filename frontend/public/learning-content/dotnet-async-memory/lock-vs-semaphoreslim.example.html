@@ -1,0 +1,81 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A method that awaits a remote refresh must not hold lock; a SemaphoreSlim with try/finally protects the async critical section.</p><ol>
+<li>Wait asynchronously for the semaphore permit.</li>
+<li>Run the protected asynchronous refresh.</li>
+<li>Release in finally after successful acquisition.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>private readonly SemaphoreSlim gate = new(1, 1);
+
+async Task RefreshAsync(CancellationToken token)
+{
+    await gate.WaitAsync(token);
+    try { await LoadAndUpdateAsync(token); }
+    finally { gate.Release(); }
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>lock has clear synchronous ownership</li>
+<li>SemaphoreSlim supports async gating and bounded concurrency</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Semaphore misuse can deadlock or over-release</li>
+<li>Long critical sections serialize throughput</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use lock only around brief synchronous code with no await.</p><p><strong>Avoid:</strong> Use SemaphoreSlim for asynchronous exclusion or concurrency limits and release in finally.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Awaiting inside lock.</li>
+<li>Calling Release when WaitAsync never acquired a permit.</li>
+<li>Forgetting finally and permanently reducing capacity.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep critical regions small.</li>
+<li>Use cancellation-aware WaitAsync.</li>
+<li>Document gate ownership and disposal lifetime.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why can a lock not be held across await?</li>
+<li>What does SemaphoreSlim count represent?</li>
+<li>Why is Release placed in finally?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A token refresh must permit only one asynchronous refresh at a time. Use SemaphoreSlim, add cancellation and timeout policy, and ensure every acquired permit is released.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Use lock for short synchronous mutual exclusion; use SemaphoreSlim when callers must await admission or limit concurrency.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

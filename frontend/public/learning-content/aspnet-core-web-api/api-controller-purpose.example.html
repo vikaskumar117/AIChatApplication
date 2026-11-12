@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A [Required] field missing from a JSON POST receives a 400 validation response instead of entering the create action.</p><ol>
+<li>Bind request using API conventions</li>
+<li>Validate model and infer sources</li>
+<li>Short-circuit invalid input with 400</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>[ApiController]
+[Route(&quot;api/orders&quot;)]
+public sealed class OrdersController : ControllerBase
+{
+    [HttpPost]
+    public ActionResult&lt;OrderDto&gt; Create(CreateOrderRequest request) =&gt;
+        CreatedAtAction(nameof(Get), new { id = 42 }, new OrderDto(42));
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Consistent model-state handling</li>
+<li>Less repetitive binding and validation code</li>
+<li>Useful API error conventions and metadata</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Inference may be surprising if a signature is ambiguous</li>
+<li>Automatic 400 responses can change legacy clients’ observed behavior</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use [ApiController] for JSON-oriented MVC APIs with consistent automatic validation responses.</p><p><strong>Avoid:</strong> Avoid relying on inference as undocumented magic; specify [FromRoute], [FromQuery], [FromBody], or [FromServices] when clarity matters.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Treating syntactically valid input as valid business data.</li>
+<li>Returning an ad hoc 200 response for invalid model state.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use request DTOs with explicit constraints and stable validation errors.</li>
+<li>Exercise invalid JSON, missing fields, and invalid annotation values in HTTP tests.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What happens to an invalid model state by default?</li>
+<li>How are parameter binding sources inferred?</li>
+<li>How can a team make binding intent explicit?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An API receives a scalar parameter from an unexpected source after adding a service dependency; make the source explicit and contract-test binding and validation errors.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>[ApiController] opts MVC controllers into conventions that make API binding and client-error behavior more predictable.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/web-api/" target="_blank" rel="noopener noreferrer">ASP.NET Core Web API controllers</a></li></ul>
+</section>
+</div>

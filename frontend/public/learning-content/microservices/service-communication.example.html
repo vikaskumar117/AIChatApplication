@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Checkout asks Pricing for a current quote, then publishes OrderPlaced so fulfillment can proceed without Checkout knowing its implementation.</p><ol>
+<li>Name the business intent and owning service.</li>
+<li>Specify the response, error, and versioning semantics.</li>
+<li>Choose direct transport or broker based on timing and coupling.</li>
+<li>Instrument the full cross-service path.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public sealed record PriceQuote(Guid ProductId, decimal Amount);
+var quote = await pricing.GetQuoteAsync(productId, deadlineToken);
+await bus.PublishAsync(new OrderPlaced(orderId, quote.Amount), deadlineToken);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Explicit contracts allow independent implementation and deployment.</li>
+<li>Different interaction styles can match synchronous decisions and deferred work.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Every network hop adds latency and a partial-failure boundary.</li>
+<li>Poorly owned contracts couple services just as tightly as shared code or schemas.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use a narrow service API or event contract owned by the producing domain.</p><p><strong>Avoid:</strong> Avoid chatty calls, shared database access, and contracts that expose internal persistence models.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid chatty calls, shared database access, and contracts that expose internal persistence models.</li>
+<li>Assuming service communication guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Assign one authoritative owner to each piece of data.</li>
+<li>Set compatibility rules and trace context at the contract boundary.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What belongs in a service contract?</li>
+<li>How does a command differ from an event?</li>
+<li>Why is a network call not equivalent to a local method call?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A team splits an application and discovers the new services still share tables. Establish data ownership and migrate callers to explicit contracts before claiming independent deployment.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A service boundary is a contract plus ownership and operational behavior, not merely a process or URL.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/dotnet/architecture/microservices/" target="_blank" rel="noopener noreferrer">Microsoft microservices architecture</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Exception handling wraps authentication and controller execution; authentication establishes the user before authorization checks access.</p><ol>
+<li>Request enters early middleware</li>
+<li>Routing, auth, and endpoint execute</li>
+<li>Response unwinds toward server</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>app.UseExceptionHandler();
+app.UseHttpsRedirection();
+app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Compositional cross-cutting behavior</li>
+<li>Explicit ordering makes request lifecycle understandable</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Misordering can bypass policies or prevent exception handling</li>
+<li>Each component can add latency or alter the response</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use middleware for application-wide behavior and verify ordering against the features each component depends on.</p><p><strong>Avoid:</strong> Avoid placing authentication after endpoints or placing exception handling so late that earlier failures escape it.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming registration order is irrelevant.</li>
+<li>Putting endpoint-specific business decisions in global middleware.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep a concise, reviewed pipeline in Program.cs.</li>
+<li>Add integration tests for middleware order, short-circuiting, and exceptions.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does calling next mean?</li>
+<li>Why does middleware order matter?</li>
+<li>Where should authentication and authorization appear?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A new authorization requirement sees no authenticated user; inspect the actual pipeline and move authentication ahead of authorization while testing both anonymous and authenticated requests.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>The ordered middleware pipeline surrounds endpoint execution, so ordering determines which components can observe and affect a request.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/" target="_blank" rel="noopener noreferrer">ASP.NET Core middleware</a></li></ul>
+</section>
+</div>

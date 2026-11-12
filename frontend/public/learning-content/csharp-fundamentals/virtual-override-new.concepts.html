@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A virtual member permits derived replacement; override explicitly replaces that inherited virtual implementation. The new modifier hides a same-named base member rather than overriding its virtual slot.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Intentional virtual dispatch enables extensibility. Hiding can create different behavior depending on whether a caller uses a base or derived static type, which is often surprising.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>A call to a virtual member follows the runtime object type. A hidden non-virtual member is selected from the compile-time reference type; the compiler can warn when hiding is accidental.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Base virtual member</strong><span>Run declares an overridable dispatch slot.</span></div></div>
+<div><span>2</span><div><strong>Derived override</strong><span>Derived.Run replaces behavior in that slot.</span></div></div>
+<div><span>3</span><div><strong>Base nonvirtual name</strong><span>Name is not dynamically dispatched.</span></div></div>
+<div><span>4</span><div><strong>new hidden member</strong><span>Derived.Name is selected only when the expression is typed Derived.</span></div></div>
+</figure>
+<figcaption>Follow the labeled stages; each node names a concrete decision or runtime effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>override means runtime substitution.</li>
+<li>new means name hiding, not polymorphic replacement.</li>
+<li>Call-site declared type matters for hidden members.</li>
+</ul>
+</section>
+</div>

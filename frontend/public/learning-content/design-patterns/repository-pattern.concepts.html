@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A repository provides a domain-oriented boundary for retrieving and persisting aggregates while hiding persistence-specific details where that abstraction is valuable.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>It can keep domain/application code independent of storage mechanics and centralize meaningful queries; a generic wrapper around every ORM operation often only hides useful capabilities.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Define operations in terms of the aggregate and use case, keep query behavior explicit, and clarify whether the repository stages changes or commits them. In EF Core, DbContext already tracks entities and implements repository/unit-of-work-like behavior.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Use-case intent</strong><span>Caller requests a domain operation such as load order for confirmation.</span></div></div>
+<div><span>2</span><div><strong>Repository contract</strong><span>Contract exposes aggregate-focused queries and persistence intent.</span></div></div>
+<div><span>3</span><div><strong>Implementation</strong><span>EF or another store performs mapping, query, and tracking.</span></div></div>
+<div><span>4</span><div><strong>Commit owner</strong><span>Application unit of work controls when staged changes become durable.</span></div></div>
+</figure>
+<figcaption>A repository is a boundary only when its API communicates intent or isolates change; renaming DbSet operations alone is not isolation.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Returning IQueryable that silently leaks provider behavior.</li>
+<li>Adding a generic repository that only forwards Add, Find, and Save.</li>
+<li>Hiding commits in methods when callers need to combine changes.</li>
+</ul>
+</section>
+</div>

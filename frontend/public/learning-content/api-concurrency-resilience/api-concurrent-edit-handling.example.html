@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A stale If-Match header produces 412 Precondition Failed; an application-level version conflict without HTTP preconditions may use 409 Conflict.</p><ol>
+<li>Client submits representation and version</li>
+<li>Server checks version in atomic write</li>
+<li>Return update or actionable conflict</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>if (!Request.Headers.IfMatch.Contains(currentEtag))
+    return StatusCode(StatusCodes.Status412PreconditionFailed);
+// Prefer enforcing If-Match atomically through the persistence version check.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Clients receive an explicit and actionable result</li>
+<li>Separates stale updates from infrastructure failures</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Response semantics and retry UX must be designed</li>
+<li>The server must avoid a time-of-check/time-of-use gap</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Choose 412 when a conditional request precondition failed and 409 for a domain-state conflict without that HTTP precondition.</p><p><strong>Avoid:</strong> Avoid sending a stale full-document retry as an automatic response to conflict.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Checking ETag before starting the transaction and assuming it remains current.</li>
+<li>Returning 500 for a normal stale edit.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use stable problem types and include safe recovery information.</li>
+<li>Record conflict metrics and test stale If-Match and body-version cases.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>When should an API use 409 versus 412?</li>
+<li>What makes a version check race-safe?</li>
+<li>Which client recovery choices are appropriate?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A mobile client retries an old update after receiving 409; return a stable Problem Details type and safe current version, then let the client reload or present a merge rather than replaying stale data.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>An API should define how a detected stale update is communicated and how a client can recover without overwriting newer state.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener noreferrer">RFC 9110: If-Match and preconditions</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9457" target="_blank" rel="noopener noreferrer">RFC 9457 Problem Details</a></li></ul>
+</section>
+</div>

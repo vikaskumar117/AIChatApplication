@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Cross-Site Scripting (XSS) is execution of untrusted content as script in a trusted origin, while Cross-Site Request Forgery (CSRF) abuses credentials the browser attaches automatically.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>XSS can steal accessible tokens or act as the user; CSRF can trigger state changes when a browser automatically sends cookies, even though the attacker may not read the response.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use context-aware output encoding and safe DOM APIs to prevent XSS; for cookie-authenticated state-changing requests use SameSite cookies as a defense-in-depth measure plus antiforgery tokens or robust origin checks, and never rely on CORS alone.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Attacker-controlled content reaches browser</strong><span>Unsafe HTML/script sinks can turn stored or reflected untrusted text into executable code in the application origin.</span></div></div>
+<div><span>2</span><div><strong>Browser credentials or script behavior are abused</strong><span>Cookies may be automatically attached to a cross-site request; bearer tokens explicitly held by script have different CSRF exposure but remain vulnerable to XSS theft.</span></div></div>
+<div><span>3</span><div><strong>Encoding, cookie, and request-origin defenses reduce risk</strong><span>Contextual encoding and safe rendering reduce XSS; antiforgery/origin and SameSite controls address cookie-based CSRF but require correct deployment.</span></div></div>
+</figure>
+<figcaption>CSRF defenses depend on credential transport; APIs using cookies and APIs using explicitly attached bearer tokens have different exposure, while XSS remains a major client risk.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>XSS executes script; CSRF abuses ambient browser credentials.</li>
+<li>HttpOnly limits JavaScript reads but does not prevent the browser sending cookies.</li>
+<li>CORS is not an authorization or universal CSRF defense.</li>
+</ul>
+</section>
+</div>

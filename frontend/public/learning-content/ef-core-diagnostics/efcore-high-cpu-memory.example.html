@@ -1,0 +1,79 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A rising heap after each request but stable traffic suggests retained objects; compare GC heap size and inspect roots in a secured dump.</p><ol>
+<li>Establish resource trends and relate them to traffic, version, and container limits.</li>
+<li>Use counters to distinguish allocation rate, GC, and retained heap.</li>
+<li>Capture a bounded trace; take a dump only when authorized and protected.</li>
+<li>Identify hot path or retaining root and reproduce under representative load.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>dotnet-counters monitor --process-id &lt;pid&gt;
+dotnet-trace collect --process-id &lt;pid&gt;
+dotnet-dump collect --process-id &lt;pid&gt;
+// Collect only with authorization, bounded duration, secure storage, and a data-handling plan.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Runtime tools distinguish live allocation, CPU hot paths, GC activity, and object retention.</li>
+<li>Repeated measurements validate remediation rather than relying on one snapshot.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Tracing and dumps add overhead and require runtime/OS access.</li>
+<li>Heap dumps can contain secrets, tokens, personal data, and application payloads.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use least-invasive metrics first, then approved traces or dumps when evidence needs deeper stacks or object roots.</p><p><strong>Avoid:</strong> Avoid collecting or sharing production dumps without authorization, access controls, retention limits, and data review.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Calling all memory growth a leak without checking allocation and GC.</li>
+<li>Collecting full dumps casually or storing them in unsecured locations.</li>
+<li>Optimizing code from one CPU sample without representative load.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Start with metrics and least-invasive collection.</li>
+<li>Bound duration and overhead of traces.</li>
+<li>Secure, restrict, and expire diagnostic artifacts.</li>
+<li>Compare before/after by build and representative request mix.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How do allocation pressure and a memory leak differ?</li>
+<li>Which tool helps identify live counters versus CPU stacks?</li>
+<li>Why is a production dump sensitive?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Memory climbs after deployment while request volume is flat. Compare per-build allocation and heap trends, trace hot allocations, inspect retained roots in an approved secured dump, and verify stable memory after the fix.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>High CPU can result from application hot loops, excessive serialization, query translation/materialization, contention, or garbage collection. High memory can be allocation pressure, large caches, unbounded buffers, or retained object graphs. CPU and memory symptoms require different evidence: a high allocation rate can cause GC/CPU without a leak, while retained memory can grow with stable allocation rate.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/core/diagnostics/" target="_blank" rel="noopener noreferrer">Microsoft Learn: .NET diagnostics tools</a></li></ul>
+</section>
+</div>

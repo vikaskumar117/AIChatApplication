@@ -1,0 +1,91 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Return every employee whose salary is in the top three distinct salary levels in their department; ties at the cutoff are included.</p><ol>
+<li>Select the employee detail columns.</li>
+<li>Partition by department and order by salary descending.</li>
+<li>Choose DENSE_RANK so equal salaries share a rank without gaps.</li>
+<li>Filter in an outer query because the window result is not available in the same query WHERE.</li>
+</ol>
+</section>
+<section>
+<p><small>DATA EXAMPLE</small></p>
+<h2>Example data</h2>
+<h3>dbo.Employee (sample)</h3><div><table><thead><tr><th>EmployeeId</th><th>Name</th><th>DepartmentId</th><th>Salary</th></tr></thead><tbody><tr><td>1</td><td>Ari</td><td>10</td><td>120000</td></tr><tr><td>2</td><td>Bo</td><td>10</td><td>110000</td></tr><tr><td>3</td><td>Cy</td><td>10</td><td>110000</td></tr><tr><td>4</td><td>Dee</td><td>20</td><td>95000</td></tr><tr><td>5</td><td>Eli</td><td>20</td><td>90000</td></tr></tbody></table></div>
+<h3>dbo.Department</h3><div><table><thead><tr><th>DepartmentId</th><th>Name</th></tr></thead><tbody><tr><td>10</td><td>Engineering</td></tr><tr><td>20</td><td>Finance</td></tr></tbody></table></div>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>WITH ranked AS (
+  SELECT e.EmployeeId, e.Name, e.DepartmentId, e.Salary,
+         DENSE_RANK() OVER (
+           PARTITION BY e.DepartmentId ORDER BY e.Salary DESC
+         ) AS salary_rank
+  FROM dbo.Employee AS e
+)
+SELECT EmployeeId, Name, DepartmentId, Salary, salary_rank
+FROM ranked
+WHERE salary_rank &lt;= 3
+ORDER BY DepartmentId, Salary DESC, EmployeeId;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Window functions preserve row details while ranking each group.</li>
+<li>The rank predicate makes inclusion of salary ties explicit.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Ranking may require sorting many rows and memory; spills can hurt performance.</li>
+<li>Tie-inclusive ranks may return more than three employees per department.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use this when the business definition is top three salary levels per department and all ties at those levels should appear.</p><p><strong>Avoid:</strong> Do not use DENSE_RANK if the contract requires exactly three employee rows; choose ROW_NUMBER with a stable unique ordering instead.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using TOP (3) globally and expecting it to reset per department.</li>
+<li>Assuming ties cannot cause more than three output rows.</li>
+<li>Filtering a window-function alias in the same SELECT-level WHERE.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Write down whether N means rows, rank positions, or distinct values.</li>
+<li>Add a deterministic unique tie-breaker to ROW_NUMBER ordering.</li>
+<li>Test departments with salary ties at both included and excluded boundaries.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is global TOP not a per-department solution?</li>
+<li>How does the tie policy affect the number of returned rows?</li>
+<li>What index key order could support this partition and order?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Compensation reporting requires everyone sharing any of the top three salary levels in each department. Confirm that ties are included, rank within department, then inspect sort and memory grant behavior on production-like volumes.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Top-N-per-group returns a limited or ranked set of employees independently within each department. A window function computes a rank without collapsing employee rows. A single global TOP (3) returns only three employees overall. Partitioning provides a scalable expression of the per-department requirement and allows the result to retain employee details.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/sql/t-sql/functions/ranking-functions-transact-sql" target="_blank" rel="noopener noreferrer">Microsoft Learn: Ranking functions</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Authentication verifies credentials and constructs a principal representing an identity and its validated claims.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Authorization evaluates that principal against endpoint policy and often the target resource, preventing the mistaken assumption that a signed-in user can access all data.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Configure authentication schemes and middleware to establish HttpContext.User, then require authorization policies and perform resource checks for ownership, tenant, or state.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Credential is presented</strong><span>Authentication validates credentials such as bearer tokens or cookies under a configured scheme.</span></div></div>
+<div><span>2</span><div><strong>Authentication establishes principal</strong><span>The resulting ClaimsPrincipal is trusted only according to the handler’s validation rules.</span></div></div>
+<div><span>3</span><div><strong>Authorization permits or denies requested action</strong><span>Authorization evaluates requirements for the operation and may load a target resource for a decision.</span></div></div>
+</figure>
+<figcaption>A 401 response indicates missing or unacceptable authentication; 403 means the authenticated principal is not allowed, subject to deliberate resource-concealment policy.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Authentication identifies; authorization decides access.</li>
+<li>Policies and resource checks both matter.</li>
+<li>Use 401 and 403 for different failure conditions.</li>
+</ul>
+</section>
+</div>

@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — A palindrome reads the same forward and backward under a specified normalization rule.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — The two-pointer method avoids building a second reversed string and shows how to reduce unnecessary comparisons.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Move left and right inward. Optionally skip non-alphanumeric characters and compare case-insensitively. The scan is O(n) time and O(1) extra space.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Normalized view</strong><span>&quot;A man, a plan, a canal: Panama&quot; → &quot;AMANAPLANACANALPANAMA&quot;</span></div></div>
+<div><span>2</span><div><strong>Compare outer pair</strong><span>A == A; move both pointers inward.</span></div></div>
+<div><span>3</span><div><strong>Repeat inward</strong><span>M == M, A == A, and continue.</span></div></div>
+<div><span>4</span><div><strong>Decision</strong><span>No mismatch before pointers meet: palindrome.</span></div></div>
+</figure>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>The algorithm is linear because each pointer only moves inward.</li>
+<li>Normalization is part of the specification.</li>
+<li>Constant space comes from comparing in place rather than allocating a normalized copy.</li>
+</ul>
+</section>
+</div>

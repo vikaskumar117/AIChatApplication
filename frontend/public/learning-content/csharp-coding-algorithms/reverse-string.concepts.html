@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — A string is immutable in C#, so reversing it means creating a new sequence rather than changing the original string in place.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — This is a simple way to demonstrate indices, two-pointer reasoning, immutability, and the difference between input size and extra space.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Copy the UTF-16 characters to an array, swap the left and right characters while the pointers have not crossed, then construct a new string. The operation takes O(n) time and O(n) extra space for the result buffer.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Input</strong><span>A B C D are copied into a mutable char array.</span></div></div>
+<div><span>2</span><div><strong>Swap ends</strong><span>Swap A and D; move left and right inward.</span></div></div>
+<div><span>3</span><div><strong>Repeat</strong><span>Swap B and C; stop when pointers meet or cross.</span></div></div>
+<div><span>4</span><div><strong>Return</strong><span>Build a new immutable string: D C B A.</span></div></div>
+</figure>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>The loop invariant is that the outside positions are already reversed.</li>
+<li>The array is mutable; the string result is a new object.</li>
+<li>State the Unicode representation your solution supports.</li>
+</ul>
+</section>
+</div>

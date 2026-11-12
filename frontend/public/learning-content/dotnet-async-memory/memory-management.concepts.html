@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>The managed heap stores objects; roots such as stack references, static fields, and handles make objects reachable. The garbage collector reclaims unreachable managed objects.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Automatic reclamation prevents many manual memory errors but does not guarantee low memory use: reachable objects may be retained unnecessarily, and unmanaged resources such as handles need deterministic release.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use ownership scopes for disposable resources, remove unintended references, and profile allocation rate, retained heap, and native resource counts as different measurements.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Allocation</strong><span>Application creates managed objects on the managed heap.</span></div></div>
+<div><span>2</span><div><strong>Root reference</strong><span>Static, stack, or handle roots keep objects reachable.</span></div></div>
+<div><span>3</span><div><strong>Unreachable graph</strong><span>Objects with no path from a root can be reclaimed.</span></div></div>
+<div><span>4</span><div><strong>External resource</strong><span>Files and native handles need deterministic ownership and disposal.</span></div></div>
+</figure>
+<figcaption>Follow each labeled stage to see the concrete scheduling, ownership, or memory effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>GC traces managed reachability, not business usefulness.</li>
+<li>Reachable but unwanted objects are application retention bugs.</li>
+<li>IDisposable concerns resources, not reclaiming managed object memory.</li>
+</ul>
+</section>
+</div>

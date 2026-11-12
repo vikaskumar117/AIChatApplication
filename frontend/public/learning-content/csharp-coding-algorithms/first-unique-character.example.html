@@ -1,0 +1,86 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A streaming import reports the first unique character in a short identifier. This batch solution is easy to reason about; a true unbounded stream needs a different data structure and expiration policy.</p><ol>
+<li>Count all characters in &quot;swiss&quot;.</li>
+<li>Scan from index 0: s has count 3.</li>
+<li>At index 1, w has count 1; return it.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>char? FirstUnique(string value)
+{
+    var counts = new Dictionary&lt;char, int&gt;();
+    foreach (char character in value)
+        counts[character] = counts.GetValueOrDefault(character) + 1;
+
+    foreach (char character in value)
+        if (counts[character] == 1)
+            return character;
+
+    return null;
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Two linear passes are easy to verify</li>
+<li>Preserves the original first-occurrence order</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Uses O(k) memory</li>
+<li>A character result may be ambiguous when duplicate symbols look identical in logs</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for a bounded input string and return a character or index as required.</p><p><strong>Avoid:</strong> Avoid assuming a two-pass in-memory solution works for an infinite stream or privacy-sensitive identifier.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Returning any character with count one can miss the first one.</li>
+<li>Using only a HashSet cannot distinguish one occurrence from multiple occurrences.</li>
+<li>Ignoring input limits can permit avoidable memory and CPU use.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Return an index when callers need an unambiguous location.</li>
+<li>Test empty input and all-repeating input.</li>
+<li>Bound untrusted input before allocating frequency state.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is a set not enough?</li>
+<li>Why do we scan the original string a second time?</li>
+<li>What should be returned if every character repeats?</li>
+<li>How would the algorithm change for a stream?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An ingestion service must flag the first unique symbol in an oversized untrusted field. Enforce a maximum input length before counting, return an index if duplicate visual characters are ambiguous, and avoid logging the complete input.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Frequency counts answer how often; a second ordered scan answers which unique character comes first.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2" target="_blank" rel="noopener noreferrer">Microsoft: Dictionary&lt;TKey,TValue&gt;</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,81 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A route’s p99 rises while SQL duration is stable but command count rises with page size, pointing to N+1 or serialization-triggered loading.</p><ol>
+<li>Confirm affected route, percentile, scope, and recent changes.</li>
+<li>Open representative slow traces and attribute time by span.</li>
+<li>Correlate EF command metrics, SQL plan history, pool waits, CPU/GC, and payload size.</li>
+<li>Mitigate safely, then verify p95/p99, errors, and resource trend.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Diagnostic sequence (run through approved telemetry, not by logging secrets):
+// 1. Compare route p50/p95/p99 by build and endpoint.
+// 2. Open a slow request trace and inspect DB/downstream spans.
+// 3. Compare EF command count, duration, rows, and SQL Query Store history.
+// 4. Check connection-pool waits, CPU, GC, thread-pool queue, and response bytes.
+// 5. Reproduce with bounded representative inputs; validate one fix.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Correlated traces distinguish application, database, and dependency latency.</li>
+<li>Tail percentiles show user impact hidden by averages.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>High-cardinality or verbose telemetry can be expensive and expose sensitive data.</li>
+<li>Sampling can omit rare slow traces and correlation requires consistent IDs.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use end-to-end tracing and resource/dependency correlation for production latency incidents.</p><p><strong>Avoid:</strong> Avoid logging full request bodies/SQL parameter values or optimizing from aggregate average duration alone.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Blaming SQL before examining trace spans or dependency time.</li>
+<li>Using average latency as the sole SLO signal.</li>
+<li>Enabling unrestricted EF sensitive-data logging in production.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Propagate trace/correlation IDs across services.</li>
+<li>Track route percentiles, command count, dependency latency, errors, and saturation.</li>
+<li>Use sampling and redaction policies.</li>
+<li>Maintain rollback and incident runbooks.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why are p95/p99 more useful than averages during incidents?</li>
+<li>How do traces distinguish SQL time from application time?</li>
+<li>Which EF metrics help identify N+1 or pool pressure?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A checkout API p99 doubles after a release. Compare old/new route traces, inspect database command count and dependency spans, check thread/connection pools and response size, then roll back or deploy a measured fix with dashboard verification.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Slow API diagnosis separates time spent in application code, database execution, network/dependency waits, queueing, serialization, and client transfer, then correlates a slow request with trace and resource evidence. Endpoint duration alone cannot reveal whether the cause is an N+1 query, blocking, pool exhaustion, downstream latency, CPU saturation, or oversized response.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/core/diagnostics/observability-with-otel" target="_blank" rel="noopener noreferrer">Microsoft Learn: OpenTelemetry in .NET</a></li></ul>
+</section>
+</div>

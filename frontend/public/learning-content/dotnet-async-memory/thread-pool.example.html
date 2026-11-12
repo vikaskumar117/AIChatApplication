@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Task.Run schedules CPU work onto pool capacity; asynchronous network waiting does not need a worker parked for the whole wait.</p><ol>
+<li>Schedule a CPU calculation and await its Task.</li>
+<li>Start native async network I/O without wrapping it in Task.Run.</li>
+<li>Observe how blocking pool workers would delay unrelated queue items.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>await Task.Run(() =&gt; CalculateReport(input), cancellationToken);
+await httpClient.GetAsync(url, cancellationToken); // async wait, no worker blocked for duration</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Worker reuse reduces thread creation</li>
+<li>Shared pool supports many framework features</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Blocking delays unrelated work</li>
+<li>Unbounded work can grow queues and latency</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Keep pool work short and nonblocking; bound CPU-heavy fan-out.</p><p><strong>Avoid:</strong> Avoid long waits or synchronous blocking on pool workers.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Treating the pool as unlimited.</li>
+<li>Increasing minimum threads as the first fix for blocking.</li>
+<li>Flooding the pool with unbounded CPU tasks.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Bound CPU concurrency.</li>
+<li>Use async I/O and avoid sync-over-async.</li>
+<li>Monitor queue length, thread count, and completion rate.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What kinds of work use the thread pool?</li>
+<li>Why does blocking reduce capacity?</li>
+<li>What should be measured during queueing incidents?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A service queues CPU-heavy exports alongside request continuations. Move long batch processing to a bounded worker queue and monitor pool queue length and throughput.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>The thread pool reuses finite workers; blocking or flooding it delays unrelated scheduled work.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

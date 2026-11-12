@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>An HttpInterceptorFn receives an immutable HttpRequest and a next handler, then returns an Observable&lt;HttpEvent&lt;unknown&gt;&gt;. Clone requests to change headers or parameters; responses and errors flow back through the chain.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Interceptors centralize concerns such as correlation IDs, trusted-origin credentials, timing, and consistent transport error mapping. Ordering matters: each interceptor wraps downstream processing and can observe the transformed result.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Register functional interceptors with provideHttpClient(withInterceptors([...])). Keep feature business rules in services; refresh/retry logic needs recursion protection, bounded retries, and coordination across simultaneous failures.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Register policy</strong><span>Configure functional interceptors in a deliberate order with the application HttpClient.</span></div></div>
+<div><span>2</span><div><strong>Clone immutable request</strong><span>Requests are immutable; clone to add headers, params, or a controlled context value.</span></div></div>
+<div><span>3</span><div><strong>Delegate</strong><span>Call next(request) exactly as the chain contract requires and retain the returned event stream.</span></div></div>
+<div><span>4</span><div><strong>Observe unwind</strong><span>Use RxJS operators on the returned stream for response timing or scoped error handling.</span></div></div>
+</figure>
+<figcaption>An interceptor is a wrapper around a request/response Observable, not a mutable global callback.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>An HttpInterceptorFn receives an immutable HttpRequest and a next handler, then returns an Observable&lt;HttpEvent&lt;unknown&gt;&gt;. Clone requests to change headers or parameters; responses and errors flow back through the chain.</li>
+<li>Interceptors centralize concerns such as correlation IDs, trusted-origin credentials, timing, and consistent transport error mapping. Ordering matters: each interceptor wraps downstream processing and can observe the transformed result.</li>
+<li>Register functional interceptors with provideHttpClient(withInterceptors([...])). Keep feature business rules in services; refresh/retry logic needs recursion protection, bounded retries, and coordination across simultaneous failures.</li>
+</ul>
+</section>
+</div>

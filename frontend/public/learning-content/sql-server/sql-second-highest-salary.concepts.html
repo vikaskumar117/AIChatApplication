@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Second-highest can mean the second distinct salary value, or the employee row in second place. Those meanings differ when salaries tie.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Explicitly defining the result avoids returning an arbitrary employee or mistakenly treating two employees tied for the highest pay as first and second.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>For the second distinct amount, use DENSE_RANK over salary DESC and filter rank 2. For exactly the second row, use ROW_NUMBER with a stable unique tie-breaker. MAX below MAX is an alternative for one distinct amount but handles NULL and empty input deliberately.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Filter input</strong><span>Choose whether NULL salary rows participate; here they are excluded.</span></div></div>
+<div><span>2</span><div><strong>Order distinct values</strong><span>Rank salary values descending.</span><code>DENSE_RANK() OVER (ORDER BY Salary DESC)</code></div></div>
+<div><span>3</span><div><strong>Select rank 2</strong><span>Return all employees sharing the second distinct value.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>“Second-highest salary” is ambiguous until tie semantics are defined.</li>
+<li>DENSE_RANK returns the second distinct value.</li>
+<li>ROW_NUMBER returns a row position and needs deterministic ordering.</li>
+<li>No rank 2 means no result, not an invented zero.</li>
+</ul>
+</section>
+</div>

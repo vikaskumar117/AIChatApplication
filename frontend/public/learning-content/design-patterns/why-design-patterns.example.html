@@ -1,0 +1,76 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A payment service needs to support new providers. Strategy can isolate provider-specific behavior; adding a pattern without provider variation would add ceremony without solving a problem.</p><ol>
+<li>State the change that is difficult today.</li>
+<li>Choose the smallest pattern that separates that change.</li>
+<li>Review whether tests and callers became clearer.</li>
+<li>Remove layers that have no distinct responsibility.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IPaymentMethod
+{
+    Task&lt;PaymentResult&gt; PayAsync(PaymentRequest request, CancellationToken ct);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Provides a concise vocabulary for responsibilities and collaboration.</li>
+<li>Can isolate change, improve substitutability, and make tests more focused.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Named patterns can be over-applied and add indirection or abstractions.</li>
+<li>A textbook structure may not fit the real domain or framework.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use a pattern when a recurring change or collaboration problem is present.</p><p><strong>Avoid:</strong> Avoid choosing a pattern by name before understanding the forces and constraints.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid choosing a pattern by name before understanding the forces and constraints.</li>
+<li>Assuming patterns: what they are and why they matter guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Explain both the problem and the trade-off in a review.</li>
+<li>Prefer simple code until change pressure justifies structure.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What problem does a pattern solve beyond giving code a familiar shape?</li>
+<li>How do you decide if an abstraction is worth its cost?</li>
+<li>Can a pattern guarantee maintainability?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A team introduces factories, repositories, and mediators in a small CRUD feature. Review whether each boundary represents real variation or merely adds files and navigation.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A pattern earns its place by improving a real design constraint, not by matching a catalog diagram.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/dotnet/standard/design-guidelines/" target="_blank" rel="noopener noreferrer">.NET design guidelines</a></li></ul>
+</section>
+</div>

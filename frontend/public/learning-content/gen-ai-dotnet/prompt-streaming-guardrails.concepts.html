@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — A prompt is the structured instruction, user input, history, and context sent to a model. Streaming emits generated pieces before completion. Guardrails are layered checks on data, requests, outputs, and tool actions.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Clear bounded prompts improve consistency; streaming reduces perceived wait time. Both increase operational complexity: partial text may be unsafe or incomplete, while longer context increases token use, latency, and exposure.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Classify and minimize input, budget prompt/history/retrieval/output tokens, and validate the task. For streaming, propagate cancellation, frame transport correctly, define completion/error events, and decide whether moderation occurs before display, per chunk, or via buffering. SSE is a one-way server-to-client event stream over HTTP; it is not a moderation or delivery guarantee. Apply content filters and application policy checks, but do not claim they eliminate hallucinations or prompt injection.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Classified request</strong><span>Minimize data; redact secrets and decide whether the request is allowed.</span></div></div>
+<div><span>2</span><div><strong>Bounded prompt</strong><span>Instructions, user input, history, retrieved context, and output share token limits.</span></div></div>
+<div><span>3</span><div><strong>Model stream</strong><span>Incremental chunks, deadlines, cancellation, token quota, and transient failure handling.</span></div></div>
+<div><span>4</span><div><strong>Safety gate</strong><span>Content policy and application checks before or during display; never a truth guarantee.</span></div></div>
+<div><span>5</span><div><strong>Client lifecycle</strong><span>SSE event framing, partial output, terminal status, disconnect, and safe rendering.</span></div></div>
+</figure>
+<figcaption>Streaming is a transport choice, not a safety feature. Decide explicitly whether each chunk is safe to show before final completion.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Prompt instructions are not an authorization or security boundary.</li>
+<li>Token limits include all sent context and generated output; usage drives cost and quota.</li>
+<li>A partial stream may be incomplete, unmoderated, or impossible to safely resume.</li>
+</ul>
+</section>
+</div>

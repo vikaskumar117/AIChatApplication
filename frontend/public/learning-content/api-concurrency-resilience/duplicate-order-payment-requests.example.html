@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A payment provider charges successfully but the response is lost; retry with the provider’s stable idempotency key and reconcile the same payment rather than creating a second charge.</p><ol>
+<li>Receive operation key and command</li>
+<li>Atomically create durable operation/order</li>
+<li>Coordinate provider effect and replay final result</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Persist order + outbox message in one database transaction.
+// Deliver with the same provider idempotency key and persist provider result.
+await outbox.EnqueueAsync(new ChargePayment(order.Id, key), ct);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Protects customers against duplicate orders and charges</li>
+<li>Durable records support retries, audit, and reconciliation</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Distributed workflows require state machines and operational monitoring</li>
+<li>Provider idempotency windows and local retention policies must align</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use end-to-end deduplication for payment, order, booking, and other non-repeatable business effects.</p><p><strong>Avoid:</strong> Avoid assuming an HTTP retry policy, a database transaction, or a frontend disabled button guarantees exactly-once payment.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Generating a new provider key on every retry.</li>
+<li>Marking an order paid before a durable, reconciled payment result exists.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use outbox/inbox, unique constraints, state transitions, and reconciliation dashboards.</li>
+<li>Design customer-visible states for pending, succeeded, failed, and needs-review operations.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why cannot one local transaction guarantee exactly one external charge?</li>
+<li>How do an outbox and provider idempotency key work together?</li>
+<li>How should an ambiguous provider timeout be reconciled?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A payment call times out after the provider may have charged; persist the operation as pending, query or replay using the same provider key, reconcile provider state, and do not tell the customer to start a new charge blindly.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Duplicate-sensitive business operations need durable deduplication across retries, concurrent requests, and downstream failures.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://aws.amazon.com/builders-library/making-retries-safe-with-idempotent-APIs/" target="_blank" rel="noopener noreferrer">AWS Builders’ Library: Making retries safe with idempotent APIs</a></li></ul>
+</section>
+</div>

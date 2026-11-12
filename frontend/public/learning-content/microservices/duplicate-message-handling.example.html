@@ -1,0 +1,72 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A payment consumer stores the event ID and payment result in the same database transaction; redelivery returns the saved result instead of charging again.</p><ol>
+<li>Keep the same idempotency identity across retries and replay.</li>
+<li>Commit processed identity with the local effect.</li>
+<li>Set retention longer than the maximum redelivery/replay horizon.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>await using var tx = await db.Database.BeginTransactionAsync(ct);
+if (await db.ProcessedMessages.AnyAsync(x =&gt; x.Id == message.Id, ct)) return;
+await payments.ApplyAsync(message.Payment, ct);
+db.ProcessedMessages.Add(new ProcessedMessage(message.Id));
+await db.SaveChangesAsync(ct);
+await tx.CommitAsync(ct);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Deduplication protects business effects against redelivery and uncertain acknowledgements.</li>
+<li>Stable operation identities support replay and reconciliation.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Deduplication storage needs retention, transaction design, and capacity.</li>
+<li>External side effects may not share the consumer’s transaction and need provider idempotency or reconciliation.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Assume broker messages can repeat and make effects idempotent or deduplicated.</p><p><strong>Avoid:</strong> Avoid claiming exactly-once business processing from a broker feature alone.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid claiming exactly-once business processing from a broker feature alone.</li>
+<li>Assuming duplicate message handling and idempotency guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Design idempotency into consumer contracts.</li>
+<li>Test crash points before effect, after effect, and before acknowledgement.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why can a message be redelivered after a successful effect?</li>
+<li>Where should a deduplication record be committed?</li>
+<li>How do you handle a provider side effect outside the local transaction?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>The consumer commits an invoice, then crashes before ACK. Redelivery finds the event ID transactionally and skips the duplicate; downstream email uses its own idempotency key.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Duplicate handling is a consumer correctness property built from stable identity, atomic local effects, and explicit handling for external side effects.</p>
+</section>
+</div>

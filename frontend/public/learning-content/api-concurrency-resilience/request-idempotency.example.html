@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A checkout POST times out after the order is committed; retry with the same idempotency key returns the already-created order.</p><ol>
+<li>Client sends stable operation key</li>
+<li>Server claims key and performs operation once</li>
+<li>Replay returns recorded outcome</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Unique index: (tenantId, operationName, idempotencyKey)
+// In one transaction, store request hash + operation result.
+if (existingKey is not null)
+    return existingKey.RequestHash == requestHash
+        ? Replay(existingKey.StoredResponse)
+        : Conflict();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Makes retries safe when outcome is uncertain</li>
+<li>Prevents duplicate creates or charges under concurrent requests</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Requires retention, key scope, and concurrent claim semantics</li>
+<li>External side effects may need an outbox or provider idempotency support</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use idempotency keys for retryable create or payment operations whose duplicate execution has meaningful cost.</p><p><strong>Avoid:</strong> Avoid using an idempotency key as authorization or storing keys without expiry, scope, and mismatch policy.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Creating the side effect before claiming the key atomically.</li>
+<li>Returning a prior result for a different request payload with the same key.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use unique constraints, durable outcomes, bounded key retention, and replay metrics.</li>
+<li>Coordinate external side effects with outbox/inbox patterns and downstream idempotency.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is a timeout an uncertain outcome?</li>
+<li>What should happen if the same key has a different request body?</li>
+<li>How do concurrent first requests avoid double execution?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Two identical payment requests arrive concurrently with one key; a unique constraint or atomic key claim allows one operation and the other waits for or replays its recorded outcome.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>An idempotent operation has the same intended effect when the same request is repeated, which makes uncertain network retries safer.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc9110#section-9.2.2" target="_blank" rel="noopener noreferrer">RFC 9110: Idempotent Methods</a></li></ul>
+</section>
+</div>

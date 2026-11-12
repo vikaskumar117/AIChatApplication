@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>The maximum salary per department can be returned as a value, or with the employee row or rows that achieve it.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>A grouped MAX returns only the amount; reporting the employee requires a join-back or a ranking method. Ties must be treated intentionally.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use MAX with GROUP BY for amounts. Use DENSE_RANK or a join on department plus maximum when all ties should appear; use ROW_NUMBER with deterministic ordering for one chosen winner.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Department partition</strong><span>Compute maxima independently per DepartmentId.</span></div></div>
+<div><span>2</span><div><strong>Salary order</strong><span>Place highest salary first in each partition.</span></div></div>
+<div><span>3</span><div><strong>Rank 1</strong><span>Select the maximum row or every employee tied at that salary.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>GROUP BY MAX returns a value, not its associated employee.</li>
+<li>Rank 1 preserves all equal maximum rows.</li>
+<li>Join-back must include the grouping key.</li>
+<li>Define behavior for NULL-only departments.</li>
+</ul>
+</section>
+</div>

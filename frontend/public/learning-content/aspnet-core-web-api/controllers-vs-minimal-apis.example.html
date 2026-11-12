@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A focused health endpoint may be concise as a Minimal API while a resource API with established MVC filters and conventions may remain controller-based.</p><ol>
+<li>Select endpoint organization</li>
+<li>Routing binds and invokes handler</li>
+<li>Shared policies and services implement behavior</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>app.MapGet(&quot;/health&quot;, () =&gt; TypedResults.Ok(new HealthResponse(&quot;ok&quot;)))
+    .WithName(&quot;Health&quot;)
+    .WithSummary(&quot;Reports service health&quot;);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Controllers provide familiar structure and MVC extension points</li>
+<li>Minimal APIs reduce ceremony for focused endpoint sets</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Controllers add conventions and structure that small services may not need</li>
+<li>Minimal API registrations can become difficult to navigate when ungrouped</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Choose based on API complexity, required extension points, operational tooling, and established team conventions.</p><p><strong>Avoid:</strong> Avoid migrating solely on unmeasured performance claims or mixing styles without a clear boundary.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming Minimal APIs cannot use filters, validation, or authorization.</li>
+<li>Assuming selecting controllers automatically configures API-controller behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep a consistent style within a coherent API surface.</li>
+<li>Compare generated contracts and integration behavior when choosing or migrating.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which MVC features do controllers organize?</li>
+<li>Can Minimal APIs use DI and authorization?</li>
+<li>What factors are more useful than assumptions about performance?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A small service has a few endpoints and a team accustomed to controllers; prototype both styles around the same service layer and compare testing, generated OpenAPI, and maintenance cost.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Controllers and Minimal APIs are two ASP.NET Core endpoint styles that share routing, dependency injection, authorization, and HTTP semantics.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/apis" target="_blank" rel="noopener noreferrer">ASP.NET Core APIs overview</a></li><li><a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis/overview" target="_blank" rel="noopener noreferrer">Minimal APIs overview</a></li></ul>
+</section>
+</div>

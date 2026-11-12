@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Rate limiting constrains how many requests or how much work a caller may consume during a defined interval.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Limits reduce accidental overload and some abusive traffic, preserving capacity for legitimate callers and downstream dependencies.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Choose fixed-window, sliding-window, token-bucket, or concurrency limits based on workload; partition by trusted identity or client, apply limits at the appropriate distributed layer, return 429 with useful retry metadata where appropriate, and monitor rejected traffic.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Identify caller and operation cost</strong><span>A partition key should come from a validated principal or trusted gateway, not an attacker-controlled header.</span></div></div>
+<div><span>2</span><div><strong>Apply partitioned limit or queue policy</strong><span>The limiter accounts for request volume, burst behavior, or concurrent work based on a deliberate algorithm.</span></div></div>
+<div><span>3</span><div><strong>Allow request or reject with 429</strong><span>Rejected calls receive a clear status and observability; distributed deployments may need gateway/shared coordination.</span></div></div>
+</figure>
+<figcaption>Rate limits should complement request-size limits, timeouts, concurrency controls, quotas, authentication, and authorization.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Limit resource consumption, not just request count.</li>
+<li>Use a trustworthy partition key and account for distributed deployment.</li>
+<li>429 is a load-control response, not an authentication failure.</li>
+</ul>
+</section>
+</div>

@@ -1,0 +1,69 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>When an order changes in memory, UI observers refresh; for durable invoice generation across processes, publish a persisted domain event instead.</p><ol>
+<li>Define whether notification is synchronous or queued.</li>
+<li>Unsubscribe or scope event handlers to component lifetime.</li>
+<li>Persist an outbox event for durable integration.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public event EventHandler&lt;OrderChangedEventArgs&gt;? Changed;
+protected void OnChanged(Order order) =&gt;
+    Changed?.Invoke(this, new OrderChangedEventArgs(order.Id));</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Publisher need not call each subscriber by concrete type.</li>
+<li>Can support extensible local notifications and reactive views.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Synchronous observers can slow or fail the publisher.</li>
+<li>Unmanaged subscriptions cause leaks; in-memory events are lost on process crash.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for local notifications with clear lifetime and failure semantics.</p><p><strong>Avoid:</strong> Avoid in-process Observer when durable cross-service delivery or independent recovery is required.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid in-process Observer when durable cross-service delivery or independent recovery is required.</li>
+<li>Assuming observer pattern guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep event payloads small and meaningful.</li>
+<li>Test subscription cleanup and observer failure behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does Observer reduce coupling?</li>
+<li>What happens if a synchronous observer throws?</li>
+<li>Why is an in-memory event not a durable integration event?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A UI subscriber remains attached after a view closes and leaks memory. Unsubscribe with the view lifetime; persist cross-service events through an outbox.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Observer decouples notification relationships but requires explicit delivery, lifetime, and error semantics.</p>
+</section>
+</div>

@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Global exception handling is a pipeline boundary that observes unhandled downstream exceptions and maps them to HTTP error responses.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Consistent failures make client behavior predictable while separating safe public diagnostics from sensitive internal logs.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Register AddProblemDetails and UseExceptionHandler early, or implement IExceptionHandler for deliberate domain-exception mappings; log with trace correlation and avoid writing exception messages to public responses.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Exception escapes endpoint</strong><span>The exception handler must be early enough to wrap components that can fail.</span></div></div>
+<div><span>2</span><div><strong>Boundary logs and maps known failure</strong><span>Known application exceptions can map to intentional statuses; unknown exceptions remain generic server failures.</span></div></div>
+<div><span>3</span><div><strong>Client receives safe error response</strong><span>Problem Details supplies a standard error shape while logs retain diagnostic detail under access controls.</span></div></div>
+</figure>
+<figcaption>An exception handler should not turn expected validation or not-found outcomes into exceptions for normal control flow.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Centralize unhandled failures at the HTTP boundary.</li>
+<li>Map known errors deliberately and retain a safe generic 500.</li>
+<li>Correlate public error IDs with protected diagnostic logs.</li>
+</ul>
+</section>
+</div>

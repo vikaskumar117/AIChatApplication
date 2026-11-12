@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A CTE names a query expression for one following statement; #temp tables are session-scoped tempdb tables; table variables are variables backed by tempdb with table-like structure and narrower scope.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Choice affects reuse, statistics, indexes, compilation, scope, and plan quality. A CTE is not inherently a materialized cache, and a table variable is not guaranteed to stay in memory.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use CTEs to express one statement clearly. Use #temp tables for multi-step intermediate results, indexes/statistics, and reuse. Use table variables for small, bounded intermediate sets where testing confirms plan quality; SQL Server version and deferred compilation affect estimates.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>CTE</strong><span>Named expression scoped to the next statement; optimizer may inline it.</span></div></div>
+<div><span>2</span><div><strong>#temp</strong><span>Session-scoped tempdb object; can be reused and indexed.</span></div></div>
+<div><span>3</span><div><strong>@table</strong><span>Variable scope; tempdb-backed behavior and cardinality estimation depend on version/features.</span></div></div>
+<div><span>4</span><div><strong>Choose with evidence</strong><span>Compare scope, reuse, statistics, indexes, compilation, and measured workload.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>A CTE is syntax for a query expression, not a guaranteed cache.</li>
+<li>#temp tables provide reusable materialization and index/statistics options.</li>
+<li>Table variables can spill/use tempdb and have version-dependent estimates.</li>
+<li>Benchmark actual plans and workload, not object-name folklore.</li>
+</ul>
+</section>
+</div>

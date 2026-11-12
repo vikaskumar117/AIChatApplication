@@ -1,0 +1,94 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A transfer command belongs in a stored procedure; a reusable filtered customer rowset may be an inline table-valued function.</p><ol>
+<li>Determine whether the caller needs a command or a composable value.</li>
+<li>Choose result contract and side-effect requirements.</li>
+<li>Account for SQL Server function restrictions and inline versus multi-statement form.</li>
+<li>Benchmark the calling query and document database code ownership.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>CREATE OR ALTER PROCEDURE dbo.GetDepartmentEmployees
+  @DepartmentId int
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT EmployeeId, Name
+  FROM dbo.Employee
+  WHERE DepartmentId = @DepartmentId;
+END;
+
+-- Inline TVF is composable as a table expression.
+CREATE OR ALTER FUNCTION dbo.EmployeesInDepartment(@DepartmentId int)
+RETURNS TABLE
+AS
+RETURN (
+  SELECT EmployeeId, Name
+  FROM dbo.Employee
+  WHERE DepartmentId = @DepartmentId
+);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Procedures expose command-oriented behavior and multiple output channels.</li>
+<li>Inline TVFs can compose relational logic into a caller query.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Database routines introduce deployment/versioning and ownership boundaries.</li>
+<li>Function restrictions and scalar/multi-statement function performance vary by form and engine version.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use procedures for database commands and explicit operational APIs; use inline TVFs when composable set logic is useful and measured.</p><p><strong>Avoid:</strong> Avoid placing all business logic in opaque database code or assuming every function is inlined and equally performant.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Trying to call a procedure as if it were a scalar expression.</li>
+<li>Assuming every function can modify arbitrary database state.</li>
+<li>Assuming stored procedures are inherently faster than parameterized queries.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use parameterized calls and explicit contracts.</li>
+<li>Keep database routines versioned with the application schema.</li>
+<li>Inspect actual plans for functions in real calling queries.</li>
+<li>Grant least privilege and avoid dynamic SQL unless identifiers are safely validated.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which routine is naturally composable in FROM?</li>
+<li>Can a stored procedure be used as a scalar expression?</li>
+<li>Why distinguish inline from multi-statement TVFs?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Several reports duplicate a department filter while a write workflow needs atomic multi-step behavior. Expose read logic through a measured inline TVF if composition helps, and keep the write workflow in a procedure or application transaction with clear ownership.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A stored procedure is an executable database routine that can accept parameters, return result sets/output parameters, and perform data modifications. A function returns a scalar or table value and is designed to participate in expressions or FROM clauses, subject to SQL Server function restrictions. The choice affects composability, side effects, result shape, permissions, and optimizer visibility. It is not simply “procedure is faster” or “function is reusable.”</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/sql/relational-databases/user-defined-functions/create-user-defined-functions-database-engine" target="_blank" rel="noopener noreferrer">Microsoft Learn: Create user-defined functions</a></li></ul>
+</section>
+</div>

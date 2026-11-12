@@ -1,0 +1,85 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A funds transfer debits and credits two accounts in one transaction and uses a conditional debit to prevent overdraft.</p><ol>
+<li>Identify the state invariant and all rows that participate.</li>
+<li>Use constraints and a transaction to apply the database unit.</li>
+<li>Rollback and propagate failures; do not report success before commit.</li>
+<li>Use durable messaging patterns for external effects.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>SET XACT_ABORT ON;
+BEGIN TRY
+  BEGIN TRANSACTION;
+  UPDATE dbo.Account
+    SET Balance = Balance - @amount
+    WHERE AccountId = @fromId AND Balance &gt;= @amount;
+  IF @@ROWCOUNT &lt;&gt; 1 THROW 50001, &#39;Insufficient funds or account missing.&#39;, 1;
+  UPDATE dbo.Account SET Balance = Balance + @amount WHERE AccountId = @toId;
+  IF @@ROWCOUNT &lt;&gt; 1 THROW 50002, &#39;Destination account missing.&#39;, 1;
+  COMMIT TRANSACTION;
+END TRY
+BEGIN CATCH
+  IF XACT_STATE() &lt;&gt; 0 ROLLBACK TRANSACTION;
+  THROW;
+END CATCH;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Atomic commits prevent partially applied database units.</li>
+<li>Constraints and transactions protect consistency during concurrency.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Long transactions hold locks or versions and can increase contention.</li>
+<li>A local transaction does not atomically commit email, payment gateway, or message broker effects.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use transactions for a bounded set of database changes that must succeed or fail together.</p><p><strong>Avoid:</strong> Avoid holding a DB transaction open across slow external calls; use an outbox/saga and idempotency for cross-system workflows.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming a successful application method means the transaction committed.</li>
+<li>Holding a transaction open while calling remote services.</li>
+<li>Relying only on application validation instead of database constraints for shared invariants.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep transactions short and scoped to related database writes.</li>
+<li>Use constraints and conditional writes for invariants.</li>
+<li>Use outbox, idempotency, and compensating actions across service boundaries.</li>
+<li>Handle rollback and uncertain commit outcomes explicitly.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does consistency mean in ACID?</li>
+<li>How does a transaction provide atomicity?</li>
+<li>Why is a payment API call not covered by a SQL transaction?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An order is saved but inventory is not decremented. Put database invariant changes in one transaction and use an outbox for subsequent events; make consumers idempotent to handle delivery retries.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>ACID describes Atomicity (all-or-nothing), Consistency (valid states/invariants), Isolation (concurrent work behaves according to isolation rules), and Durability (committed work survives failures according to configured guarantees). ACID guides schema constraints, transaction boundaries, error handling, and recovery design. It does not mean every business workflow automatically has correct invariants or that all isolation levels provide serial behavior.</p>
+</section>
+</div>

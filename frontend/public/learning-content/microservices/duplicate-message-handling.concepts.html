@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A duplicate message is the same logical delivery processed more than once; an idempotent operation produces the same effective state when repeated with the same identity.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>At-least-once delivery is commonly used because acknowledgement can be lost after a consumer commits. The broker may redeliver even though the business effect succeeded.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Assign a stable message/operation ID, atomically record deduplication with the business effect where possible, and define retention and conflict behavior. Exactly-once transport does not by itself guarantee exactly-once external side effects.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Stable identity</strong><span>Each logical message and side-effecting operation keeps one durable key.</span></div></div>
+<div><span>2</span><div><strong>Check / apply</strong><span>Deduplication decision and local business mutation share an atomic boundary.</span></div></div>
+<div><span>3</span><div><strong>Acknowledge</strong><span>Acknowledge after durable success; crash before ACK safely causes redelivery.</span></div></div>
+<div><span>4</span><div><strong>External effects</strong><span>Use provider idempotency or reconciliation when effect is outside the local transaction.</span></div></div>
+</figure>
+<figcaption>At-least-once delivery means one or more attempts, not guaranteed eventual success; dead-lettering and operational recovery still matter.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Recording “processed” before the effect can lose work.</li>
+<li>Recording it after an unprotected external effect can duplicate that effect.</li>
+<li>Assuming deduplication makes arbitrary handlers safe.</li>
+</ul>
+</section>
+</div>

@@ -1,0 +1,81 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An internal engineering assistant searches an Azure AI Search index. The API applies the signed-in user’s tenant and document permissions before retrieving chunks, then returns citations linked to the source versions supplied to the model.</p><ol>
+<li>Establish source ownership, document IDs, ACLs, update/delete events, and data classification.</li>
+<li>Evaluate chunking and embedding choices on representative queries; keep model and index dimensions compatible.</li>
+<li>Apply tenant and document filters in the search request, then rerank and cap context by token budget.</li>
+<li>Measure retrieval recall, citation correctness, groundedness, latency, and cost independently.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Illustrative .NET flow; apply authorization in the index query.
+var vector = await embeddingClient.EmbedAsync(query, cancellationToken);
+var chunks = await search.SearchAsync(
+    vector, filter: authorizedFilter, top: 8, cancellationToken);
+var answer = await chat.CompleteAsync(
+    BuildPrompt(query, chunks), cancellationToken);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Uses current private knowledge without model retraining</li>
+<li>Retrieved sources can make answers more inspectable</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Bad extraction, chunking, or ACL filtering can produce unsafe answers</li>
+<li>Embedding, indexing, search, reranking, and generation add latency and cost</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use RAG when answers depend on changing, private, or source-citable reference data.</p><p><strong>Avoid:</strong> Avoid treating vector similarity as proof, trusting prompt instructions from retrieved text, or retrieving before enforcing the caller’s document permissions.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Filtering only after retrieval or trusting the model to ignore unauthorized chunks.</li>
+<li>Indexing secrets or prompt-injection content without data classification and source controls.</li>
+<li>Citing a document just because it was in the index rather than confirming it was retrieved and used.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Apply ACL filters in the retrieval operation and test tenant isolation with negative cases.</li>
+<li>Version the ingestion pipeline and embedding model; re-embed when dimensions or semantics change.</li>
+<li>Set context and token budgets, cite source versions, and monitor retrieval quality, access denials, and spend.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is an embedding, and why must the query and index models be compatible?</li>
+<li>How do chunk size and overlap affect recall, precision, and token cost?</li>
+<li>Where should tenant and document ACL filters be enforced?</li>
+<li>How would you measure retrieval quality separately from answer quality?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A support assistant returns another tenant’s project note. Treat this as an authorization defect, not merely a prompt defect: apply tenant and per-document ACL filters in the retrieval layer, test with adversarial cross-tenant queries, reindex changed permissions, and audit source IDs without logging sensitive content.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A dependable RAG system controls source permissions, retrieval quality, context size, and citation traceability end to end.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/azure/search/retrieval-augmented-generation-overview" target="_blank" rel="noopener noreferrer">Retrieval augmented generation concepts</a></li><li><a href="https://learn.microsoft.com/azure/search/vector-search-overview" target="_blank" rel="noopener noreferrer">Azure AI Search vector search</a></li><li><a href="https://learn.microsoft.com/azure/search/search-security-overview" target="_blank" rel="noopener noreferrer">Azure AI Search security</a></li><li><a href="https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai" target="_blank" rel="noopener noreferrer">Microsoft.Extensions.AI overview</a></li></ul>
+</section>
+</div>

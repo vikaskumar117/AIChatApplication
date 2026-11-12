@@ -1,0 +1,39 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Slow API diagnosis separates time spent in application code, database execution, network/dependency waits, queueing, serialization, and client transfer, then correlates a slow request with trace and resource evidence.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Endpoint duration alone cannot reveal whether the cause is an N+1 query, blocking, pool exhaustion, downstream latency, CPU saturation, or oversized response.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Compare p50/p95/p99 by route and deployment version, inspect distributed traces and dependency spans, correlate EF command count/duration and Query Store, check connection/thread pools and waits, and reproduce with representative inputs. Change one hypothesis and watch tail latency.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>SLO / percentile alert</strong><span>Identify affected route, customer impact, time window, and deployment correlation.</span></div></div>
+<div><span>2</span><div><strong>Distributed trace</strong><span>Break request latency into application, DB, and downstream spans.</span></div></div>
+<div><span>3</span><div><strong>EF and SQL evidence</strong><span>Inspect command count/duration, Query Store plans, waits, and row volume.</span></div></div>
+<div><span>4</span><div><strong>Host and network</strong><span>Check CPU, GC, thread/connection pools, queueing, serialization, and response bytes.</span></div></div>
+<div><span>5</span><div><strong>Mitigate / verify</strong><span>Choose rollback or targeted fix; validate recovery against SLO and error rate.</span></div></div>
+</figure>
+<figcaption>Validate the behavior against the deployed EF Core/provider version, generated SQL, database schema, and production configuration.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>API latency spans application, data, dependencies, and transfer.</li>
+<li>Percentiles expose tail degradation hidden by mean duration.</li>
+<li>Query count, SQL duration, and host saturation are complementary evidence.</li>
+<li>Protect telemetry from high-cardinality and sensitive payloads.</li>
+</ul>
+</section>
+</div>

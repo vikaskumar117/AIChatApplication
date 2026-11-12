@@ -1,0 +1,76 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>PUT sends the full editable profile; PATCH may update only preferred language without resetting omitted notification settings.</p><ol>
+<li>Client selects replacement or patch document</li>
+<li>API validates representation and version</li>
+<li>Apply full replacement or partial operation</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>[HttpPut(&quot;{id:int}&quot;)]
+public Task&lt;IActionResult&gt; Replace(int id, ReplaceProfileRequest body) =&gt; ...;
+
+[HttpPatch(&quot;{id:int}&quot;)]
+public Task&lt;IActionResult&gt; Patch(int id, JsonPatchDocument&lt;ProfileDto&gt; patch) =&gt; ...;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>PUT gives a clear full-replacement contract</li>
+<li>PATCH can reduce payloads for focused partial changes</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>PUT payloads can be larger and completeness rules need care</li>
+<li>PATCH formats introduce path, authorization, and validation complexity</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use PUT when the client supplies the intended full editable representation and PATCH for deliberately specified partial changes.</p><p><strong>Avoid:</strong> Avoid applying arbitrary patch paths to persistence entities or silently treating partial input as replacement.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using a patch document directly against a database entity.</li>
+<li>Assuming PUT’s omitted fields are preserved without documenting that behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Advertise supported patch media types and allowed operations.</li>
+<li>Test repeated PATCH, invalid paths, property authorization, and stale versions.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Is PATCH necessarily idempotent?</li>
+<li>What happens to an omitted field in PUT?</li>
+<li>How do you prevent a patch from changing a forbidden property?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A client PATCHes a profile role property by guessing a JSON path; constrain permitted operations, authorize each mutable property, validate the resulting resource, and enforce If-Match.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>PUT conventionally replaces a resource representation; PATCH applies a defined partial modification.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc9110" target="_blank" rel="noopener noreferrer">RFC 9110: PUT and PATCH semantics</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc5789" target="_blank" rel="noopener noreferrer">RFC 5789: PATCH Method</a></li></ul>
+</section>
+</div>

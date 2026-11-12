@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Angular evaluates template expressions for views considered eligible for checking and applies changed binding values to the DOM. A state mutation alone is not universally a notification; Angular must know that relevant work may have occurred.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Events, input updates, async pipe emissions, and signal writes read by a template provide notification paths. OnPush narrows eligibility but does not mean “never check”; Angular traverses marked paths and checks the relevant view.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use stable, immutable state boundaries, signals or async pipe, and profiling to find expensive templates. Avoid forcing detectChanges to conceal missing notification or ownership; schedule external-library callbacks through a supported Angular integration when necessary.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Mutate owned state</strong><span>A user event, signal write, input update, or stream emission changes application state.</span></div></div>
+<div><span>2</span><div><strong>Notify Angular</strong><span>Angular receives a supported notification and marks relevant views for checking.</span></div></div>
+<div><span>3</span><div><strong>Evaluate eligible views</strong><span>The tree traversal checks eligible views while respecting subtree skipping rules.</span></div></div>
+<div><span>4</span><div><strong>Commit DOM updates</strong><span>Only bindings whose values changed require corresponding DOM updates.</span></div></div>
+</figure>
+<figcaption>A change in memory and a request to render are related but distinct; use supported notification mechanisms.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Angular evaluates template expressions for views considered eligible for checking and applies changed binding values to the DOM. A state mutation alone is not universally a notification; Angular must know that relevant work may have occurred.</li>
+<li>Events, input updates, async pipe emissions, and signal writes read by a template provide notification paths. OnPush narrows eligibility but does not mean “never check”; Angular traverses marked paths and checks the relevant view.</li>
+<li>Use stable, immutable state boundaries, signals or async pipe, and profiling to find expensive templates. Avoid forcing detectChanges to conceal missing notification or ownership; schedule external-library callbacks through a supported Angular integration when necessary.</li>
+</ul>
+</section>
+</div>

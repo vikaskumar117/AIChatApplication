@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A precondition is what callers must provide; a postcondition is what a method promises afterward. A subtype should not demand stronger preconditions, weaken guarantees, or violate invariants.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Behavioral substitutability prevents polymorphic calls from failing in surprising subtype-specific ways. Matching signatures alone does not establish a sound subtype relationship.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>If a subtype cannot support a base operation honestly, split the contract, use composition, or model distinct capabilities instead of throwing “not supported” from an inherited member.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Client promise</strong><span>IReadStore promises lookup; IWriteStore promises persistence.</span></div></div>
+<div><span>2</span><div><strong>Subtype capability</strong><span>ReadOnlyStore implements only the operation it can honor.</span></div></div>
+<div><span>3</span><div><strong>Safe substitution</strong><span>Clients using IReadStore work without subtype-specific exceptions.</span></div></div>
+</figure>
+<figcaption>Follow the labeled stages; each node names a concrete decision or runtime effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>LSP concerns behavior, not just inheritance syntax.</li>
+<li>Subtypes should preserve preconditions and guarantees.</li>
+<li>Small capability contracts allow honest implementations.</li>
+</ul>
+</section>
+</div>

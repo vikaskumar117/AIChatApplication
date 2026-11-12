@@ -1,0 +1,89 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Post an order through the test server, verify status code, and query the database to ensure the transaction persisted the expected order.</p><ol>
+<li>Select a provider that matches the behavior under test.</li>
+<li>Create a unique database/schema per test run or collection.</li>
+<li>Arrange data through known setup and call the public HTTP/application boundary.</li>
+<li>Assert response and database outcome, then clean up regardless of test result.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public sealed class OrdersApiTests : IClassFixture&lt;WebApplicationFactory&lt;Program&gt;&gt;
+{
+    private readonly HttpClient _client;
+    public OrdersApiTests(WebApplicationFactory&lt;Program&gt; factory) =&gt;
+        _client = factory.CreateClient();
+
+    [Fact]
+    public async Task Post_order_returns_created()
+    {
+        var response = await _client.PostAsJsonAsync(
+            &quot;/api/orders&quot;, new CreateOrderRequest(&quot;SKU-1&quot;, 2));
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Validates real dependency injection, HTTP pipeline, serialization, and relational semantics.</li>
+<li>Provides confidence in behavior across component boundaries.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Slower and more operationally complex than unit tests.</li>
+<li>Shared databases, nondeterministic state, and parallel runs can cause flaky tests.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for critical API flows, EF translation, constraints, transactions, authentication wiring, and provider-specific behavior.</p><p><strong>Avoid:</strong> Avoid running destructive tests against shared or production databases or using a provider that cannot represent the behavior being tested.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using one shared database and relying on test execution order.</li>
+<li>Testing provider-specific SQL only with EF InMemory.</li>
+<li>Ignoring cleanup after test failure.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use disposable, isolated databases or containers.</li>
+<li>Keep fixtures deterministic and parallel-safe.</li>
+<li>Apply migrations/schema through an explicit test setup.</li>
+<li>Test a focused set of critical end-to-end flows.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does WebApplicationFactory exercise?</li>
+<li>When is SQLite insufficient compared with SQL Server?</li>
+<li>How do you isolate parallel integration tests?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A migration introduces a SQL Server-specific filtered index and a query translation regression. Run integration tests against the same engine/provider version in an isolated database and verify both schema and endpoint behavior.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>An integration test exercises multiple real components across a boundary, such as HTTP routing, dependency injection, serialization, EF Core translation, and a relational database. Integration tests catch configuration, mapping, provider, constraint, and middleware failures that isolated unit tests cannot observe.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests" target="_blank" rel="noopener noreferrer">Microsoft Learn: Integration tests in ASP.NET Core</a></li></ul>
+</section>
+</div>

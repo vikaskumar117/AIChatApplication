@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An equality filter on DepartmentId followed by salary ordering can use an index beginning with DepartmentId then Salary.</p><ol>
+<li>Capture the actual plan and SET STATISTICS IO, TIME output in a safe representative environment.</li>
+<li>Check predicate sargability, estimated/actual cardinality, and index leading keys.</li>
+<li>Look beyond “seek” for rows read, lookups, joins, sorts, and spills.</li>
+<li>Compare before/after read, CPU, latency, and write overhead.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>-- Sargable predicate can use a key on HireDate.
+SELECT EmployeeId, HireDate
+FROM dbo.Employee
+WHERE HireDate &gt;= @startDate
+  AND HireDate &lt; @endDate;
+-- Avoid wrapping the indexed column in CONVERT(YEAR, HireDate) = @year.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Reduces pages read for selective access and may satisfy ordering.</li>
+<li>Covering indexes can eliminate key lookups for a specific query.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Low-selectivity scans may be cheaper than many random lookups.</li>
+<li>Indexes cannot compensate for bad estimates, excessive rows, or costly downstream operators.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use an index when plan and I/O evidence shows it supports a meaningful predicate, join, ordering, or coverage need.</p><p><strong>Avoid:</strong> Do not add an index solely because a query is slow; first inspect waits, row estimates, sargability, and bottleneck location.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming every scan is bad or every seek is good.</li>
+<li>Applying functions to indexed columns unnecessarily in predicates.</li>
+<li>Adding indexes without accounting for write amplification.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Measure logical reads, actual rows, CPU, waits, and end-to-end latency.</li>
+<li>Keep predicates type-compatible and sargable where semantics allow.</li>
+<li>Validate index changes with read-heavy and write-heavy workload tests.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why can a scan be optimal?</li>
+<li>What makes a predicate non-sargable?</li>
+<li>How can an index seek still perform poorly?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An indexed endpoint gets slower as data grows. Compare actual and estimated rows, check whether a seek reads most of the table or causes lookups, review statistics and parameter sensitivity, and test a narrow index against logical reads and write workload.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A B-tree index narrows the rows that must be visited for selective predicates and can provide ordered rows or cover all columns needed by a query. Reading fewer pages can reduce I/O and CPU, but an index seek can still return many rows, perform many lookups, or feed an expensive join or sort.</p>
+</section>
+</div>

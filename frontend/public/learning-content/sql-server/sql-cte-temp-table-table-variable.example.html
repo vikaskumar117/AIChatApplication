@@ -1,0 +1,86 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Stage a filtered customer set used by several statements and add an index when its cardinality makes reuse valuable.</p><ol>
+<li>Estimate row count, lifetime, number of references, and required indexes.</li>
+<li>Start with a CTE for a one-statement readable expression.</li>
+<li>Materialize to #temp if reuse or statistics/indexes improve measured plans.</li>
+<li>Test table variables only for bounded inputs on the deployed SQL Server version.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>-- CTE: readable expression scoped to the next statement.
+;WITH Active AS (
+  SELECT CustomerId, RegionId FROM dbo.Customer WHERE IsActive = 1
+)
+SELECT RegionId, COUNT_BIG(*) FROM Active GROUP BY RegionId;
+
+-- #temp: materialized, reusable intermediate result; evaluate indexing.
+SELECT CustomerId, RegionId INTO #Active
+FROM dbo.Customer WHERE IsActive = 1;
+CREATE INDEX IX_Active_Region ON #Active(RegionId);
+SELECT RegionId, COUNT_BIG(*) FROM #Active GROUP BY RegionId;
+DROP TABLE #Active;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>CTEs make a single relational expression readable.</li>
+<li>#temp tables enable reuse and statistics/index choices for complex workflows.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>CTEs may be inlined/re-evaluated in a plan and do not imply storage.</li>
+<li>Temp tables use tempdb and add writes, lifecycle, and compilation considerations; table-variable estimates can be poor for some workloads.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use CTE for one-statement decomposition; #temp for measured multi-step reuse or cardinality-sensitive work; table variables for small predictable scoped sets.</p><p><strong>Avoid:</strong> Avoid assuming a CTE caches rows or a table variable is always faster or memory-only. Do not choose based on folklore without representative plans.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Expecting a repeated CTE reference to run once and cache results.</li>
+<li>Assuming table variables are always in memory or always outperform temp tables.</li>
+<li>Ignoring tempdb and compilation costs when materializing.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Choose the narrowest lifetime and scope that fits the workflow.</li>
+<li>Compare actual versus estimated rows and spills.</li>
+<li>Include data volume and SQL Server version in performance tests.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Is a CTE necessarily materialized?</li>
+<li>When can a temp table improve a multi-stage query?</li>
+<li>Why can table-variable cardinality affect plan quality?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A report reuses an intermediate million-row customer set and spills repeatedly. Compare a CTE, #temp table with an appropriate index, and the original plan using actual rows, tempdb activity, and end-to-end latency.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A CTE names a query expression for one following statement; #temp tables are session-scoped tempdb tables; table variables are variables backed by tempdb with table-like structure and narrower scope. Choice affects reuse, statistics, indexes, compilation, scope, and plan quality. A CTE is not inherently a materialized cache, and a table variable is not guaranteed to stay in memory.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/sql/t-sql/queries/with-common-table-expression-transact-sql" target="_blank" rel="noopener noreferrer">Microsoft Learn: WITH common table expression</a></li></ul>
+</section>
+</div>

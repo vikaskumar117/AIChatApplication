@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>For scores 100, 90, 90, 80 the functions return row numbers 1,2,3,4; ranks 1,2,2,4; dense ranks 1,2,2,3.</p><ol>
+<li>Choose whether ties should share a rank.</li>
+<li>Define partition and ranking columns.</li>
+<li>Include a unique tie-breaker only when individual row order should be unique.</li>
+<li>Filter using the selected function’s semantics.</li>
+</ol>
+</section>
+<section>
+<p><small>DATA EXAMPLE</small></p>
+<h2>Example data</h2>
+<h3>Ranking example</h3><div><table><thead><tr><th>Score</th><th>ROW_NUMBER</th><th>RANK</th><th>DENSE_RANK</th></tr></thead><tbody><tr><td>100</td><td>1</td><td>1</td><td>1</td></tr><tr><td>90</td><td>2</td><td>2</td><td>2</td></tr><tr><td>90</td><td>3</td><td>2</td><td>2</td></tr><tr><td>80</td><td>4</td><td>4</td><td>3</td></tr></tbody></table></div>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>SELECT EmployeeId, Salary,
+       ROW_NUMBER() OVER (ORDER BY Salary DESC, EmployeeId) AS row_num,
+       RANK()       OVER (ORDER BY Salary DESC) AS salary_rank,
+       DENSE_RANK() OVER (ORDER BY Salary DESC) AS salary_dense_rank
+FROM dbo.Employee
+ORDER BY Salary DESC, EmployeeId;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Provides explicit control of row positions and tie behavior.</li>
+<li>Works for pagination, leaderboards, and top-N analyses.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Ordering can require substantial sorting.</li>
+<li>Nondeterministic ROW_NUMBER ties can change between executions without a unique ordering.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use ROW_NUMBER for a deterministic single row sequence; RANK for competition ranking; DENSE_RANK for distinct ordered values.</p><p><strong>Avoid:</strong> Do not filter rank values before defining what ties should mean; do not expect RANK &lt;= N to return exactly N rows.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Adding EmployeeId to RANK ordering when equal salaries must remain tied.</li>
+<li>Expecting RANK to have no gaps after ties.</li>
+<li>Assuming ROW_NUMBER is repeatable when order columns are not unique.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Test ranking functions with intentional ties and cutoff ties.</li>
+<li>Document whether N means rows, places, or distinct values.</li>
+<li>Use stable unique ordering when deterministic row assignment matters.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What ranks result for values 100, 90, 90, 80?</li>
+<li>Which function returns exactly N rows if enough rows exist?</li>
+<li>When should the ordering include a unique key?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A leaderboard shows duplicate place labels and a top-five report returns six people. Align rank semantics with product: competition places, distinct score levels, or exactly five rows, then test ties at the cutoff.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>These window ranking functions assign positions within an ordered partition. ROW_NUMBER assigns a unique sequence; RANK gives ties the same rank and leaves gaps; DENSE_RANK gives ties the same rank without gaps. The ranking function determines how ties affect top-N boundaries and whether a query returns a fixed row count or a fixed number of rank/value levels.</p>
+</section>
+</div>

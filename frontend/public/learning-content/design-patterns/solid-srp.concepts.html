@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Single Responsibility Principle (SRP) says a module should have one coherent reason to change, often expressed as one actor or policy that owns its behavior.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Cohesive responsibilities are easier to change and test; “one responsibility” does not mean one method or one class per statement.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Separate policies with independent change causes while keeping behavior that changes together cohesive. For example, calculate an invoice in domain code and delegate persistence and email delivery to their owners.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Mixed reasons</strong><span>Tax regulation, database schema, and SMTP format change for different owners.</span></div></div>
+<div><span>2</span><div><strong>Cohesive policy</strong><span>InvoiceCalculator owns invoice math and its business invariants.</span></div></div>
+<div><span>3</span><div><strong>Persistence boundary</strong><span>Repository or application service owns storage interaction.</span></div></div>
+<div><span>4</span><div><strong>Notification boundary</strong><span>Notification service owns delivery formatting and provider behavior.</span></div></div>
+</figure>
+<figcaption>SRP is about cohesive reasons to change, not class size or a mandatory count of methods.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Splitting a class mechanically into many pass-through types.</li>
+<li>Leaving one policy scattered across several classes.</li>
+<li>Using “single responsibility” to mean one statement per type.</li>
+</ul>
+</section>
+</div>

@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A browser app renders a comment as text, while a cookie-authenticated transfer endpoint requires a server-validated antiforgery token.</p><ol>
+<li>Attacker-controlled content reaches browser</li>
+<li>Browser credentials or script behavior are abused</li>
+<li>Encoding, cookie, and request-origin defenses reduce risk</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Frontend: render untrusted text through framework interpolation/textContent, not innerHTML.
+// ASP.NET Core cookie-authenticated MVC:
+services.AddAntiforgery(options =&gt; options.HeaderName = &quot;X-CSRF-TOKEN&quot;);
+// Validate the token on state-changing endpoints; configure cookie policy deliberately.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Layered browser controls address distinct attack classes</li>
+<li>Safe templating and antiforgery middleware reduce repeated mistakes</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Security depends on rendering context and cookie architecture</li>
+<li>SameSite or CORS settings alone do not cover every browser flow</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use safe output encoding for all untrusted content and antiforgery controls when browsers attach authentication cookies automatically.</p><p><strong>Avoid:</strong> Avoid treating sanitization as universal, disabling browser protections, or assuming bearer-token storage is safe from XSS.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using raw HTML rendering for untrusted text.</li>
+<li>Assuming SameSite or an uncredentialed CORS policy makes all state changes safe.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use framework auto-escaping, context-aware encoding, CSP, and safe DOM APIs.</li>
+<li>For cookie auth, implement and test antiforgery and origin controls for unsafe methods.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does CSRF differ from XSS?</li>
+<li>Why can HttpOnly cookies help against token theft but not CSRF?</li>
+<li>Does CORS prevent CSRF?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A comment page introduces stored markup and a cookie-authenticated delete endpoint; render content as text, retain robust CSP as defense in depth, and require server-validated antiforgery protection for state changes.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>XSS attacks run attacker-controlled script in a user’s browser; CSRF tricks a browser into sending an authenticated action using ambient credentials.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP Cross Site Scripting Prevention Cheat Sheet</a></li><li><a href="https://learn.microsoft.com/en-us/aspnet/core/security/anti-request-forgery" target="_blank" rel="noopener noreferrer">ASP.NET Core antiforgery</a></li></ul>
+</section>
+</div>

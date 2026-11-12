@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A value type passed to a method taking object is boxed. Prefer a generic method when the type can remain T.</p><ol>
+<li>Pass an int to an object-returning method.</li>
+<li>Treat the result as object, then cast it to int.</li>
+<li>Compare with Echo&lt;T&gt;, which keeps the type parameter.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>static object Box(int value) =&gt; value;
+object boxed = Box(42);       // boxing: object contains a copy
+int number = (int)boxed;      // unboxing: exact type required
+
+static T Echo&lt;T&gt;(T value) =&gt; value;
+int noObjectConversion = Echo(42);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Required for object/interface compatibility</li>
+<li>Generic APIs avoid many boxing conversions</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Boxing may allocate and copy</li>
+<li>Wrong unbox type throws InvalidCastException</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use generics for type-preserving hot paths and collections.</p><p><strong>Avoid:</strong> Avoid repeatedly boxing values in high-frequency loops without profiling.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming unboxing accepts numeric conversion between different types.</li>
+<li>Assuming every interface call boxes every struct in every context.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use generic APIs for typed collections and algorithms.</li>
+<li>Profile allocation hot spots before changing readable code.</li>
+<li>Keep casts at explicit, validated interop boundaries.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is copied during boxing?</li>
+<li>Why must unboxing name the exact value type?</li>
+<li>How do generics reduce boxing?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A telemetry loop shows allocation spikes from formatting numeric values through object-based APIs. Use typed overloads or generic APIs, then verify allocation reduction with a profiler.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Boxing stores a value copy in an object representation; unboxing validates and extracts the matching value type.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

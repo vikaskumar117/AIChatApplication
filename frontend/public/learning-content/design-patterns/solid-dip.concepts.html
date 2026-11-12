@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Dependency Inversion Principle (DIP) says high-level policy should not depend directly on low-level details; both should depend on abstractions owned around the policy.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>It lets business rules remain stable when databases, transports, or vendors change, but an interface is useful only when it represents a meaningful direction of dependency.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Define an application-facing contract for a required capability, implement it in infrastructure, and inject it at composition. Do not confuse DIP with placing interfaces on every class or with dependency injection itself.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>High-level policy</strong><span>Checkout expresses the business decision it needs to make.</span></div></div>
+<div><span>2</span><div><strong>Abstraction / port</strong><span>Application contract describes capability in domain-relevant terms.</span></div></div>
+<div><span>3</span><div><strong>Low-level adapter</strong><span>Infrastructure implements the port using provider-specific SDK details.</span></div></div>
+<div><span>4</span><div><strong>Composition</strong><span>DI binds the port to the adapter at the application boundary.</span></div></div>
+</figure>
+<figcaption>DIP is about source-code dependency direction; DI is one mechanism for supplying implementations at runtime.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Leaking vendor SDK types through the application port.</li>
+<li>Assuming an interface alone reverses dependency direction.</li>
+<li>Adding abstractions without a real volatility or testing boundary.</li>
+</ul>
+</section>
+</div>

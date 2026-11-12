@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A search page uses RxJS debounceTime and switchMap for requests, then exposes the latest result as a signal for synchronous template derivations.</p><ol>
+<li>Keep RxJS operators for debounce, switchMap, retries, and multi-event composition.</li>
+<li>Use computed for synchronous derivation from signal state.</li>
+<li>Choose toSignal initial values or requireSync based on source guarantees.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>readonly results = toSignal(
+  this.query$.pipe(
+    debounceTime(250),
+    switchMap(query =&gt; this.api.search(query))
+  ),
+  { initialValue: [] as Result[] }
+);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Each abstraction is strong in its own domain</li>
+<li>Interop allows incremental architecture</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Conversions can obscure subscription lifetime or initial state</li>
+<li>Using only one abstraction creates awkward workarounds</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use signals for current state and RxJS for temporal/asynchronous composition; interoperate at component/service boundaries.</p><p><strong>Avoid:</strong> Avoid treating a signal as a multi-value stream or an Observable as a synchronous state container.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Converting every Observable into a signal even when stream operators are still needed.</li>
+<li>Creating repeated conversions that create duplicate subscriptions.</li>
+<li>Ignoring error and initial-value behavior at the interop boundary.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Make subscription ownership and source sharing explicit.</li>
+<li>Use toObservable only when a consumer needs stream composition.</li>
+<li>Keep each value’s canonical source of truth singular.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What semantics does Observable add beyond a current value?</li>
+<li>What must be decided when calling toSignal?</li>
+<li>When is switchMap still useful in a signal-based app?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A screen needs cancellable typeahead plus synchronous computed sorting. Keep the network timing pipeline in RxJS, bridge its latest result with toSignal, and derive local sorting with computed.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A signal always represents a current value readable synchronously. An Observable represents zero or more future emissions, with subscription, completion, error, and teardown semantics; it may be cold or hot. Use signals for component/application state and pure derived values. Use RxJS for HTTP pipelines, user event timing, cancellation, retries, and combining streams; bridge at a clear boundary instead of converting reflexively.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/guide/signals" target="_blank" rel="noopener noreferrer">Angular signals</a></li><li><a href="https://rxjs.dev/guide/overview" target="_blank" rel="noopener noreferrer">RxJS overview</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A document service stores file bytes in Blob Storage and keeps searchable metadata in Azure SQL. A Queue Storage message carries the blob reference for thumbnail generation; the worker is idempotent and can retry safely.</p><ol>
+<li>Upload to a private container and validate size and allowed content.</li>
+<li>Persist document ownership and processing state.</li>
+<li>Enqueue a stable document ID; worker loads the blob under managed identity.</li>
+<li>Deduplicate processing, record outcome, and apply retention rules.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Prefer workload identity instead of a connection string secret.
+var credential = new DefaultAzureCredential();
+var blobService = new BlobServiceClient(
+    new Uri(storageAccountUri), credential);
+var container = blobService.GetBlobContainerClient(&quot;documents&quot;);
+
+// Store metadata separately; avoid embedding authorization decisions in a public blob URL.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Managed durability, tiers, and scaling reduce storage operations</li>
+<li>Lifecycle rules can lower long-term object cost</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Redundancy and access tier affect cost and recovery characteristics</li>
+<li>A storage account key or overly broad SAS can expose many objects</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use Blob for durable object content, Queue Storage for simple decoupled work, and Files when shared filesystem semantics are required.</p><p><strong>Avoid:</strong> Avoid treating Queue Storage as a full-featured enterprise broker or exposing account keys and public blobs by default.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Making a container public to simplify downloads.</li>
+<li>Using long-lived account keys or broad, non-expiring SAS tokens.</li>
+<li>Assuming a storage queue provides ordering, transactions, or dead-letter features like Service Bus.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use managed identity, private access, and narrow data-plane roles.</li>
+<li>Apply lifecycle policies, versioning/soft delete, and recovery tests based on business RPO/RTO.</li>
+<li>Validate uploads, scan untrusted content, and make processors safe for retries.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>When would you choose Blob over Azure Files?</li>
+<li>What must a queue consumer do when a message is delivered again?</li>
+<li>How do access tiers and redundancy affect cost and recovery?</li>
+<li>Why prefer managed identity to an account key?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A public upload endpoint receives large files and triggers repeated processing. Enforce size/type limits, quarantine and scan before use, store privately, enqueue only a stable blob reference, use a managed identity, and monitor queue age and storage egress.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Use each Azure Storage primitive for its intended data shape and design identity, lifecycle, recovery, and duplicate handling.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/azure/storage/common/storage-introduction" target="_blank" rel="noopener noreferrer">Azure Storage introduction</a></li><li><a href="https://learn.microsoft.com/en-us/azure/storage/blobs/authorize-access-azure-active-directory" target="_blank" rel="noopener noreferrer">Authorize Blob data access with Microsoft Entra ID</a></li></ul>
+</section>
+</div>

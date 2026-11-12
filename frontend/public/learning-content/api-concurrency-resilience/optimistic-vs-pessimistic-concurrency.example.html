@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Use optimistic tokens for product-description edits; use a short database transaction for a scarce inventory allocation when atomic conditional decrement is not sufficient.</p><ol>
+<li>Select concurrency strategy</li>
+<li>Perform conditional write or acquire lock</li>
+<li>Commit, detect conflict, or release lock</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Optimistic EF Core token:
+modelBuilder.Entity&lt;Product&gt;()
+    .Property(p =&gt; p.Version)
+    .IsRowVersion();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Optimistic updates offer high concurrency with little blocking</li>
+<li>Pessimistic locking can serialize truly exclusive short operations</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Optimistic conflicts require merge or retry policy</li>
+<li>Locks can block, reduce throughput, and deadlock</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Prefer optimistic checks for typical web edits and use short, explicit locks only when contention and invariant analysis justify them.</p><p><strong>Avoid:</strong> Avoid holding database locks while waiting for users, networks, or external payment providers.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Retrying non-idempotent external effects after a database conflict.</li>
+<li>Assuming higher isolation always improves correctness without throughput cost.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Instrument conflicts, wait time, and deadlocks before tuning.</li>
+<li>Keep external calls outside locked transactions and use an outbox where needed.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does optimistic concurrency detect conflict?</li>
+<li>What are the costs of pessimistic locking?</li>
+<li>When is retry unsafe?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A shipment allocation workflow has high contention; compare atomic conditional updates, optimistic retries, and short transactions under representative load before choosing a locking policy.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Optimistic concurrency detects a conflict when committing; pessimistic concurrency acquires a lock to exclude competing work.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/ef/core/saving/concurrency" target="_blank" rel="noopener noreferrer">EF Core concurrency handling</a></li></ul>
+</section>
+</div>

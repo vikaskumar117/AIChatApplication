@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Middleware sees HttpContext for requests that traverse its pipeline and can run before routing or around selected downstream work.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Filters are MVC extension points for concerns that need MVC action, model-state, or result context, and they run only when MVC executes.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Select middleware for broad transport behavior and filters for MVC-specific behavior; choose the appropriate filter stage such as authorization, action, exception, or result.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Middleware receives HTTP request</strong><span>Middleware surrounds downstream components and may also apply to non-MVC endpoints.</span></div></div>
+<div><span>2</span><div><strong>MVC selects filter pipeline</strong><span>MVC filters operate after endpoint selection and can access MVC-specific action arguments or results.</span></div></div>
+<div><span>3</span><div><strong>Action and result execute within middleware</strong><span>The HTTP response unwinds through middleware after MVC filters and action execution complete.</span></div></div>
+</figure>
+<figcaption>Endpoint filters are a separate abstraction for endpoint handlers; do not confuse them with MVC filters.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Middleware is pipeline-level; MVC filters are framework execution-level.</li>
+<li>Filters have MVC context but narrower coverage.</li>
+<li>Security boundaries must cover every endpoint style in use.</li>
+</ul>
+</section>
+</div>

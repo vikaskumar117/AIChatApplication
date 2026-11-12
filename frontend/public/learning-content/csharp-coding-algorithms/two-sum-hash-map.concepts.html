@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — Two Sum returns a pair of indices whose corresponding values add to a target.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — A nested-loop solution is easy to derive but O(n²). A dictionary reduces expected lookup time to O(1), making the full scan expected O(n) with O(n) extra space.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — For each value, calculate target minus value. Check whether that complement was seen before; if so, return the saved index. Otherwise save the current value and index. Checking before insertion prevents reusing the same element.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Read value</strong><span>Current value is 7; target is 10.</span></div></div>
+<div><span>2</span><div><strong>Find complement</strong><span>Required complement = 10 - 7 = 3.</span></div></div>
+<div><span>3</span><div><strong>Dictionary lookup</strong><span>If 3 was seen at index 0, the pair is found.</span></div></div>
+<div><span>4</span><div><strong>Otherwise store</strong><span>Save current value/index and continue scanning.</span></div></div>
+</figure>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>The dictionary represents only earlier elements.</li>
+<li>Expected O(n) time trades for O(n) memory.</li>
+<li>Check before insert to avoid pairing an element with itself.</li>
+</ul>
+</section>
+</div>

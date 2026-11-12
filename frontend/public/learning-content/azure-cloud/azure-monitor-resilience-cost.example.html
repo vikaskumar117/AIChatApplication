@@ -1,0 +1,84 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An order API has an availability SLO and a defined recovery point. Application Insights traces a request through the API and database, alerts on error-budget burn, while scheduled restore exercises verify backups and Azure Cost Management highlights cost per successful order.</p><ol>
+<li>Set user-facing latency/availability objectives and RPO/RTO.</li>
+<li>Instrument APIs and dependencies with correlated telemetry.</li>
+<li>Alert on SLO burn, queue age, dependency saturation, and backup failures.</li>
+<li>Run restore/failover exercises and compare actual recovery to objectives.</li>
+<li>Review cost per successful workload and adjust bounded scaling.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Example Kusto query: failed requests by operation over the last hour
+requests
+| where timestamp &gt; ago(1h)
+| summarize total=count(),
+            failures=countif(success == false)
+  by operation_Name
+| extend failureRate = todouble(failures) / total
+| order by failureRate desc</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Correlated telemetry shortens detection and diagnosis</li>
+<li>Explicit RPO/RTO and budgets make trade-offs measurable</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Telemetry retention, replicas, backups, and cross-region traffic cost money</li>
+<li>Alerts without ownership or tested runbooks create noise rather than resilience</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use SLO-driven monitoring, owned alerts, tested recovery, and cost guardrails for production workloads.</p><p><strong>Avoid:</strong> Avoid equating a green health probe with end-to-end availability or assuming backups are recoverable without restore tests.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Alerting on every metric threshold without user-impact context or ownership.</li>
+<li>Assuming multi-region deployment automatically provides safe failover.</li>
+<li>Scaling without maximums, budget alerts, or downstream capacity checks.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Correlate traces, metrics, and structured logs with safe redaction.</li>
+<li>Attach runbooks and owners to actionable alerts; review noisy alerts.</li>
+<li>Test restore/failover regularly and track cost per meaningful business transaction.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is the difference between a health check and an SLO?</li>
+<li>How do RPO and RTO influence architecture?</li>
+<li>Why must alerts have an owner and runbook?</li>
+<li>How can autoscaling increase both resilience and cost?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A regional outage causes the application to fail over, but stale data and unexpectedly high egress costs follow. Revisit consistency and RPO, test failback, alert on replication lag and spend, and document who owns recovery decisions.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Measure user outcomes, exercise recovery, and include cost guardrails so Azure reliability claims are operationally verifiable.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/overview" target="_blank" rel="noopener noreferrer">Azure Monitor overview</a></li><li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview" target="_blank" rel="noopener noreferrer">Application Insights overview</a></li><li><a href="https://learn.microsoft.com/en-us/azure/well-architected/reliability/" target="_blank" rel="noopener noreferrer">Azure Well-Architected reliability</a></li><li><a href="https://learn.microsoft.com/en-us/azure/cost-management-billing/cost-management-billing-overview" target="_blank" rel="noopener noreferrer">Azure Cost Management</a></li></ul>
+</section>
+</div>

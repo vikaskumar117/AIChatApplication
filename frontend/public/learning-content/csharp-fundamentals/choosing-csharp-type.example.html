@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A customer has stable identity and lifecycle, so use a class; an address/value snapshot can be a record; a tiny immutable coordinate can be a struct.</p><ol>
+<li>Check whether the domain distinguishes two instances with equal fields.</li>
+<li>Specify whether mutation should be shared or isolated.</li>
+<li>Select class, record, or struct, then profile realistic workloads.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public sealed class Customer
+{
+    public Guid Id { get; }
+    public string Name { get; private set; }
+    public Customer(Guid id, string name) { Id = id; Name = name; }
+    public void Rename(string name) =&gt; Name = name;
+}
+
+public sealed record Address(string City, string PostalCode);
+public readonly record struct Point(int X, int Y);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Types communicate domain semantics</li>
+<li>Small immutable values can be efficient</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Copying and equality rules affect API behavior</li>
+<li>Micro-optimizing without profiling can add complexity</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use classes for entities with identity and lifecycle, records for value-shaped data, and small immutable structs for lightweight values.</p><p><strong>Avoid:</strong> Avoid mutable structs and changing domain types solely from stack/heap myths.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Making all DTOs structs to avoid heap allocations.</li>
+<li>Assuming every data record should be a C# record.</li>
+<li>Ignoring equality implications in dictionaries and sets.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Write equality tests for value objects.</li>
+<li>Keep entity identity explicit and stable.</li>
+<li>Profile allocations and copies under production-like load.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is Customer usually an entity class?</li>
+<li>When is a record struct suitable?</li>
+<li>What should be measured before optimizing allocations?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>In an order platform, keep Customer and Order as entities, represent Money with a carefully validated value type, and treat addresses as values only if field equality reflects business rules.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Model entities as identity, value objects as content, and use structs only when their small-value copy semantics are a good fit.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

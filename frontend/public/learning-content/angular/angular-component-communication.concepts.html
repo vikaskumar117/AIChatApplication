@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A parent supplies state through inputs and receives child intent through outputs; this keeps ownership explicit. Content/view queries and model inputs have narrower purposes, while sibling or cross-route coordination often requires a shared service/store.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Signals, Observable streams, and immutable input values can carry state; outputs should express events or intent rather than let a child mutate parent-owned objects invisibly. Avoid using a global event bus for tightly related components.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Choose the narrowest mechanism that matches the relationship and lifetime. Shared services should define ownership, replay, error, and cleanup contracts rather than becoming an unstructured bag of mutable state.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Name state owner</strong><span>Assign one component, route service, or store responsibility for canonical state.</span></div></div>
+<div><span>2</span><div><strong>Send state downward</strong><span>Inputs expose data and configuration at the component boundary.</span></div></div>
+<div><span>3</span><div><strong>Send intent upward</strong><span>Outputs communicate a user action so the owner decides how state changes.</span></div></div>
+<div><span>4</span><div><strong>Scope collaboration</strong><span>For distant consumers, use a service/store whose lifetime matches the shared workflow.</span></div></div>
+</figure>
+<figcaption>Communication should reveal both direction and ownership; shared state is not a reason to discard component contracts.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>A parent supplies state through inputs and receives child intent through outputs; this keeps ownership explicit. Content/view queries and model inputs have narrower purposes, while sibling or cross-route coordination often requires a shared service/store.</li>
+<li>Signals, Observable streams, and immutable input values can carry state; outputs should express events or intent rather than let a child mutate parent-owned objects invisibly. Avoid using a global event bus for tightly related components.</li>
+<li>Choose the narrowest mechanism that matches the relationship and lifetime. Shared services should define ownership, replay, error, and cleanup contracts rather than becoming an unstructured bag of mutable state.</li>
+</ul>
+</section>
+</div>

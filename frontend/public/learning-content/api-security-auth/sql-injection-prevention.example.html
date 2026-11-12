@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Search for a username using a parameterized equality predicate rather than concatenating it into a WHERE clause.</p><ol>
+<li>Untrusted input enters data query</li>
+<li>Parameterized query preserves SQL structure</li>
+<li>Database executes bounded command under least privilege</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var user = await db.Users
+    .SingleOrDefaultAsync(u =&gt; u.Name == requestedName, cancellationToken);
+
+// Raw SQL: pass values as parameters; allow-list dynamic column identifiers.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Parameterization blocks value-based SQL syntax injection</li>
+<li>Least privilege constrains impact of other defects</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Dynamic identifiers and query composition require careful allow-list design</li>
+<li>Safe SQL does not prove row-level authorization is correct</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use ORM expression trees or explicit parameters and pair them with least privilege and resource authorization.</p><p><strong>Avoid:</strong> Avoid constructing SQL values through string concatenation or accepting arbitrary ORDER BY/table names.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using string interpolation in raw SQL for values.</li>
+<li>Assuming parameterized SQL prevents broken tenant isolation.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Review raw SQL and use parameter APIs consistently.</li>
+<li>Test malicious inputs and cross-tenant access with least-privilege database identities.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why do query parameters prevent SQL injection?</li>
+<li>Can a parameter safely represent a column name?</li>
+<li>Does parameterization replace authorization?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A report endpoint builds a sort expression from client input; replace arbitrary SQL fragments with an allow-listed mapping and verify tenant filters are still applied.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>SQL injection occurs when untrusted input changes query structure; parameterization keeps values data rather than executable SQL.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP SQL Injection Prevention Cheat Sheet</a></li></ul>
+</section>
+</div>

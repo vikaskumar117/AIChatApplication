@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>An execution plan is the optimizer’s chosen physical strategy: operators and data flow used to execute a query. An estimated plan contains estimates; an actual plan adds runtime observations such as actual rows and executions.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Plans reveal access methods, join algorithms, sorts, aggregates, lookups, spills, and estimate errors. They explain implementation, not the logical SQL binding order or every external bottleneck.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Read from data-producing inputs toward parent operators; compare estimated and actual rows, check warnings and memory grants, inspect predicates and rows read, and correlate with runtime metrics and waits. A graphical icon or cost percentage is not a complete diagnosis.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Estimated rows</strong><span>Optimizer uses statistics and parameters to estimate cardinality and cost.</span></div></div>
+<div><span>2</span><div><strong>Physical operators</strong><span>Access, join, filter, aggregate, sort, and exchange operators form a dataflow plan.</span></div></div>
+<div><span>3</span><div><strong>Runtime metrics</strong><span>Actual plan adds rows, executions, warnings, and observed resource details.</span></div></div>
+<div><span>4</span><div><strong>Evidence correlation</strong><span>Combine plan findings with IO/TIME, waits, Query Store, and end-to-end trace.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>A plan describes physical implementation, not logical clause-binding order.</li>
+<li>Actual plans provide runtime evidence unavailable from estimated plans.</li>
+<li>Estimate errors can propagate into join, memory, and access-path choices.</li>
+<li>Plan cost percentages and seek/scan labels are clues, not conclusions.</li>
+</ul>
+</section>
+</div>

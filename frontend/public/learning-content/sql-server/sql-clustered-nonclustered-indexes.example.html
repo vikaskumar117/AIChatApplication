@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Support department salary ordering and return employee name without making Name part of the index search key.</p><ol>
+<li>List filters, joins, order columns, selected fields, and write rates.</li>
+<li>Review existing indexes and actual execution plans.</li>
+<li>Design key columns in useful leading order; add minimal included payload.</li>
+<li>Measure logical reads, duration, and write overhead under representative load.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>-- Example only: verify existing indexes, workload, and write cost first.
+CREATE NONCLUSTERED INDEX IX_Employee_Department_Salary
+ON dbo.Employee (DepartmentId, Salary DESC)
+INCLUDE (EmployeeId, Name);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Can reduce logical reads, support ordered access, and cover a query.</li>
+<li>Unique indexes enforce data invariants as well as aiding access.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Every insert/update/delete may maintain affected indexes.</li>
+<li>Indexes consume storage, can cause page splits, and may be unused or duplicated.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use a focused index when measured predicates, joins, ordering, or constraints justify its read benefit.</p><p><strong>Avoid:</strong> Avoid indexing every column or using wide, volatile clustered keys without considering write amplification and row-locator size.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Creating overlapping indexes without comparing their key and include columns.</li>
+<li>Putting every selected column into the key instead of using INCLUDE.</li>
+<li>Treating an index seek as proof of a fast query regardless of rows read or lookups.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use plans and workload measurements to justify index changes.</li>
+<li>Keep keys narrow and stable; include only columns that avoid material cost.</li>
+<li>Monitor usage, write impact, statistics, and duplicate/overlapping indexes.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is stored at the leaf level of a clustered index?</li>
+<li>Why does a nonclustered index need a row locator?</li>
+<li>When does INCLUDE help versus adding a key column?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A salary report scans a large employee table. Confirm query shape and selectivity, compare existing indexes and actual plan, evaluate a department/salary key with includes, then measure read improvement against insert/update cost.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A clustered index is the table’s rowstore B-tree whose leaf level contains the data rows; a table has at most one. A nonclustered index is a separate B-tree with key columns and a row locator (clustered key or RID), and a table may have many. Indexes provide ordered access paths, support constraints, and can avoid scans or lookups. Each index also adds storage, write work, and maintenance.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/sql/relational-databases/indexes/sql-server-index-design-guide" target="_blank" rel="noopener noreferrer">Microsoft Learn: SQL Server indexes</a></li></ul>
+</section>
+</div>

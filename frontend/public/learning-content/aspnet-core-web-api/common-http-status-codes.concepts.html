@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>An HTTP status code is the response’s standardized three-digit classification of whether and how the request was handled.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Precise codes let clients choose correct next steps, such as correcting input, authenticating, requesting permission, resolving a conflict, or retrying later.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use 200 for successful representation, 201 for creation, 204 for success without a body, 400 for invalid requests, 401 for missing or invalid authentication, 403 for denied permission, 404 for absent or undisclosed resources, 409 for state conflicts, and 500 for unexpected server errors.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Classify outcome</strong><span>A successful read commonly returns 200; creation commonly returns 201 with Location; deletion can return 204.</span></div></div>
+<div><span>2</span><div><strong>Select status and safe body</strong><span>400 means the request is invalid; 401 means valid authentication credentials are absent or unacceptable and normally carries an authentication challenge.</span></div></div>
+<div><span>3</span><div><strong>Client follows status-specific recovery</strong><span>403 means identity is understood but permission is denied; 404 means no accessible resource is exposed; 409 signals a conflict with current state; 500 is an unexpected server failure.</span></div></div>
+</figure>
+<figcaption>A 404 may intentionally conceal that a protected resource exists; choose based on the threat model and keep behavior consistent.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>401 is authentication; 403 is authorization.</li>
+<li>409 represents a resolvable state conflict, not arbitrary failure.</li>
+<li>500 is for unexpected server-side failures, not invalid input.</li>
+</ul>
+</section>
+</div>

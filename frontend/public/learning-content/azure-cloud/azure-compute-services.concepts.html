@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — App Service hosts web apps and APIs; Functions runs event-triggered functions; Container Apps runs containerized applications. A plan is the capacity and billing boundary that backs an app or workload.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Matching the runtime model to request patterns, latency, dependencies, and operational skill prevents paying for idle capacity or inheriting unnecessary host management.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — App Service scales its plan and supports deployment slots; Functions binds triggers and bindings to code and scales according to its hosting plan; Container Apps deploys revisions and can scale replicas from HTTP or event metrics through KEDA-based rules. Scale-to-zero and cold-start behavior depend on the selected plan, configuration, and workload.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Web app / API</strong><span>App Service plan; slots and app-level scaling fit managed web hosting.</span></div></div>
+<div><span>2</span><div><strong>Event handler</strong><span>Functions trigger and hosting plan determine scale, duration, and startup behavior.</span></div></div>
+<div><span>3</span><div><strong>Container workload</strong><span>Container Apps revisions and scale rules control replicas and rollout.</span></div></div>
+<div><span>4</span><div><strong>Production controls</strong><span>Identity, ingress/egress, min/max capacity, telemetry, and budget guardrails.</span></div></div>
+</figure>
+<figcaption>Platform choice is a workload decision; plan, network, and scale configuration determine its real production behavior.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>The service name does not determine the bill; the selected plan and capacity do.</li>
+<li>Scale rules need safe maximums and downstream capacity.</li>
+<li>Private ingress and outbound VNet access are separate networking decisions.</li>
+</ul>
+</section>
+</div>

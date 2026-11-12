@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A method is the standardized request verb—such as GET, POST, PUT, PATCH, or DELETE—that describes the requested interaction with a resource.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Correct semantics enable predictable retries, caching, intermediaries, and client expectations; safe means intended not to change state, while idempotent means repeated identical requests have the same intended effect.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Map verbs to resource operations: GET reads, POST creates or invokes non-idempotent processing, PUT replaces a resource representation, PATCH applies a partial change, and DELETE removes or deactivates it.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Client selects method and resource</strong><span>The method and URI together identify the requested resource operation.</span></div></div>
+<div><span>2</span><div><strong>API applies method contract</strong><span>GET is safe and idempotent; PUT and DELETE are idempotent by intended effect, and POST is not inherently idempotent.</span></div></div>
+<div><span>3</span><div><strong>Response reflects operation outcome</strong><span>The server still must implement those semantics consistently; status codes and validators communicate outcome and concurrency.</span></div></div>
+</figure>
+<figcaption>Idempotence concerns intended server effect, not necessarily identical status codes, response bodies, or zero database writes on each repetition.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Safe and idempotent are distinct properties.</li>
+<li>PUT and DELETE are idempotent in intended effect.</li>
+<li>Method choice is an externally visible contract.</li>
+</ul>
+</section>
+</div>

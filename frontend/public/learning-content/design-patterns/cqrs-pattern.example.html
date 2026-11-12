@@ -1,0 +1,69 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>ConfirmOrder validates and changes the aggregate; GetOrderSummary projects a lightweight DTO for the customer dashboard.</p><ol>
+<li>Make command handling authoritative for invariants.</li>
+<li>Return query DTOs rather than exposing persistence entities.</li>
+<li>Specify projection freshness when read models lag.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public sealed record ConfirmOrder(Guid OrderId);
+public sealed record GetOrderSummary(Guid OrderId);
+// Command handler enforces the invariant; query handler projects read data.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Separates write invariants from read-oriented projection needs.</li>
+<li>Enables independent optimization when workloads materially diverge.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Additional message types and handlers add indirection.</li>
+<li>Separate read stores introduce replication lag, rebuild, and reconciliation concerns.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use when read and write models or scaling constraints differ materially.</p><p><strong>Avoid:</strong> Avoid a separate database, event sourcing, or MediatR solely because the term CQRS is fashionable.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid a separate database, event sourcing, or MediatR solely because the term CQRS is fashionable.</li>
+<li>Assuming cqrs guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Start with logical separation in one database.</li>
+<li>Measure read/write pressure before adding another store.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Does CQRS require two databases?</li>
+<li>How does a command differ from a query?</li>
+<li>What new consistency problem comes with a separate read model?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A dashboard requires denormalized search while writes remain authoritative. Update the projection reliably, state its freshness, and retain a rebuild path.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>CQRS separates intent and models; physical separation and event sourcing are independent choices.</p>
+</section>
+</div>

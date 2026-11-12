@@ -1,0 +1,86 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A known optimistic-concurrency exception becomes 409; an unanticipated database connectivity failure is logged and returned as generic 500.</p><ol>
+<li>Downstream operation throws</li>
+<li>Exception boundary logs and classifies</li>
+<li>Client receives safe Problem Details</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler&lt;ApiExceptionHandler&gt;();
+app.UseExceptionHandler();
+
+internal sealed class ApiExceptionHandler(ILogger&lt;ApiExceptionHandler&gt; logger)
+    : IExceptionHandler
+{
+    public ValueTask&lt;bool&gt; TryHandleAsync(
+        HttpContext context, Exception exception, CancellationToken ct)
+    {
+        logger.LogError(exception, &quot;Unhandled request failure {TraceId}&quot;,
+            context.TraceIdentifier);
+        return ValueTask.FromResult(false); // Leave generic handling to configured pipeline.
+    }
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Consistent error shape and centralized telemetry</li>
+<li>Keeps endpoint code focused on expected outcomes</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Incorrect mapping can hide faults or mislead clients</li>
+<li>Handled exceptions need explicit logging and observability</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use global middleware or IExceptionHandler for unexpected failures and narrowly mapped known domain exceptions.</p><p><strong>Avoid:</strong> Avoid catch-all success responses, exception-driven normal control flow, and public stack traces.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Returning true for every exception without logging it.</li>
+<li>Mapping every exception to 400 or including its message in the response.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Attach trace correlation and alert on unexpected 5xx rates.</li>
+<li>Test known mapping, unknown fallback, response-started behavior, and disclosure.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why must exception middleware be early?</li>
+<li>When should a handler return false?</li>
+<li>How should a known concurrency exception differ from an unknown exception?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A custom handler suppresses all diagnostics while returning 500; ensure handled exceptions are logged and measured, and let unknown failures reach the generic safe fallback.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Centralized exception handling turns unhandled failures into consistent, safe API responses while preserving operational diagnostics.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling" target="_blank" rel="noopener noreferrer">ASP.NET Core exception handling</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc9457" target="_blank" rel="noopener noreferrer">RFC 9457 Problem Details</a></li></ul>
+</section>
+</div>

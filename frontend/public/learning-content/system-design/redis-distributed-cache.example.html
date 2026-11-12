@@ -1,0 +1,88 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A catalog service caches a public product listing for a short TTL. After a successful catalog update it invalidates affected keys; simultaneous misses for a popular listing are coalesced so one database read refreshes the value for waiting requests.</p><ol>
+<li>Read a tenant-scoped listing key from Redis.</li>
+<li>On miss, join an in-flight refresh or acquire the refresh slot.</li>
+<li>Load the authoritative listing and cache it with a measured TTL.</li>
+<li>Invalidate the affected key after a catalog update and monitor fallback volume.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var value = await cache.GetStringAsync(key, cancellationToken);
+if (value is null)
+{
+    value = await LoadFromDatabaseAsync(cancellationToken);
+    await cache.SetStringAsync(
+        key,
+        value,
+        new DistributedCacheEntryOptions
+        {
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+        },
+        cancellationToken);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Shared values reduce duplicate work across instances</li>
+<li>TTL and eviction can bound stale-data exposure and storage</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>A cache hit can still be stale or incorrect if keys are poorly scoped</li>
+<li>Cache outage can transfer load to the source and trigger a cascading failure</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for rebuildable or explicitly stale-tolerant data with a clear key, TTL, invalidation, timeout, and fallback budget.</p><p><strong>Avoid:</strong> Avoid caching authorization-sensitive responses without complete identity-aware keys, or using cache as the only durable copy of critical data.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using a key without tenant or authorization scope can leak data across users.</li>
+<li>Letting every concurrent miss hit the database causes a cache stampede.</li>
+<li>Treating an unbounded database fallback as a safe response to cache failure.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Set explicit timeouts, TTLs, payload limits, and source fallback concurrency.</li>
+<li>Use jitter or request coalescing for hot keys and track staleness and hit ratio.</li>
+<li>Cache only data whose freshness and invalidation contract is understood.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Explain the cache-aside read and write path.</li>
+<li>How do cache penetration, breakdown, and stampede differ?</li>
+<li>What should happen to source traffic when Redis is unavailable?</li>
+<li>How would you prevent one tenant’s cached data from being served to another?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Redis latency increases during a catalog promotion. Bound cache timeouts, coalesce refreshes for hot keys, and apply a concurrency limit to database fallbacks; if the source budget is exhausted, serve an allowed stale value or fail deliberately rather than overload the database.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Cache-aside trades source work for a bounded, potentially stale copy; key design and failure budgets determine whether it is safe.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://redis.io/learn/howtos/solutions/microservices/caching" target="_blank" rel="noopener noreferrer">Redis documentation: Cache-aside pattern</a></li><li><a href="https://learn.microsoft.com/en-us/aspnet/core/performance/caching/distributed" target="_blank" rel="noopener noreferrer">Microsoft: Distributed caching in ASP.NET Core</a></li></ul>
+</section>
+</div>

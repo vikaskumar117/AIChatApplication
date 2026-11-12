@@ -1,0 +1,71 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Order policy depends on IPaymentAuthorizer; the infrastructure adapter depends on the provider SDK and implements that port.</p><ol>
+<li>Keep ports in the layer whose policy needs the capability.</li>
+<li>Translate vendor models at the infrastructure boundary.</li>
+<li>Test business policy against the abstraction and adapter separately.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IPaymentAuthorizer
+{
+    Task&lt;Authorization&gt; AuthorizeAsync(Payment payment, CancellationToken ct);
+}
+public sealed class OrderCheckout(IPaymentAuthorizer payments) { /* high-level policy */ }</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>High-level domain policy can be tested without external systems.</li>
+<li>Infrastructure replacement does not require rewriting business rules.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Abstractions can become needless indirection if no meaningful boundary exists.</li>
+<li>A poorly owned abstraction can leak vendor details or be shaped by low-level constraints.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use at volatile or external boundaries where policy must remain independent.</p><p><strong>Avoid:</strong> Avoid introducing abstractions for stable internal details that have no substitutability need.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid introducing abstractions for stable internal details that have no substitutability need.</li>
+<li>Assuming solid: dependency inversion principle guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep contracts small and domain-relevant.</li>
+<li>Use explicit composition rather than service location.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How is DIP different from dependency injection?</li>
+<li>Which side should own an application port?</li>
+<li>Why is an interface around every class not automatically DIP?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A vendor SDK type has spread through domain services. Introduce an application-owned port and adapter, then map provider errors into meaningful application outcomes.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>DIP protects higher-level policy from low-level detail through a meaningful abstraction owned by the policy.</p>
+</section>
+</div>

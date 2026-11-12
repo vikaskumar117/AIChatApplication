@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>The Orders API rejects an otherwise well-signed token whose aud is the Billing API and returns 401 rather than trusting its decoded orders.read claim.</p><ol>
+<li>Receive bearer access token</li>
+<li>Validate trust, signature, audience, and time</li>
+<li>Authorize permission and target resource</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =&gt;
+    {
+        options.Authority = configuration[&quot;Identity:Authority&quot;];
+        options.Audience = &quot;api://orders&quot;;
+        options.TokenValidationParameters.ValidateIssuer = true;
+        options.TokenValidationParameters.ValidateAudience = true;
+        options.TokenValidationParameters.ValidateLifetime = true;
+    });
+app.UseAuthentication();
+app.UseAuthorization();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Signature-validated claims can be checked locally at scale</li>
+<li>Standard authority metadata supports interoperable key rollover</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Revocation before expiry may require provider checks or application state</li>
+<li>Configuration errors can accept wrong issuers or reject valid key rotations</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use maintained bearer authentication middleware and configure exact issuer, API audience, lifetime, and authorization requirements.</p><p><strong>Avoid:</strong> Never trust a decoded token, accept arbitrary algorithms/issuers, log bearer credentials, or send an ID token as an API access token.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Base64URL-decoding a payload and treating its claims as trusted.</li>
+<li>Checking signature but omitting audience or issuer validation.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use provider discovery/JWKS and tested key rollover rather than hard-coded static assumptions.</li>
+<li>Test wrong issuer, wrong audience, expired tokens, key rotation, insufficient scope, and resource ownership.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does a JWT signature prove and not prove?</li>
+<li>Why validate audience as well as issuer?</li>
+<li>What is the difference between 401 and 403 after token processing?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A signing key rotates and some API instances reject new tokens; use trusted metadata and overlapping key rollover, test old and new key windows, and keep issuer/audience restrictions intact.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>An API must validate a bearer access token’s cryptographic and protocol constraints before it trusts claims or authorizes a request.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc7519" target="_blank" rel="noopener noreferrer">RFC 7519: JSON Web Token</a></li><li><a href="https://learn.microsoft.com/en-us/entra/identity-platform/access-tokens" target="_blank" rel="noopener noreferrer">Microsoft identity platform access tokens</a></li></ul>
+</section>
+</div>

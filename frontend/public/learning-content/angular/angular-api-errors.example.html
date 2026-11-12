@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A dashboard can show one failed widget beside successful widgets, while a failed authorization request should not be converted into an empty successful result.</p><ol>
+<li>Keep loading, success, empty, and error states distinct.</li>
+<li>Use exponential backoff with jitter and Retry-After awareness where appropriate.</li>
+<li>Attach request/correlation IDs to diagnostics without logging secrets.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>readonly report$ = this.http.get&lt;Report&gt;(&#39;/api/report&#39;).pipe(
+  retry({ count: 2, delay: (_, attempt) =&gt; timer(attempt * 500) }),
+  catchError((error: HttpErrorResponse) =&gt; {
+    this.logger.warn(&#39;Report load failed&#39;, { status: error.status });
+    return throwError(() =&gt; error);
+  })
+);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Central policies improve consistency</li>
+<li>Explicit error states make recovery possible</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Retries can duplicate non-idempotent writes</li>
+<li>Overly broad catches hide defects and mislead users</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use catchError to model a deliberate fallback or rethrow; retry only known transient, safe operations with bounds.</p><p><strong>Avoid:</strong> Avoid exposing raw server messages, credentials, or stack details to users.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Returning of([]) for every failure and making outages look like empty data.</li>
+<li>Retrying every status or blindly retrying POST requests.</li>
+<li>Displaying raw backend error payloads to end users.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Handle expected errors at the narrowest boundary that can recover meaningfully.</li>
+<li>Keep unexpected errors observable for centralized diagnostics.</li>
+<li>Make retry limits and user recovery paths explicit.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does HttpErrorResponse status 0 often indicate?</li>
+<li>Where should catchError be placed for partial widget failure?</li>
+<li>When is retry unsafe?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An analytics screen has independent panels. Each panel maps its own failure to retryable local state so one outage does not erase successful results; logs include status and correlation data but not tokens or private payloads.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>HttpClient reports transport, timeout, and non-success responses through HttpErrorResponse on the Observable error channel. A status of 0 commonly represents network-level failure; status codes and server payloads require contextual interpretation. catchError can transform, recover, or rethrow an error. Catch at the boundary that knows whether to provide a fallback, retry a transient failure, or surface an error state; avoid swallowing failures into apparently valid empty data.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/guide/http" target="_blank" rel="noopener noreferrer">Angular HTTP</a></li><li><a href="https://rxjs.dev/api/operators/catchError" target="_blank" rel="noopener noreferrer">catchError API</a></li></ul>
+</section>
+</div>

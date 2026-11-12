@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — System design is the process of defining components, data ownership, interfaces, deployment, and operational behavior that satisfy product and quality requirements.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Starting with technologies instead of requirements creates overbuilt or unsafe designs. A structured discussion makes assumptions, constraints, and trade-offs visible.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Clarify functional requirements and exclusions; quantify traffic, data, latency, availability, and security; sketch a high-level design; define APIs and data ownership; deep-dive the highest-risk component; then address failure, scaling, observability, cost, and evolution.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Requirements</strong><span>Who uses it? What is in scope? What must not happen?</span></div></div>
+<div><span>2</span><div><strong>Quality goals</strong><span>Latency, availability, consistency, security, recovery, and cost targets.</span></div></div>
+<div><span>3</span><div><strong>Capacity + contracts</strong><span>Estimate load; define API, data ownership, and invariants.</span></div></div>
+<div><span>4</span><div><strong>HLD / LLD</strong><span>Draw components, then detail the highest-risk path and state transitions.</span></div></div>
+<div><span>5</span><div><strong>Validate + evolve</strong><span>Test failure modes, bottlenecks, operational plans, and trade-offs.</span></div></div>
+</figure>
+<figcaption>Architecture is a set of decisions against constraints. Record assumptions so a changed requirement triggers a deliberate redesign rather than hidden drift.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Separate requirements from solution choices.</li>
+<li>Use estimates to expose scale constraints, not to claim false precision.</li>
+<li>Connect each major choice to a requirement and a trade-off.</li>
+</ul>
+</section>
+</div>

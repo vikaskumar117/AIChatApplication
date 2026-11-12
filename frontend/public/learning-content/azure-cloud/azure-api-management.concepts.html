@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — Azure API Management (APIM) is a managed gateway and API management platform for publishing, protecting, transforming, and observing APIs.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — A gateway centralizes consumer-facing controls such as authentication validation, quotas, routing, versioning, and request/response transformation without duplicating all of them in every client.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — A request passes through gateway policy scopes and is forwarded to a backend. Policies can authenticate, rate-limit, rewrite, or transform, but the backend must still enforce business authorization and data ownership. Network mode, tier, region, and private connectivity determine the real trust boundary.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Consumer</strong><span>Uses a documented API and an approved identity/credential.</span></div></div>
+<div><span>2</span><div><strong>APIM gateway</strong><span>Validates configured credentials, applies quotas, and routes traffic.</span></div></div>
+<div><span>3</span><div><strong>Protected backend</strong><span>Authenticates/authorizes the operation and resource independently.</span></div></div>
+<div><span>4</span><div><strong>Telemetry</strong><span>Correlates gateway and backend metrics without logging secrets.</span></div></div>
+</figure>
+<figcaption>Gateway controls protect the API boundary; they do not prove that a caller may access a particular business record.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>APIM is an API gateway and management surface, not a complete application security model.</li>
+<li>Do not trust caller-supplied identity headers.</li>
+<li>Network mode, SKU, region, and policies shape operational behavior and cost.</li>
+</ul>
+</section>
+</div>

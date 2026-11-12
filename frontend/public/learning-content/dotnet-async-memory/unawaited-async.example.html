@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Do not start order persistence and return success before it completes; await it or enqueue durable work with an acknowledged status.</p><ol>
+<li>Compare a naked SaveOrderAsync call with awaiting it.</li>
+<li>Observe that await propagates completion and failure.</li>
+<li>Move truly durable background work to an owned queue.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Dangerous: task and exception are discarded
+SaveOrderAsync(order, token);
+
+// Request-owned work:
+await SaveOrderAsync(order, token);
+
+// Deliberate background ownership requires a queue/worker, not a naked call.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Awaiting propagates errors and sequencing</li>
+<li>Durable queues provide explicit background ownership</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Discarded tasks can fail silently</li>
+<li>Request-scoped dependencies may be disposed too early</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Await or return Task from all request-owned work.</p><p><strong>Avoid:</strong> Avoid naked fire-and-forget tasks and async void outside event handlers.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Launching background work from a request with scoped dependencies.</li>
+<li>Using async void to hide missing Task ownership.</li>
+<li>Assuming process shutdown waits for outstanding work.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Await request-owned work.</li>
+<li>Capture background work in a durable queue when required.</li>
+<li>Log, retry, cancel, and drain work deliberately.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Does an unawaited Task stop running?</li>
+<li>When might its exception become visible?</li>
+<li>How should durable background work be started?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A request must send an email after accepting an order. Persist an outbox message transactionally and let a monitored worker deliver it rather than discarding SendAsync.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Unawaited asynchronous work continues independently but loses reliable completion and failure handling; establish explicit ownership.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

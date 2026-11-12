@@ -1,0 +1,70 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A safe inventory read retries one connection reset with jitter; a payment submission reuses the same idempotency key rather than issuing a new charge.</p><ol>
+<li>Budget attempts within the caller deadline.</li>
+<li>Use jitter and respect Retry-After when applicable.</li>
+<li>Keep the same idempotency key across attempts.</li>
+<li>Measure retry volume separately from original requests.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var options = new HttpRequestMessage(HttpMethod.Post, &quot;/payments&quot;);
+options.Headers.Add(&quot;Idempotency-Key&quot;, command.OperationId.ToString());
+// Retry policy must bound attempts and total deadline.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Can mask brief transient network or service faults.</li>
+<li>Backoff can reduce synchronized load when many callers fail together.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Amplifies overload and consumes the request time budget.</li>
+<li>An unknown first-attempt outcome can produce duplicate side effects.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use bounded retries for transient errors on idempotent or deduplicated operations.</p><p><strong>Avoid:</strong> Avoid retries for validation failures, unbounded loops, or calls already near their deadline.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid retries for validation failures, unbounded loops, or calls already near their deadline.</li>
+<li>Assuming retry policy guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Choose one deliberate retry owner per operation path.</li>
+<li>Disable or reduce retries during overload when they worsen saturation.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why add jitter to exponential backoff?</li>
+<li>When can a timeout lead to a duplicate side effect?</li>
+<li>What is the difference between attempt limit and total deadline?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A payment request times out after the provider may have accepted it. Reconcile or retry with the provider’s idempotency key; never generate a fresh operation identity.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Retries trade extra work and latency for transient-fault tolerance; safe operation identity and strict budgets are prerequisites.</p>
+</section>
+</div>

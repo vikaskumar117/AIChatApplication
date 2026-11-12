@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A Task is a general awaitable handle. Task.Run queues synchronous CPU-bound work to a pool worker and returns a Task for that delegate’s completion.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Task.Run can keep a UI thread responsive or isolate bounded CPU work, but it does not make blocking I/O scalable and adds scheduling overhead. On server request threads it can worsen pool pressure.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Call asynchronous I/O APIs directly and await them. Use Task.Run only when a synchronous CPU operation must move off a responsive thread or when deliberate scheduling is part of the design.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>I/O-bound operation</strong><span>Native ReadAllTextAsync yields while the filesystem operation completes.</span></div></div>
+<div><span>2</span><div><strong>CPU-bound delegate</strong><span>ComputeDigest consumes CPU and may be scheduled on a worker.</span></div></div>
+<div><span>3</span><div><strong>Task.Run</strong><span>Queues the synchronous delegate; it does not convert an operation into true async I/O.</span></div></div>
+<div><span>4</span><div><strong>Await result</strong><span>Caller observes completion, errors, or cancellation.</span></div></div>
+</figure>
+<figcaption>Follow each labeled stage to see the concrete scheduling, ownership, or memory effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Task is the completion abstraction; Task.Run is a scheduling API.</li>
+<li>I/O async frees a worker while waiting.</li>
+<li>Task.Run uses finite thread-pool capacity.</li>
+</ul>
+</section>
+</div>

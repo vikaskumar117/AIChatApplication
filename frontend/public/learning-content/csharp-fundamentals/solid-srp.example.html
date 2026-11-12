@@ -1,0 +1,81 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Invoice calculation and email delivery change for different reasons, so keep calculation in InvoiceService and notification in an injected notifier.</p><ol>
+<li>Identify calculation and delivery as separate change axes.</li>
+<li>Place calculation in its cohesive owner.</li>
+<li>Expose notification through a narrow collaborator contract.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public sealed record Invoice(decimal Subtotal, decimal Tax);
+public sealed class InvoiceCalculator
+{
+    public decimal Total(Invoice invoice) =&gt; invoice.Subtotal + invoice.Tax;
+}
+public interface IInvoiceNotifier
+{
+    Task SendAsync(decimal total, CancellationToken token);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Localized changes and tests</li>
+<li>Clear ownership of behavior</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Too many tiny classes obscure flow</li>
+<li>Artificial boundaries add indirection</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Separate policies with genuinely independent change reasons.</p><p><strong>Avoid:</strong> Avoid equating SRP with one method per class or extracting trivial wrappers.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>A “God class” that calculates, stores, renders, and sends.</li>
+<li>Splitting each trivial operation into a separate class by rote.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use change history and stakeholder ownership to find boundaries.</li>
+<li>Keep classes cohesive and testable.</li>
+<li>Refactor when separation reduces actual change coupling.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is a “reason to change”?</li>
+<li>How can SRP improve tests?</li>
+<li>Why does SRP not mean one method per class?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Tax policy changes frequently while notification channels are stable. Keep calculation and delivery separate and let an application service coordinate them.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>SRP reduces unrelated change coupling by grouping behavior around one coherent responsibility.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

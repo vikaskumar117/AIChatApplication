@@ -1,0 +1,69 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A recommendation client opens after sustained timeouts, fails fast for a short interval, then allows a probe to test recovery.</p><ol>
+<li>Count only relevant failures, not caller cancellation or business rejection.</li>
+<li>Tune thresholds from dependency behavior and service objectives.</li>
+<li>Provide bounded probe traffic and monitor state changes.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Pseudocode: closed -&gt; open after threshold
+// open -&gt; fail fast until break duration expires
+// half-open -&gt; allow limited probe; close on recovery</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Avoids wasting caller capacity on a failing dependency.</li>
+<li>Allows a dependency to recover without a constant flood of requests.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Thresholds can cause false opens or synchronized recovery bursts.</li>
+<li>A breaker does not replace timeouts, retries, or business fallback.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for remote dependencies with observable failure signals and a defined fast-fail behavior.</p><p><strong>Avoid:</strong> Avoid a breaker around local deterministic validation or as a substitute for fixing chronic capacity limits.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid a breaker around local deterministic validation or as a substitute for fixing chronic capacity limits.</li>
+<li>Assuming circuit breaker guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Compose breaker with a deadline and concurrency controls.</li>
+<li>Make open-state behavior explicit and observable.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What distinguishes open from half-open?</li>
+<li>Why should a breaker be paired with a timeout?</li>
+<li>What can a breaker not guarantee?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>The shipping provider becomes slow. A breaker prevents every API worker from waiting on it; shipment creation remains pending and a background workflow resumes after recovery.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A circuit breaker limits repeated calls during failure; it is not a recovery mechanism by itself.</p>
+</section>
+</div>

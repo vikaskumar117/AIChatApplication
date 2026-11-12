@@ -1,0 +1,86 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A checkout calls IPaymentMethod.PayAsync without depending on card internals; the adapter encapsulates provider details, and a derived provider may specialize implementation only where appropriate.</p><ol>
+<li>Validate the checkout invariant before calling collaborators.</li>
+<li>Depend on the payment capability rather than a concrete provider.</li>
+<li>Substitute an implementation without changing checkout policy.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IPaymentMethod
+{
+    Task PayAsync(decimal amount, CancellationToken cancellationToken);
+}
+public sealed class Checkout
+{
+    private readonly IPaymentMethod payment;
+    public Checkout(IPaymentMethod payment) =&gt; this.payment = payment;
+    public Task CompleteAsync(decimal total, CancellationToken token)
+    {
+        if (total &lt;= 0) throw new ArgumentOutOfRangeException(nameof(total));
+        return payment.PayAsync(total, token);
+    }
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Protects business invariants</li>
+<li>Enables implementation substitution</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Inheritance can over-couple designs</li>
+<li>Excessive abstraction hides simple flows</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use encapsulation to protect invariants, abstraction for meaningful boundaries, and polymorphism for interchangeable behavior.</p><p><strong>Avoid:</strong> Avoid inheritance solely to share code; prefer composition when behavior is assembled.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Exposing mutable state and relying on callers to preserve invariants.</li>
+<li>Creating deep class hierarchies for code reuse alone.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep invariants near the state or operation they protect.</li>
+<li>Design contracts around client needs.</li>
+<li>Favor composition where behavior varies independently.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Name the four OOP pillars.</li>
+<li>How is abstraction different from encapsulation?</li>
+<li>Does polymorphism require inheritance from a class?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A checkout system supports multiple payment methods and must enforce positive totals. Keep validation in the domain-facing service and provider protocol inside replaceable adapters.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>OOP principles help protect rules and substitute behavior; they are tools, not reasons to build inheritance-heavy frameworks.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

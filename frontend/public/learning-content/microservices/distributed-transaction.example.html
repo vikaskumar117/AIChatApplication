@@ -1,0 +1,71 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Two databases under one tightly controlled application may use a supported transaction coordinator; independent microservices instead commit locally and coordinate with an outbox/saga.</p><ol>
+<li>Verify participant and platform support before design approval.</li>
+<li>Understand coordinator recovery and in-doubt operations.</li>
+<li>Prefer local atomicity with outbox when spanning database and broker.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>await using var tx = await db.Database.BeginTransactionAsync(ct);
+db.Orders.Add(order);
+db.Outbox.Add(OutboxMessage.For(&quot;OrderCreated&quot;, order.Id));
+await db.SaveChangesAsync(ct);
+await tx.CommitAsync(ct);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Can provide atomic commit across compatible participants.</li>
+<li>Simplifies invariants when a genuinely shared transaction boundary is feasible.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Coordinator and participant support constrain deployment and technology.</li>
+<li>Coordination can block or reduce availability during failures and lengthen resource locks.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use only when all participants and infrastructure support the required protocol and failure model.</p><p><strong>Avoid:</strong> Avoid assuming HTTP calls or a broker publication automatically join a database transaction.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid assuming HTTP calls or a broker publication automatically join a database transaction.</li>
+<li>Assuming distributed transactions guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Choose the narrowest transaction boundary that protects the invariant.</li>
+<li>Document operational recovery for prepared or in-doubt transactions.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does two-phase commit coordinate?</li>
+<li>Why can distributed commit block during failure?</li>
+<li>When is an outbox preferable?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An order service wants atomic database update plus broker publish. Since the broker is not in the database transaction, store an outbox row atomically and dispatch it rather than claiming a cross-resource commit.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Distributed transactions can provide atomicity at the cost of coordination and availability; independent services more often need eventual workflows.</p>
+</section>
+</div>

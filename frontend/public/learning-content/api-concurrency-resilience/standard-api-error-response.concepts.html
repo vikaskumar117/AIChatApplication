@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A standard API error response is a consistent representation of a failed HTTP operation, including status and safe diagnostic fields.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Stable error types, validation details, and trace identifiers simplify client handling and support investigations while limiting disclosure.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Adopt RFC 9457 Problem Details or a documented compatible schema, keep status aligned with the HTTP response, define validation extension shapes, and expose correlation identifiers without stack traces or secrets.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Failure is classified</strong><span>The HTTP status remains authoritative and should agree with the problem document status.</span></div></div>
+<div><span>2</span><div><strong>Problem document is constructed safely</strong><span>A problem type or stable code can identify a client-actionable failure without parsing prose.</span></div></div>
+<div><span>3</span><div><strong>Client acts on type, status, and trace context</strong><span>A trace identifier links the response to protected server telemetry; details must avoid secrets and internal exception content.</span></div></div>
+</figure>
+<figcaption>RFC 9457 obsoletes RFC 7807; ASP.NET Core support may refer to both terminology and version-specific framework APIs.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Keep status and problem status consistent.</li>
+<li>Use stable types/codes and safe details.</li>
+<li>Connect client support reports to internal traces.</li>
+</ul>
+</section>
+</div>

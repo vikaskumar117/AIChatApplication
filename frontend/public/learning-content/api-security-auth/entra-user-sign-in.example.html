@@ -1,0 +1,76 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An employee signs in to an internal portal with Entra; the portal obtains a token for the Inventory API rather than forwarding an ID token.</p><ol>
+<li>Register client and API</li>
+<li>User signs in at Entra</li>
+<li>Client obtains API-scoped access token</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Client registration configuration (conceptual)
+Authority = &quot;https://login.microsoftonline.com/{tenantId}/v2.0&quot;;
+ClientId = configuration[&quot;Entra:ClientId&quot;];
+RedirectUri = &quot;https://portal.example/signin-oidc&quot;;
+// Request only the exposed API scopes needed by this feature.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Centralized identity controls, lifecycle, and policy</li>
+<li>Standards-based integrations and workload identity options</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Tenant, consent, and registration settings require operational governance</li>
+<li>Cloud identity availability and configuration become dependencies</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use Entra ID for supported organizational and customer identity scenarios when its tenant and account model matches requirements.</p><p><strong>Avoid:</strong> Avoid hardcoding tenant secrets or assuming all tenants, account types, claims, and consent configurations behave identically.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Trusting a token because it came from Microsoft without checking tenant and API audience.</li>
+<li>Confusing authentication registration with application-level permission.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use Microsoft identity libraries and supported platform flows.</li>
+<li>Treat tenant ID, issuer, audience, scopes, and consent as explicit security configuration.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is the distinction between an app registration and a service principal?</li>
+<li>Which token is sent to the API?</li>
+<li>Where are MFA and conditional-access policies enforced?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A multi-tenant SaaS begins accepting organizational users; explicitly decide supported tenants, issuer validation, consent, tenant authorization, and account-linking policy before enabling sign-in.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Microsoft Entra ID is an identity platform that can authenticate users and issue protocol tokens for registered applications and APIs.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/entra/identity-platform/v2-overview" target="_blank" rel="noopener noreferrer">Microsoft identity platform overview</a></li><li><a href="https://learn.microsoft.com/en-us/entra/identity-platform/msal-authentication-flows" target="_blank" rel="noopener noreferrer">Microsoft identity platform authentication flows</a></li></ul>
+</section>
+</div>

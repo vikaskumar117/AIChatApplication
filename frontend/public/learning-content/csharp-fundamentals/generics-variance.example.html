@@ -1,0 +1,98 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A repository can return Customer objects directly rather than returning object values that every caller must cast.</p><ol>
+<li>Declare the type parameter T.</li>
+<li>Add only constraints the implementation actually needs.</li>
+<li>Implement and call the closed IRepository&lt;Customer&gt; type.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IEntity { Guid Id { get; } }
+public interface IRepository&lt;T&gt; where T : IEntity
+{
+    Task&lt;T?&gt; FindAsync(Guid id, CancellationToken cancellationToken);
+}
+public interface IProducer&lt;out T&gt; { T Get(); }
+public interface IConsumer&lt;in T&gt; { void Accept(T value); }
+
+public sealed record Customer(Guid Id, string Name) : IEntity;
+public sealed class CustomerRepository : IRepository&lt;Customer&gt;
+{
+    public Task&lt;Customer?&gt; FindAsync(Guid id, CancellationToken cancellationToken)
+        =&gt; Task.FromResult&lt;Customer?&gt;(new Customer(id, &quot;Mira&quot;));
+}
+
+public static class Program
+{
+    public static void Main()
+    {
+        IEnumerable&lt;string&gt; names = new List&lt;string&gt;();
+        IEnumerable&lt;object&gt; objects = names; // covariance
+        Action&lt;object&gt; logObject = value =&gt; Console.WriteLine(value);
+        Action&lt;string&gt; logString = logObject; // contravariance
+    }
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Reusable compile-time type safety</li>
+<li>Constraints document required capabilities</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Complex constraints can obscure APIs</li>
+<li>Over-generalized frameworks are harder to evolve</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use generics when behavior is genuinely reusable across types and preserve precise type information.</p><p><strong>Avoid:</strong> Avoid generic abstractions whose type parameters do not affect meaningful behavior.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using object inside a generic class and losing type safety.</li>
+<li>Adding constraints that are unrelated to the algorithm.</li>
+<li>Creating a universal repository that hides domain queries.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Prefer type-safe inputs and outputs.</li>
+<li>Constrain to required capabilities, not a particular implementation.</li>
+<li>Test generic behavior with representative types.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does a generic constraint guarantee?</li>
+<li>Why is IRepository&lt;Customer&gt; safer than an object repository?</li>
+<li>Where can variance be declared?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A persistence library supports several entity types. Keep generic CRUD operations constrained by actual requirements and keep domain-specific queries explicit.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Generics provide reusable APIs that retain concrete type information and enable compiler-checked constraints.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

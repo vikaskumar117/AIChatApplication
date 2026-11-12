@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A value type stores its value directly in its variable context. Boxing creates an object representation that contains a copy; unboxing checks and copies that value back out.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Conversions to object or a non-generic interface can allocate and copy, affecting hot paths and identity expectations. Modern generic collections avoid common boxing cases.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Boxing is implicit; unboxing requires an explicit cast and exact compatible type. Nullable values and interface dispatch have specific runtime rules, so inspect allocations rather than assuming every conversion boxes.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Value input</strong><span>The int variable contains the value 42.</span></div></div>
+<div><span>2</span><div><strong>Box conversion</strong><span>Converting to object wraps a copy in a managed object representation.</span></div></div>
+<div><span>3</span><div><strong>Exact unbox</strong><span>Casting to int validates the boxed type and copies the value back.</span></div></div>
+</figure>
+<figcaption>Follow the labeled stages; each node names a concrete decision or runtime effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Boxing is a value-to-object conversion, not reference aliasing.</li>
+<li>Unboxing requires a compatible exact value type.</li>
+<li>Generics often preserve values without object conversion.</li>
+</ul>
+</section>
+</div>

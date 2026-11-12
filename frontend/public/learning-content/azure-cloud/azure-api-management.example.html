@@ -1,0 +1,84 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>APIM validates caller tokens, applies a per-product quota, and routes requests to an internal Orders API. The Orders API independently verifies order ownership and tenant boundaries.</p><ol>
+<li>Publish an API version with a clear contract and product.</li>
+<li>Apply token validation and route-level rate limits at APIM.</li>
+<li>Keep the backend private where appropriate and authenticate gateway-to-backend traffic.</li>
+<li>Enforce tenant and resource permissions in the backend; correlate gateway and service telemetry.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>&lt;!-- Illustrative APIM policy fragment; configure values and scope per environment. --&gt;
+&lt;inbound&gt;
+  &lt;base /&gt;
+  &lt;rate-limit-by-key calls=&quot;60&quot; renewal-period=&quot;60&quot;
+      counter-key=&quot;@(context.Subscription?.Id ?? context.Request.IpAddress)&quot; /&gt;
+  &lt;set-header name=&quot;X-Request-Id&quot; exists-action=&quot;override&quot;&gt;
+    &lt;value&gt;@(context.RequestId.ToString())&lt;/value&gt;
+  &lt;/set-header&gt;
+&lt;/inbound&gt;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Consistent gateway policies and API publication controls</li>
+<li>Can protect or hide backend endpoints behind a managed boundary</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Gateway policies and tier/network features have limits and cost</li>
+<li>Misconfigured transformations can create divergent API behavior or false authorization confidence</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use APIM for governed external APIs, shared gateway policies, consumer onboarding, and controlled routing.</p><p><strong>Avoid:</strong> Avoid putting all domain authorization in gateway policies or assuming an API key alone proves end-user identity.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming a subscription key is user authentication.</li>
+<li>Removing backend authorization after moving checks to a gateway.</li>
+<li>Ignoring policy inheritance, rate-limit scope, private DNS, and backend connectivity.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use OAuth/OIDC tokens for user or service identity and keep backend authorization authoritative.</li>
+<li>Version contracts deliberately and test policies at each scope.</li>
+<li>Monitor rejected requests, throttles, latency, backend errors, and gateway capacity.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What belongs at a gateway versus in the backend?</li>
+<li>Why does APIM not replace object-level authorization?</li>
+<li>How do quota/rate policies differ from backend capacity protection?</li>
+<li>What must be considered when APIM reaches a private backend?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A new gateway policy accidentally trusts a client-supplied tenant header. Remove that trust, derive identity from validated credentials, keep object authorization in the backend, test policy inheritance, and verify private backend reachability and quota behavior.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>APIM centralizes API-edge governance; preserve independent backend authorization and validate the full network and policy path.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/azure/api-management/api-management-key-concepts" target="_blank" rel="noopener noreferrer">Azure API Management overview</a></li><li><a href="https://learn.microsoft.com/en-us/azure/api-management/api-management-policies" target="_blank" rel="noopener noreferrer">APIM policy reference</a></li></ul>
+</section>
+</div>

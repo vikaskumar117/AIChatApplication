@@ -1,0 +1,73 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>OrderService declares an IOrderRepository dependency; the ASP.NET Core composition root registers the EF implementation for the request scope.</p><ol>
+<li>Keep required dependencies constructor-visible.</li>
+<li>Register lifetimes that match state ownership.</li>
+<li>Use explicit scopes in long-lived workers.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>services.AddScoped&lt;IOrderRepository, EfOrderRepository&gt;();
+services.AddScoped&lt;OrderService&gt;();
+
+public sealed class OrderService(IOrderRepository orders)
+{
+    public Task&lt;Order?&gt; FindAsync(Guid id, CancellationToken ct) =&gt; orders.FindAsync(id, ct);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Dependencies are visible and replaceable for testing or configuration.</li>
+<li>Composition centralizes implementation choice and lifecycle management.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Container misconfiguration and lifetime mismatch can fail at runtime.</li>
+<li>Service locator patterns hide dependencies and weaken compile-time clarity.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use constructor injection for required collaborators and composition-root registration.</p><p><strong>Avoid:</strong> Avoid resolving arbitrary services from IServiceProvider inside domain logic.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid resolving arbitrary services from IServiceProvider inside domain logic.</li>
+<li>Assuming dependency injection pattern guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep composition in startup/module boundaries.</li>
+<li>Validate registrations and test important object graphs.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is the difference between DI and a DI container?</li>
+<li>Why is constructor injection useful?</li>
+<li>What is a captive dependency?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A singleton background service captures a scoped DbContext. Create a scope per operation or use an appropriate factory rather than sharing a request-scoped context.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Dependency injection separates use from construction; correct abstraction and lifetime design remain application responsibilities.</p>
+</section>
+</div>

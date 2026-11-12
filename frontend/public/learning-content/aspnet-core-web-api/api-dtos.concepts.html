@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A Data Transfer Object is a type shaped for data crossing an API boundary, such as a create request or response representation.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Separate contracts prevent accidental exposure of internal fields and allow storage models to evolve without silently breaking clients.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Define explicit request and response DTOs, validate request fields, map at an application boundary, and return only fields the caller is authorized to see.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Deserialize request DTO</strong><span>Request DTOs describe the accepted wire contract and should not be persistence entities.</span></div></div>
+<div><span>2</span><div><strong>Map and enforce application rules</strong><span>Application logic maps accepted values into domain operations rather than trusting client-supplied internal fields.</span></div></div>
+<div><span>3</span><div><strong>Project authorized response DTO</strong><span>Response projection controls serialization and must account for caller-specific data permissions.</span></div></div>
+</figure>
+<figcaption>Records and immutability are useful choices, but the essential architectural property is the explicit boundary contract.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>DTOs are wire contracts, not database models.</li>
+<li>Input and output shapes often have different trust and exposure rules.</li>
+<li>Mapping is a useful place to enforce authorized projection.</li>
+</ul>
+</section>
+</div>

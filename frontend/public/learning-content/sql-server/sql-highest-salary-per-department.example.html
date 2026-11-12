@@ -1,0 +1,87 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Return every employee tied for the highest non-NULL salary in their department.</p><ol>
+<li>Filter NULL salaries if those do not represent a pay amount.</li>
+<li>Rank rows descending within each department.</li>
+<li>Select rank 1 and retain all ties.</li>
+<li>If only the maximum amount is needed, use GROUP BY DepartmentId with MAX(Salary).</li>
+</ol>
+</section>
+<section>
+<p><small>DATA EXAMPLE</small></p>
+<h2>Example data</h2>
+<h3>dbo.Employee (sample)</h3><div><table><thead><tr><th>EmployeeId</th><th>Name</th><th>DepartmentId</th><th>Salary</th></tr></thead><tbody><tr><td>1</td><td>Ari</td><td>10</td><td>120000</td></tr><tr><td>2</td><td>Bo</td><td>10</td><td>110000</td></tr><tr><td>3</td><td>Cy</td><td>10</td><td>110000</td></tr><tr><td>4</td><td>Dee</td><td>20</td><td>95000</td></tr><tr><td>5</td><td>Eli</td><td>20</td><td>90000</td></tr></tbody></table></div>
+<h3>dbo.Department</h3><div><table><thead><tr><th>DepartmentId</th><th>Name</th></tr></thead><tbody><tr><td>10</td><td>Engineering</td></tr><tr><td>20</td><td>Finance</td></tr></tbody></table></div>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>WITH ranked AS (
+  SELECT EmployeeId, Name, DepartmentId, Salary,
+         DENSE_RANK() OVER (
+           PARTITION BY DepartmentId ORDER BY Salary DESC
+         ) AS salary_rank
+  FROM dbo.Employee
+  WHERE Salary IS NOT NULL
+)
+SELECT EmployeeId, Name, DepartmentId, Salary
+FROM ranked
+WHERE salary_rank = 1
+ORDER BY DepartmentId, EmployeeId;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Window ranking preserves employee details and all top ties.</li>
+<li>The tie policy is visible and testable.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Ranking may sort data; grouped aggregate plus join can also require additional work.</li>
+<li>Departments with no non-NULL salary have no qualifying employee.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use DENSE_RANK = 1 when the answer should include every employee tied at the department maximum.</p><p><strong>Avoid:</strong> Avoid joining only by salary; include the department key or employees from other departments may match.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Selecting an unrelated employee name alongside MAX without a valid grouping rule.</li>
+<li>Joining max salary back on salary only and mixing departments.</li>
+<li>Using ROW_NUMBER when all ties are required.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Specify whether ties are all returned or one is selected.</li>
+<li>Use a unique tie-breaker for one-winner requirements.</li>
+<li>Test NULL-only and tied-maximum groups.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why does GROUP BY MAX not return the employee name?</li>
+<li>How do you include all employees tied for maximum?</li>
+<li>What columns are needed in an aggregate join-back?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A dashboard needs the top-paid employee in each department. Product clarifies all ties should appear; implement rank 1 and test departments with no salary and multiple maximum-paid people.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>The maximum salary per department can be returned as a value, or with the employee row or rows that achieve it. A grouped MAX returns only the amount; reporting the employee requires a join-back or a ranking method. Ties must be treated intentionally.</p>
+</section>
+</div>

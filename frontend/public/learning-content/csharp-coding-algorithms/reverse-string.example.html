@@ -1,0 +1,88 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A log-normalization utility reverses a short ASCII token for a coding exercise. In production, clarify whether “character” means UTF-16 code unit, Unicode scalar value, or user-perceived grapheme cluster.</p><ol>
+<li>Start with [c, o, d, e], left = 0, right = 3.</li>
+<li>Swap c/e; then swap o/d.</li>
+<li>Pointers cross, so stop and return &quot;edoc&quot;.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>string Reverse(string value)
+{
+    char[] characters = value.ToCharArray();
+    int left = 0;
+    int right = characters.Length - 1;
+
+    while (left &lt; right)
+    {
+        (characters[left], characters[right]) = (characters[right], characters[left]);
+        left++;
+        right--;
+    }
+
+    return new string(characters);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Linear time with a straightforward invariant</li>
+<li>Original string remains unchanged</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>The result requires O(n) additional memory</li>
+<li>char-based reversal can split a surrogate pair or grapheme cluster</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use the two-pointer version when the input contract is ASCII or UTF-16 code-unit based.</p><p><strong>Avoid:</strong> Avoid claiming this reverses user-perceived Unicode characters; use text-element-aware processing when that is the actual requirement.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using `left &lt;= right` is valid but can do an unnecessary self-swap.</li>
+<li>Repeated string concatenation can make a simple reversal quadratic.</li>
+<li>Treating UTF-16 char units as full visible characters breaks some Unicode text.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Handle empty and one-character input naturally.</li>
+<li>Describe O(n) time and O(n) additional buffer space.</li>
+<li>Use Unicode-aware text elements when product requirements are grapheme-based.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why can’t a C# string be reversed in place?</li>
+<li>What is the time and space complexity?</li>
+<li>What can go wrong when reversing Unicode text using char?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A customer-name feature reverses visible text for a user-facing operation. Confirm Unicode requirements first; a char-array algorithm may corrupt emoji or combining marks, so choose a text-element-aware implementation and test real multilingual samples.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Two pointers reverse a mutable copy in linear time; clarify whether the input contract is code units or visible Unicode characters.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/api/system.string" target="_blank" rel="noopener noreferrer">Microsoft: String class</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/api/system.char" target="_blank" rel="noopener noreferrer">Microsoft: Char structure</a></li></ul>
+</section>
+</div>

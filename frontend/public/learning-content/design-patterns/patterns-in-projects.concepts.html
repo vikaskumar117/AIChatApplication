@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Production systems commonly combine a few patterns around a use case: dependency injection assembles collaborators, a strategy selects policy, a repository may encapsulate domain queries, and a decorator adds cross-cutting behavior.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Patterns compose to separate change and testing boundaries, but unnecessary layers multiply indirection and can obscure control flow and transaction ownership.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Trace one request through its composition root, handler, domain policy, persistence boundary, and infrastructure; identify who owns state, errors, retries, and commit before adding another pattern.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Composition root</strong><span>DI registers concrete infrastructure and policy implementations.</span></div></div>
+<div><span>2</span><div><strong>Use-case service</strong><span>Coordinates one application operation and its error/transaction boundary.</span></div></div>
+<div><span>3</span><div><strong>Domain policy</strong><span>Strategy or domain object owns business variation and invariants.</span></div></div>
+<div><span>4</span><div><strong>Infrastructure</strong><span>Repository or adapter integrates with persistence and external providers.</span></div></div>
+</figure>
+<figcaption>Patterns provide local structures; the request flow still needs one explicit owner for ordering, failures, and durable effects.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Assuming dependency injection itself creates good architecture.</li>
+<li>Splitting business decisions between handler, controller, and repository.</li>
+<li>Committing one effect before an unrelated effect with no recovery plan.</li>
+</ul>
+</section>
+</div>

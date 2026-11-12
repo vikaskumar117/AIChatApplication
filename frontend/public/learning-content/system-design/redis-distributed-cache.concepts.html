@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — Distributed caching stores reusable data outside an individual process so multiple instances can read it. Cache-aside is a pattern where the application checks the cache, loads the source on a miss, then populates the cache.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Reusing computed or read-heavy data can lower latency and database load. The trade is additional network and operational dependency plus a second copy that may be stale or missing.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Choose a versioned key, identity/tenant scope, serialization, TTL, and invalidation owner. Read cache with a short timeout; on miss load the source, then populate with a bounded lifetime. Protect hot misses with request coalescing or jittered refresh, and cap fallback concurrency when Redis is unhealthy.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Request + scoped key</strong><span>Key includes resource version and every tenant/identity dimension that changes the result.</span></div></div>
+<div><span>2</span><div><strong>Redis lookup</strong><span>Bounded-time cache hit returns reusable data; misses are expected.</span></div></div>
+<div><span>3</span><div><strong>Authoritative source</strong><span>Miss loads database or service under a fallback concurrency budget.</span></div></div>
+<div><span>4</span><div><strong>TTL + invalidation</strong><span>Expiration limits age; write-side invalidation reduces stale windows.</span></div></div>
+<div><span>5</span><div><strong>Failure controls</strong><span>Coalescing, stale fallback, and source limits prevent a miss storm.</span></div></div>
+</figure>
+<figcaption>Cache-aside makes the application responsible for cache population and freshness; Redis availability does not replace source-of-truth durability.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>A cache improves performance, not correctness or durability by itself.</li>
+<li>TTL bounds age but does not guarantee immediate consistency.</li>
+<li>Design Redis outage behavior before production traffic depends on it.</li>
+</ul>
+</section>
+</div>

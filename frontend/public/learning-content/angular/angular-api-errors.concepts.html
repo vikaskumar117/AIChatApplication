@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>HttpClient reports transport, timeout, and non-success responses through HttpErrorResponse on the Observable error channel. A status of 0 commonly represents network-level failure; status codes and server payloads require contextual interpretation.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>catchError can transform, recover, or rethrow an error. Catch at the boundary that knows whether to provide a fallback, retry a transient failure, or surface an error state; avoid swallowing failures into apparently valid empty data.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Production handling separates user-safe messages from diagnostic detail, preserves correlation identifiers, and avoids logging credentials or sensitive response bodies. Retry only bounded, transient, preferably idempotent operations.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Receive failure</strong><span>HTTP errors arrive on the Observable error channel rather than as normal response values.</span></div></div>
+<div><span>2</span><div><strong>Classify</strong><span>Distinguish network/timeout, authorization, validation, throttling, and server failures.</span></div></div>
+<div><span>3</span><div><strong>Choose recovery</strong><span>Retry only bounded transient operations; otherwise map to a typed state or rethrow.</span></div></div>
+<div><span>4</span><div><strong>Communicate safely</strong><span>Give users actionable copy and emit sanitized telemetry for investigation.</span></div></div>
+</figure>
+<figcaption>Error placement controls whether failures are local to one request or terminate the larger composed stream.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>HttpClient reports transport, timeout, and non-success responses through HttpErrorResponse on the Observable error channel. A status of 0 commonly represents network-level failure; status codes and server payloads require contextual interpretation.</li>
+<li>catchError can transform, recover, or rethrow an error. Catch at the boundary that knows whether to provide a fallback, retry a transient failure, or surface an error state; avoid swallowing failures into apparently valid empty data.</li>
+<li>Production handling separates user-safe messages from diagnostic detail, preserves correlation identifiers, and avoids logging credentials or sensitive response bodies. Retry only bounded, transient, preferably idempotent operations.</li>
+</ul>
+</section>
+</div>

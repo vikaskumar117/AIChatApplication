@@ -1,0 +1,71 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A small team keeps checkout and catalog as modules in one application until ownership, release cadence, or scaling needs justify independent services.</p><ol>
+<li>Measure the concrete pain before splitting.</li>
+<li>Enforce module boundaries inside a monolith.</li>
+<li>Include on-call and platform costs in the architecture decision.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Modular monolith boundary:
+public interface IInventoryAvailability
+{
+    Task&lt;bool&gt; IsAvailableAsync(Guid sku, CancellationToken ct);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Monoliths simplify local calls, transactions, debugging, and deployment.</li>
+<li>Microservices can isolate scaling, failure, and releases across autonomous teams.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Monolith modules can become entangled and share release risk.</li>
+<li>Microservices add network latency, partial failure, observability, and platform operating cost.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Choose service separation for proven autonomy, scaling, or fault-isolation needs.</p><p><strong>Avoid:</strong> Avoid splitting by technical layer or adopting microservices as a default maturity step.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid splitting by technical layer or adopting microservices as a default maturity step.</li>
+<li>Assuming monolith vs microservices guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Prefer reversible incremental boundaries.</li>
+<li>Adopt the simplest architecture that meets current constraints.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>When is a modular monolith a better choice?</li>
+<li>Which costs appear when a local call becomes remote?</li>
+<li>What organizational condition supports independent services?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A team splits a monolith but cannot deploy services independently because every release requires a coordinated schema migration. Establish ownership and compatibility before further decomposition.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Architecture choice is a cost and capability decision; modularity can exist without network boundaries.</p>
+</section>
+</div>

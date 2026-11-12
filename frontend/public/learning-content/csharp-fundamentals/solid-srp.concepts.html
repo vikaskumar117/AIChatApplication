@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Responsibility means a coherent policy owned by a stakeholder or change axis. SRP is not a rule that every class contain exactly one method.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Separating policies prevents a formatting change from destabilizing persistence or business rules, and lets each concern be tested with appropriate collaborators.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Move behavior when its data, invariants, or change cadence form a separate responsibility. Avoid splitting every line into a service; cohesive ownership matters more than class count.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Business calculation</strong><span>InvoiceCalculator owns total policy and changes with pricing/tax rules.</span></div></div>
+<div><span>2</span><div><strong>Notification contract</strong><span>IInvoiceNotifier owns delivery capability and isolates channel details.</span></div></div>
+<div><span>3</span><div><strong>Independent evolution</strong><span>Changing email delivery does not require rewriting calculation policy.</span></div></div>
+</figure>
+<figcaption>Follow the labeled stages; each node names a concrete decision or runtime effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>SRP concerns reasons to change, not method count.</li>
+<li>Cohesion is more important than maximizing class count.</li>
+<li>A coordinator may compose responsibilities without owning their policies.</li>
+</ul>
+</section>
+</div>

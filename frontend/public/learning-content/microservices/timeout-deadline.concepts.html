@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A timeout bounds how long one operation waits; a deadline is the end-to-end time budget by which the whole request must complete.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Without bounds, blocked calls retain sockets and capacity, and nested services can continue work after the caller has abandoned it.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Propagate the remaining deadline and cancellation token to downstream operations, reserving time for local processing and response; distinguish caller cancellation from dependency timeout.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Request budget</strong><span>Choose an overall limit from the operation’s user-facing latency objective.</span></div></div>
+<div><span>2</span><div><strong>Allocate hops</strong><span>Each dependency gets only the remaining time, reserving response overhead.</span></div></div>
+<div><span>3</span><div><strong>Cancel work</strong><span>Pass cancellation to operations that can safely stop.</span></div></div>
+<div><span>4</span><div><strong>Classify outcome</strong><span>Distinguish deadline expiry, caller abort, and service shutdown.</span></div></div>
+</figure>
+<figcaption>Timeout is a local bound; deadline is a shared end-to-end budget. Neither proves whether a remote side effect committed.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Giving every nested call the full request timeout.</li>
+<li>Retrying after deadline expiry.</li>
+<li>Assuming cancellation rolled back remote work.</li>
+</ul>
+</section>
+</div>

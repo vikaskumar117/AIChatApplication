@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Return the second distinct salary value and all employees paid that amount.</p><ol>
+<li>Exclude NULL salaries according to the stated rule.</li>
+<li>Assign a dense rank over all employees ordered by salary descending.</li>
+<li>Filter rank 2 outside the ranking query.</li>
+<li>Return all ties at the second distinct amount.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>WITH ranked AS (
+  SELECT EmployeeId, Name, Salary,
+         DENSE_RANK() OVER (ORDER BY Salary DESC) AS salary_rank
+  FROM dbo.Employee
+  WHERE Salary IS NOT NULL
+)
+SELECT EmployeeId, Name, Salary
+FROM ranked
+WHERE salary_rank = 2;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>DENSE_RANK states distinct-value semantics and preserves all employees tied at the amount.</li>
+<li>The query naturally returns no rows when fewer than two distinct non-NULL amounts exist.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Ranking may sort the candidate set.</li>
+<li>Different business meanings require different ranking semantics.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use DENSE_RANK when asking for the second-highest distinct salary and the employees receiving it.</p><p><strong>Avoid:</strong> Avoid MAX(MAX(...)) when NULL, no rows, or tie behavior is unclear; avoid ROW_NUMBER without deterministic ordering.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using ROW_NUMBER and arbitrarily selecting among tied salaries.</li>
+<li>Using RANK = 2 and overlooking rank gaps.</li>
+<li>Ignoring NULL and empty-table behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Document whether the output is a value or employee row.</li>
+<li>Test tied maximum, tied second, NULL, and fewer-than-two-value cases.</li>
+<li>Use DENSE_RANK for distinct ordinal values.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why does DENSE_RANK differ from ROW_NUMBER with ties?</li>
+<li>What should the query return when fewer than two distinct salaries exist?</li>
+<li>How can a unique tie-breaker define the second employee row?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An HR API is asked for “the second highest salary.” Clarify whether the API returns a salary amount or a person position, define tie behavior, and test zero, one, tied-highest, and tied-second cases.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Second-highest can mean the second distinct salary value, or the employee row in second place. Those meanings differ when salaries tie. Explicitly defining the result avoids returning an arbitrary employee or mistakenly treating two employees tied for the highest pay as first and second.</p>
+</section>
+</div>

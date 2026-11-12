@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>An API repeatedly reads product metadata that changes infrequently. A per-instance LRU can bound memory and reuse hot values; invalidation and data freshness still belong to the owning product service.</p><ol>
+<li>Insert A, B, C: head is C and tail is A.</li>
+<li>Read A: move its existing node to the head.</li>
+<li>Insert D over capacity: remove the current tail from both structures.</li>
+<li>Verify dictionary count equals list count after each operation.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Core representation:
+Dictionary&lt;TKey, LinkedListNode&lt;Entry&gt;&gt; byKey;
+LinkedList&lt;Entry&gt; recency; // First = most recent; Last = least recent.
+
+// Get(key): if found, move node to First and return its value.
+// Put(key, value): update/move existing node or AddFirst a new node.
+// If Count &gt; capacity: remove Last from both list and dictionary.
+// For shared use, guard every map/list mutation with one synchronization policy.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Average O(1) lookup, recency update, and eviction</li>
+<li>A strict entry-count or weighted capacity can bound memory</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Every operation must keep two structures consistent</li>
+<li>Thread safety, TTL, invalidation, and multi-instance sharing are separate concerns</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for bounded, recency-based local data when entries are cheap to rebuild and profiling shows reuse.</p><p><strong>Avoid:</strong> Avoid treating it as a distributed cache or freshness policy; choose another policy when frequency, TTL, or consistency is more important than recency.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Removing a tail node but leaving its key in the dictionary creates stale entries.</li>
+<li>Using a singly linked list makes arbitrary removal O(n).</li>
+<li>Assuming process-local LRU provides shared behavior across service replicas.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Define capacity, null-value, update, and zero-capacity behavior.</li>
+<li>Encapsulate map/list operations so invariants cannot be bypassed.</li>
+<li>Measure hit ratio and memory before choosing LRU over TTL or frequency-based eviction.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why combine a dictionary with a doubly linked list?</li>
+<li>What does the list head and tail represent?</li>
+<li>How do you prevent a map/list inconsistency on update or eviction?</li>
+<li>What changes if the cache is concurrent or needs TTL?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A service’s per-process product lookup cache grows without bound and repeats expensive source reads. Add a capacity limit after measuring hit rate, set invalidation behavior on catalog writes, and load-test memory and concurrent access before rollout.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A dictionary plus a doubly linked recency list gives constant-time LRU operations while requiring strict synchronization of both structures.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.dictionary-2" target="_blank" rel="noopener noreferrer">Microsoft: Dictionary&lt;TKey,TValue&gt;</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/api/system.collections.generic.linkedlist-1" target="_blank" rel="noopener noreferrer">Microsoft: LinkedList&lt;T&gt;</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A downstream outage is any dependency becoming unavailable, slow, overloaded, or semantically unhealthy from this caller’s perspective.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>In a distributed system, partial failure is normal: the process may be healthy while one dependency fails, and waiting calls can exhaust threads, sockets, or request capacity.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Bound each call with a deadline, limit concurrent work, fail fast when possible, and choose a business-valid fallback, queued continuation, or explicit error. Avoid retrying every request during an outage.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Detect health</strong><span>Observe latency, error rate, saturation, and dependency-specific health.</span></div></div>
+<div><span>2</span><div><strong>Contain work</strong><span>Deadline, concurrency cap, and load shedding bound resource consumption.</span></div></div>
+<div><span>3</span><div><strong>Choose outcome</strong><span>Return explicit failure, valid fallback, or durable deferred work.</span></div></div>
+<div><span>4</span><div><strong>Recover safely</strong><span>Watch recovery and prevent a burst of queued requests from stampeding the dependency.</span></div></div>
+</figure>
+<figcaption>A fallback is a business decision, not a generic exception handler; only use data that is safe to present as a substitute.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Returning empty data may falsely imply “no results.”</li>
+<li>Retrying an outage can intensify overload.</li>
+<li>A health endpoint alone does not prove an operation is usable.</li>
+</ul>
+</section>
+</div>

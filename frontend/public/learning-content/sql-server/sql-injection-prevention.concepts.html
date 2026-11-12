@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>SQL injection occurs when untrusted input is concatenated into SQL syntax, allowing input to alter the intended command or predicate.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Injection can bypass authorization filters, expose or modify data, and execute unintended statements. Escaping ad hoc is fragile, especially for encoding, quoting, and multiple SQL dialect details.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use parameterized commands so values are data, not executable syntax. For dynamic identifiers or sort directions that cannot be parameters, map input to a strict allowlist and quote validated identifiers. Apply least privilege and avoid returning raw database errors.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Untrusted input</strong><span>HTTP values are data and must not become SQL syntax.</span></div></div>
+<div><span>2</span><div><strong>Typed parameter</strong><span>Driver sends the value separately from command text.</span></div></div>
+<div><span>3</span><div><strong>Allowlisted structure</strong><span>Dynamic column/table choices come only from an explicit server-side mapping.</span></div></div>
+<div><span>4</span><div><strong>Defense in depth</strong><span>Least privilege, validation, safe errors, and security tests limit impact.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Parameterized values are data, not SQL syntax.</li>
+<li>Identifiers and keywords need server-side allowlists, not ordinary value parameters.</li>
+<li>Escaping and input filtering are not substitutes for parameterization.</li>
+<li>Least privilege and safe error handling reduce impact.</li>
+</ul>
+</section>
+</div>

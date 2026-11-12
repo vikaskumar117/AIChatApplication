@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A request loads a customer projection and updates an order within one scoped DbContext.</p><ol>
+<li>Configure provider, entity keys, relationships, and constraints.</li>
+<li>Compose IQueryable before materialization.</li>
+<li>Inspect generated SQL for important query paths.</li>
+<li>Use a scoped DbContext and explicitly save a bounded unit of work.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var order = await db.Orders
+    .Where(o =&gt; o.Id == orderId)
+    .Select(o =&gt; new { o.Id, o.Status })
+    .SingleOrDefaultAsync(ct);
+
+var entity = await db.Orders.SingleAsync(o =&gt; o.Id == orderId, ct);
+entity.Status = OrderStatus.Confirmed;
+await db.SaveChangesAsync(ct);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>LINQ and change tracking simplify common relational CRUD and mapping.</li>
+<li>Provider abstraction and migrations support repeatable development workflows.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Generated SQL and provider translation can differ from developer expectations.</li>
+<li>Change tracking, relationship loading, and abstractions can add allocations or hide round trips.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use EF Core for domain-oriented data access when generated SQL and provider behavior are understood and measured.</p><p><strong>Avoid:</strong> Avoid treating EF Core as a substitute for relational modeling, SQL knowledge, or reviewing critical generated SQL.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Treating IQueryable operations as already executed in memory.</li>
+<li>Keeping one DbContext for an application lifetime.</li>
+<li>Assuming EF InMemory behavior proves relational-provider correctness.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Scope DbContext to a request or explicit unit of work.</li>
+<li>Use async database APIs with cancellation tokens in server paths.</li>
+<li>Configure keys, relationships, and constraints intentionally.</li>
+<li>Inspect SQL and use a relational provider for integration tests.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What responsibilities does DbContext have?</li>
+<li>How does LINQ become SQL?</li>
+<li>Why can two EF Core providers translate a query differently?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A team ships a query that works in the in-memory provider but fails on SQL Server translation. Reproduce using the production relational provider, inspect generated SQL, and keep provider-specific behavior inside integration coverage.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Entity Framework Core (EF Core) is a .NET object-relational mapper (ORM): it maps .NET entity types and LINQ queries to relational schema and SQL through a database provider. DbContext is a unit-of-work and identity map that coordinates querying, change tracking, and saving. EF Core reduces repetitive data-access code while preserving access to relational capabilities, but the abstraction does not remove SQL, transaction, schema, or provider behavior.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/ef/core/" target="_blank" rel="noopener noreferrer">Microsoft Learn: EF Core overview</a></li></ul>
+</section>
+</div>

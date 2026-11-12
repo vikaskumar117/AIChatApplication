@@ -1,0 +1,84 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>For a notification service, clarify channels, delivery guarantees, throughput, and user preferences first. Then estimate peak sends, separate request acceptance from delivery, and deep-dive deduplication and provider failure rather than prematurely choosing a queue.</p><ol>
+<li>Ask whether notifications are best-effort or must be durably accepted.</li>
+<li>Estimate peak event rate and provider quotas.</li>
+<li>Draw API, durable queue, dispatcher, preference store, and provider adapters.</li>
+<li>Deep-dive deduplication, retries, rate limits, delivery status, and replay.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Interview checklist
+1. Requirements + explicit non-goals
+2. SLOs, traffic, storage, and latency budget
+3. API contracts + data ownership
+4. HLD: clients -&gt; edge -&gt; services -&gt; data/queues
+5. LLD: state transitions, boundaries, concurrency
+6. Failure, security, observability, cost, rollout
+
+// State assumptions and revisit them when the design changes.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Creates a clear reasoning path from product need to implementation</li>
+<li>Makes assumptions and risks reviewable</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Early estimates are uncertain and must be labeled</li>
+<li>A checklist cannot replace domain judgment or validate a design by itself</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use this sequence in interviews and architecture reviews; adapt depth to the most important risk and stated constraints.</p><p><strong>Avoid:</strong> Avoid spending most of the time on technology names before defining requirements, capacity, and success criteria.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Jumping to microservices or a database before clarifying the workload.</li>
+<li>Treating availability, consistency, and latency as unlimited goals.</li>
+<li>Ignoring failure, operations, security, and cost until the end.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>State assumptions aloud and label estimates.</li>
+<li>Use diagrams to show ownership and request/event direction.</li>
+<li>Prioritize the hardest constraint and revisit the design when assumptions change.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is the difference between functional and non-functional requirements?</li>
+<li>How do you choose which component to deep-dive?</li>
+<li>What assumptions would change your architecture?</li>
+<li>How do you explain a trade-off to a product stakeholder?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A team proposes microservices for a small new product without traffic or team constraints. Reframe the decision around independent scaling, ownership, deployment needs, and operational readiness; start with the simplest boundary that preserves a credible evolution path.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Clarify, quantify, sketch, deep-dive, and validate; the quality of the reasoning matters more than a fashionable technology list.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/azure/well-architected/" target="_blank" rel="noopener noreferrer">Azure Well-Architected Framework</a></li><li><a href="https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html" target="_blank" rel="noopener noreferrer">AWS Well-Architected Framework</a></li></ul>
+</section>
+</div>

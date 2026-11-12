@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A B-tree index narrows the rows that must be visited for selective predicates and can provide ordered rows or cover all columns needed by a query.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Reading fewer pages can reduce I/O and CPU, but an index seek can still return many rows, perform many lookups, or feed an expensive join or sort.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Align leading key columns with useful equality/range predicates and ordering; keep predicates sargable (search-argument-able), maintain statistics, and check actual rows, logical reads, lookups, and spills. The optimizer chooses indexes using estimated costs and available statistics.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Sargable predicate</strong><span>Expose an indexable range/equality condition on the stored key.</span></div></div>
+<div><span>2</span><div><strong>Statistics estimate</strong><span>Histogram and density information inform cardinality and cost estimates.</span></div></div>
+<div><span>3</span><div><strong>Access and operators</strong><span>Seek, scan, lookup, join, sort, or aggregate are selected for the full plan.</span></div></div>
+<div><span>4</span><div><strong>Runtime validation</strong><span>Actual rows, reads, CPU, spills, and waits confirm whether it helped.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Indexes reduce data access only when query shape and selectivity benefit.</li>
+<li>A seek can still read many rows or trigger expensive lookups.</li>
+<li>Sargable predicates and accurate statistics support better access choices.</li>
+<li>Optimize the whole plan and measured workload, not a single operator label.</li>
+</ul>
+</section>
+</div>

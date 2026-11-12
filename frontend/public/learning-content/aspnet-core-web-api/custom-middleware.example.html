@@ -1,0 +1,79 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Attach a trace identifier to structured logs for every request, including requests that later fail.</p><ol>
+<li>Inspect request context</li>
+<li>Continue or intentionally short-circuit</li>
+<li>Observe or finalize response</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>app.Use(async (context, next) =&gt;
+{
+    var started = Stopwatch.GetTimestamp();
+    await next(context);
+    logger.LogInformation(&quot;HTTP {Status} took {Elapsed}ms&quot;,
+        context.Response.StatusCode,
+        Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+});</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>One implementation covers many endpoints</li>
+<li>Can operate before and after endpoint execution</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Global scope can make endpoint-specific behavior awkward</li>
+<li>Incorrect lifetime use or body buffering can cause bugs and cost</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use custom middleware when the same HTTP concern must consistently wrap a broad part of the application.</p><p><strong>Avoid:</strong> Avoid storing request state in middleware instance fields or reading request bodies without deliberate buffering, limits, and privacy review.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Calling next twice or failing to await downstream processing.</li>
+<li>Keeping mutable request data in a long-lived middleware field.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use framework-provided diagnostics when they already meet the need.</li>
+<li>Keep middleware stateless and pass cancellation and request context through.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does middleware continue the pipeline?</li>
+<li>What does short-circuit mean?</li>
+<li>Where should request-specific state live?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Add a correlation header even on controlled errors; place middleware before exception and endpoint processing, preserve an existing trace ID only when validated, and test header behavior after response start.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Middleware is an HTTP delegate that can inspect, transform, short-circuit, or delegate request processing.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/fundamentals/middleware/write" target="_blank" rel="noopener noreferrer">Write custom ASP.NET Core middleware</a></li></ul>
+</section>
+</div>

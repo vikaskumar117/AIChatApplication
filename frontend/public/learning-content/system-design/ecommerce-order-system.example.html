@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A customer retries checkout after a gateway timeout. The API returns the already-created order for the same key; if a payment provider later reports success after a timeout, the workflow queries or retries with the provider’s stable key before deciding whether to refund or continue.</p><ol>
+<li>Client retries POST with the same idempotency key.</li>
+<li>API returns the existing Pending order rather than creating a second one.</li>
+<li>Outbox publisher may deliver twice; consumer deduplication prevents repeated reservation.</li>
+<li>Payment timeout triggers provider-key retry or status lookup before a refund decision.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>POST /orders (Idempotency-Key: client-generated stable key)
+  -&gt; transaction: create Pending order + Outbox event
+  -&gt; publisher: deliver event at least once
+  -&gt; workflow: reserve inventory -&gt; authorize payment
+  -&gt; transition to Confirmed, or compensate and record failure</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Queue-backed stages can scale and recover independently</li>
+<li>Durable state makes retries and operator repair possible</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>The workflow is eventually consistent, not one global transaction</li>
+<li>Outbox, deduplication, compensation, and queue operations require ownership</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use explicit state transitions, a transactional outbox, idempotency at each side-effect boundary, bounded queues, and reconciliation.</p><p><strong>Avoid:</strong> Avoid claiming “exactly once” across independent services or using distributed locks instead of database constraints and ownership.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Publishing directly after database commit can lose the event if the process crashes between the two operations.</li>
+<li>Calling a message queue “exactly once” does not remove duplicate side effects in the consumer.</li>
+<li>Retrying a payment with a new provider key can create a second charge.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Document state transitions, invariants, idempotency scope, and retention for each key.</li>
+<li>Set bounded retries, dead-letter handling, queue-age alerts, and a reconciliation process.</li>
+<li>Use database uniqueness or conditional updates for inventory ownership; load-test overload and recovery behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is an outbox needed if the order is already in a database?</li>
+<li>How do you prevent a retried checkout from creating a second charge?</li>
+<li>How would you prevent inventory oversell under concurrent orders?</li>
+<li>What happens if payment succeeds but the consumer crashes before recording success?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A seasonal sale creates a traffic spike while the payment processor slows down. Keep acceptance within database and queue capacity, return only after durable persistence, slow or reject excess work deliberately, bound retries, and expose stuck-order age so operations can recover or compensate safely.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Durable local acceptance, at-least-once messaging, idempotent effects, and explicit compensation make checkout recoverable under partial failure.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/azure/architecture/databases/guide/transactional-outbox-cosmos" target="_blank" rel="noopener noreferrer">Microsoft: Transactional outbox pattern</a></li><li><a href="https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/saga.html" target="_blank" rel="noopener noreferrer">AWS Prescriptive Guidance: Saga pattern</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A delegate is a type whose value can reference one or more compatible methods. Func&lt;T..., TResult&gt; returns a value; Action&lt;T...&gt; returns void. An event restricts subscription changes and invocation to its declaring publisher.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Callbacks decouple a producer from the work performed; events support one-to-many in-process notification. Multicast handlers run synchronously in invocation order, so slow or throwing handlers affect the publisher.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use events for notifications and delegates for supplied behavior. Unsubscribe long-lived publishers to release subscriber references; use queues/message brokers when delivery must be durable, asynchronous, or cross-process.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Delegate signature</strong><span>Action&lt;int&gt; describes a callback accepting an order ID and returning void.</span></div></div>
+<div><span>2</span><div><strong>Subscription</strong><span>Changed += records a handler in the publisher’s invocation list.</span></div></div>
+<div><span>3</span><div><strong>Publisher invocation</strong><span>Publish synchronously invokes registered handlers.</span></div></div>
+<div><span>4</span><div><strong>Unsubscription</strong><span>Removing the handler releases the publisher’s reference to the subscriber.</span></div></div>
+</figure>
+<figcaption>Follow the labeled stages; each node names a concrete decision or runtime effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Func returns a result; Action returns void.</li>
+<li>Events provide controlled publisher-owned invocation.</li>
+<li>Subscriptions are references with lifetime and exception consequences.</li>
+</ul>
+</section>
+</div>

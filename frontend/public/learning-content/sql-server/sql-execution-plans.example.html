@@ -1,0 +1,81 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A key lookup repeated hundreds of thousands of times may indicate an index coverage trade-off; verify rows, reads, and write costs before changing it.</p><ol>
+<li>Capture an actual plan using representative parameters in a safe environment.</li>
+<li>Read data flow from leaves toward root and inspect predicates, joins, and row counts.</li>
+<li>Compare estimated and actual rows; investigate spills, memory grants, and repeated lookups.</li>
+<li>Correlate with logical reads, CPU, waits, and application latency before changing anything.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>SET STATISTICS IO, TIME ON;
+-- In SSMS, enable Include Actual Execution Plan, then run a representative query.
+SELECT EmployeeId, Name
+FROM dbo.Employee
+WHERE DepartmentId = @departmentId
+ORDER BY Salary DESC;
+SET STATISTICS IO, TIME OFF;</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Shows operator choices and estimate/runtime evidence.</li>
+<li>Helps explain scans, lookups, joins, sorts, spills, and memory grants.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Actual plan capture adds overhead and may expose sensitive literals or schema details.</li>
+<li>Estimated operator percentages are relative estimates, not direct elapsed-time attribution.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use actual plans with representative parameter values alongside Query Store, reads, CPU, waits, and latency.</p><p><strong>Avoid:</strong> Avoid assuming the largest estimated-cost operator is the actual bottleneck or that an estimated plan proves runtime behavior.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Reading plan flow as if it guaranteed the written SQL clause order.</li>
+<li>Treating estimated cost percentages as actual elapsed-time percentages.</li>
+<li>Capturing an actual plan with unrepresentative parameters and extrapolating.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use Query Store to examine plan history and regressions.</li>
+<li>Use representative parameters/data and protect captured plan artifacts.</li>
+<li>Confirm a plan hypothesis with IO, TIME, waits, and end-to-end measurements.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What extra information does an actual plan provide?</li>
+<li>How do you interpret estimated-versus-actual row discrepancy?</li>
+<li>Why is a key lookup not automatically bad?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A query suddenly spills to tempdb. Capture an actual plan on representative data, inspect sort/hash warnings, memory grant and estimate errors, validate statistics and parameter behavior, then test a measured fix.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>An execution plan is the optimizer’s chosen physical strategy: operators and data flow used to execute a query. An estimated plan contains estimates; an actual plan adds runtime observations such as actual rows and executions. Plans reveal access methods, join algorithms, sorts, aggregates, lookups, spills, and estimate errors. They explain implementation, not the logical SQL binding order or every external bottleneck.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/sql/relational-databases/performance/display-and-save-execution-plans" target="_blank" rel="noopener noreferrer">Microsoft Learn: Display and save execution plans</a></li></ul>
+</section>
+</div>

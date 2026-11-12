@@ -1,0 +1,76 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Load initial settings with forkJoin, derive a filtered view from filters and live data with combineLatest, and merge independent refresh events when only event order matters.</p><ol>
+<li>Seed state streams when a latest-value output is required immediately.</li>
+<li>Use named object properties for forkJoin aggregates when supported by the project RxJS version.</li>
+<li>Test error and completion behavior, not only happy-path values.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>const initial$ = forkJoin([user$, settings$]);
+const view$ = combineLatest([filters$, rows$]);
+const events$ = merge(refreshClick$, reconnect$);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Each operator expresses a distinct timing contract</li>
+<li>Correct choice makes UI update behavior predictable</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Wrong operator can never emit or emit too often</li>
+<li>combineLatest retains latest values and may recompute frequently</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use forkJoin for completed finite inputs, combineLatest for latest-state recomputation, and merge for interleaved events.</p><p><strong>Avoid:</strong> Avoid combineLatest when any source may never emit without providing a deliberate initial value.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Expecting merge to synchronize inputs into a tuple.</li>
+<li>Expecting combineLatest to emit before each source has emitted once.</li>
+<li>Using forkJoin with a long-lived stream that never completes.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Write down each source’s cardinality and completion behavior before choosing.</li>
+<li>Use map after combination to derive a view model.</li>
+<li>Place error recovery at the level where partial versus total failure is decided.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which operator emits only once after completion?</li>
+<li>Why does combineLatest wait before its first emission?</li>
+<li>Does merge produce a tuple?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A route combines an HTTP-loaded catalog with a live filter form. forkJoin loads finite initial resources; combineLatest drives the filtered view as either filters or rows change.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>forkJoin waits for every source to complete, then emits their last values once. combineLatest waits until every source has emitted, then emits a new tuple whenever any source emits, using each source’s latest value. merge forwards each source emission independently as it arrives; it does not create a tuple or wait for all sources. Each operator preserves Observable completion/error rules, and a source error normally errors the result.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://rxjs.dev/api/index/function/forkJoin" target="_blank" rel="noopener noreferrer">forkJoin</a></li><li><a href="https://rxjs.dev/api/index/function/combineLatest" target="_blank" rel="noopener noreferrer">combineLatest</a></li><li><a href="https://rxjs.dev/api/index/function/merge" target="_blank" rel="noopener noreferrer">merge</a></li></ul>
+</section>
+</div>

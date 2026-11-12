@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>These window ranking functions assign positions within an ordered partition. ROW_NUMBER assigns a unique sequence; RANK gives ties the same rank and leaves gaps; DENSE_RANK gives ties the same rank without gaps.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>The ranking function determines how ties affect top-N boundaries and whether a query returns a fixed row count or a fixed number of rank/value levels.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use OVER(PARTITION BY group ORDER BY score) to define scope and order. ROW_NUMBER ordering should include a unique key for repeatability. RANK and DENSE_RANK preserve equal ordering values as ties.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Partition</strong><span>Start a separate sequence for each group.</span></div></div>
+<div><span>2</span><div><strong>Sort</strong><span>Order rows by the ranking measure; decide whether tie-breaker belongs in the order.</span></div></div>
+<div><span>3</span><div><strong>ROW_NUMBER</strong><span>Unique sequential row positions; with a unique order, exactly one row per number.</span></div></div>
+<div><span>4</span><div><strong>RANK / DENSE_RANK</strong><span>Ties share a number; RANK leaves gaps, DENSE_RANK does not.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>ROW_NUMBER is a row sequence; RANK is competition position; DENSE_RANK is distinct-value position.</li>
+<li>Ties make rank &lt;= N potentially return more than N rows.</li>
+<li>A unique order is needed for repeatable ROW_NUMBER assignments.</li>
+<li>Partitioning restarts the ranking independently for each group.</li>
+</ul>
+</section>
+</div>

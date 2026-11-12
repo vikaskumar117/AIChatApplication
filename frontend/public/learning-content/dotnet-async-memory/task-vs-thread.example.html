@@ -1,0 +1,79 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A File.ReadAllTextAsync task represents a read that can be pending without dedicating a thread to wait for disk completion.</p><ol>
+<li>Start an asynchronous file read and keep its Task.</li>
+<li>Await the Task to get the content.</li>
+<li>Contrast with explicitly constructing and joining a dedicated Thread.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>Task&lt;string&gt; read = File.ReadAllTextAsync(path, cancellationToken);
+string contents = await read;
+
+// A dedicated thread is explicit and usually unnecessary for ordinary work:
+var thread = new Thread(() =&gt; Console.WriteLine(&quot;worker&quot;));
+thread.Start();
+thread.Join();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Tasks compose naturally with async APIs</li>
+<li>Thread pools reuse workers</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Dedicated threads consume stack and scheduling resources</li>
+<li>A task does not guarantee parallelism</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use Task-based APIs for normal asynchronous work and Thread only for justified low-level control.</p><p><strong>Avoid:</strong> Avoid creating one dedicated thread per request or task.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming every Task creates a thread.</li>
+<li>Creating dedicated threads for routine network waits.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Prefer Task and async APIs for composable work.</li>
+<li>Use dedicated threads only for requirements that justify lifecycle control.</li>
+<li>Bound CPU work.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Can a Task exist without a worker thread?</li>
+<li>What does a thread provide?</li>
+<li>Does awaiting a Task guarantee execution on another thread?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A server creates a new Thread for each incoming operation and exhausts resources. Replace ordinary I/O waits with async Tasks and bound CPU parallelism separately.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Tasks represent outcomes and compose operations; threads execute instructions and are not allocated one-for-one to Tasks.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

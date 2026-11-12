@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Thread safety means concurrent operations preserve an object’s invariants and return valid results under the object’s shared-state access patterns.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>A DI singleton can serve many concurrent requests in one process; safe construction does not make mutable fields, collections, caches, or compound read-modify-write operations safe.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Prefer immutable state or thread-safe primitives/collections, synchronize compound invariants, bound cache growth, and test concurrent behavior. Use Lazy&lt;T&gt; when safe lazy construction is actually needed; DI already controls ordinary service creation.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Shared instance</strong><span>One singleton is concurrently accessed by requests and background work.</span></div></div>
+<div><span>2</span><div><strong>State invariant</strong><span>Identify fields and multi-step operations whose consistency must hold.</span></div></div>
+<div><span>3</span><div><strong>Synchronization</strong><span>Use immutable data, atomic operations, or a narrowly scoped lock.</span></div></div>
+<div><span>4</span><div><strong>Operational bound</strong><span>Control contention, cache size, expiration, and lifecycle.</span></div></div>
+</figure>
+<figcaption>Thread safety preserves invariants under concurrency; merely replacing a Dictionary with ConcurrentDictionary may not make a multi-operation update atomic.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Assuming a singleton is safe because it was constructed once.</li>
+<li>Relying on unsynchronized check-then-act logic.</li>
+<li>Using a process-local singleton for state that must coordinate across replicas.</li>
+</ul>
+</section>
+</div>

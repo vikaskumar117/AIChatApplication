@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Route a low-risk classification request to a lower-cost deployment and a complex synthesis task to a stronger approved model. Keep data residency and quality constraints explicit, and fall back only to a deployment approved for that data class.</p><ol>
+<li>Define data classes, allowed regions/deployments, task capabilities, and per-tenant budgets.</li>
+<li>Implement routing behind an explicit interface while preserving necessary provider-specific options.</li>
+<li>Set request deadlines, concurrency limits, bounded retries for transient errors, and cancellation.</li>
+<li>Exercise quota exhaustion, provider outage, and forbidden-fallback cases; measure cost and response quality.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IModelRoute
+{
+    Task&lt;string&gt; CompleteAsync(
+        ModelRequest request, CancellationToken cancellationToken);
+}
+
+var route = router.Select(policyClass, requestedCapability);
+var result = await route.CompleteAsync(request, cancellationToken);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Central policies and provider changes are easier to manage</li>
+<li>Routing can balance capability, quota, latency, and cost</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>A gateway adds latency, operating cost, and another failure domain</li>
+<li>A lowest-common-denominator API can hide provider-specific features or safety behavior</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use a gateway when model choice, policy, quota, or provider abstraction is a real cross-cutting need.</p><p><strong>Avoid:</strong> Avoid automatic cross-provider fallback without reviewing data handling, residency, capability parity, quality, and user-visible behavior.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Retrying every 429 or timeout immediately and creating a request storm.</li>
+<li>Failing over to a different region/provider without checking residency and retention policy.</li>
+<li>Logging full prompts and completions to central telemetry by default.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Apply explicit data classification, model allowlists, tenant budgets, concurrency limits, and region policy.</li>
+<li>Use bounded exponential backoff with jitter only for retryable failures and respect request deadlines.</li>
+<li>Track tokens, latency, throttles, errors, and quality while redacting sensitive content.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What should a model-routing policy consider beyond price?</li>
+<li>Which concerns does Microsoft.Extensions.AI abstract and which remain application responsibilities?</li>
+<li>When is retry safe for a model request that can invoke tools?</li>
+<li>How do you prevent a fallback from violating data residency?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A regional model deployment hits quota during a traffic spike. Apply per-tenant limits and bounded backoff with jitter, shed or queue noncritical work, and route only to a pre-approved deployment in the allowed region. Track token cost, 429s, latency, and quality so retries do not amplify overload.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A model gateway is useful when it enforces explicit routing and budget policy; abstraction alone does not provide safe failover.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai" target="_blank" rel="noopener noreferrer">Microsoft.Extensions.AI overview</a></li><li><a href="https://learn.microsoft.com/azure/ai-services/openai/quotas-limits" target="_blank" rel="noopener noreferrer">Azure OpenAI quotas and limits</a></li><li><a href="https://learn.microsoft.com/legal/cognitive-services/openai/data-privacy" target="_blank" rel="noopener noreferrer">Azure OpenAI data, privacy, and security</a></li><li><a href="https://learn.microsoft.com/azure/ai-services/openai/how-to/network" target="_blank" rel="noopener noreferrer">Azure OpenAI networking</a></li></ul>
+</section>
+</div>

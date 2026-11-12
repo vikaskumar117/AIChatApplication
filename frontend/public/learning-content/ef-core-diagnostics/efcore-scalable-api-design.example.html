@@ -1,0 +1,84 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A catalog endpoint caps page size, uses keyset pagination, projects DTOs, and returns a continuation token instead of loading the whole table.</p><ol>
+<li>Set request, pagination, payload, and dependency budgets.</li>
+<li>Design query projection and stable keyset or bounded offset paging.</li>
+<li>Use async cancellation, short transaction scope, and idempotent writes.</li>
+<li>Load-test end-to-end while monitoring database, connection pools, and tail latency.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var page = await db.Products
+    .AsNoTracking()
+    .Where(p =&gt; p.IsActive &amp;&amp;
+        (p.Name.CompareTo(afterName) &gt; 0 ||
+         (p.Name == afterName &amp;&amp; p.Id &gt; afterId)))
+    .OrderBy(p =&gt; p.Name).ThenBy(p =&gt; p.Id)
+    .Take(Math.Clamp(request.PageSize, 1, 100))
+    .Select(p =&gt; new ProductDto(p.Id, p.Name, p.Price))
+    .ToListAsync(ct);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Bounded requests protect database and service capacity.</li>
+<li>Stateless APIs, idempotency, and observable budgets support horizontal scaling.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Pagination, caching, and asynchronous workflows add contract and consistency complexity.</li>
+<li>Capacity limits and rate limits can reject work that previously queued implicitly.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use bounded resource consumption and explicit consistency contracts for public or high-volume APIs.</p><p><strong>Avoid:</strong> Avoid unbounded collection endpoints, per-request unbounded fan-out, and relying on in-memory state for cross-instance coordination.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Returning all matching rows or allowing unbounded page sizes.</li>
+<li>Assuming adding API replicas automatically increases database capacity.</li>
+<li>Using distributed retries without idempotency or a total deadline.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use capped pagination, DTO projection, cancellation, and async I/O.</li>
+<li>Keep application instances stateless and DbContext scoped.</li>
+<li>Apply rate limits, backpressure, and idempotency to protect dependencies.</li>
+<li>Load-test realistic traffic mixes and monitor saturation and tail percentiles.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why cap page size?</li>
+<li>When is keyset pagination better than deep OFFSET?</li>
+<li>How do idempotency and outbox support scale?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A product endpoint causes database CPU spikes as traffic grows. Cap page size, use keyset pagination and a covering access path if measured, apply request budgets and rate limiting, and monitor latency/DB saturation while scaling out.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A scalable API bounds work per request, isolates failures, manages concurrency and resources, and supports horizontal growth without relying on process-local state. Unbounded queries, payloads, synchronous I/O, shared mutable state, and retry amplification make traffic growth translate directly into database saturation and tail latency.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/ef/core/performance/" target="_blank" rel="noopener noreferrer">Microsoft Learn: EF Core performance</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,79 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A date-range query scans because a conversion wraps the indexed column; rewrite to a half-open date range, then validate correctness and reads.</p><ol>
+<li>Identify the exact query and capture representative parameters.</li>
+<li>Record baseline duration, CPU, logical reads, row counts, waits, and plan.</li>
+<li>Determine whether database execution, blocking, network transfer, or client work dominates.</li>
+<li>Test one change and compare correctness, p95/p99, reads, CPU, and write impact.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>-- Prefer a half-open range over applying YEAR() to the column.
+SELECT OrderId, CreatedAt, Total
+FROM dbo.[Order]
+WHERE CreatedAt &gt;= @dayStart
+  AND CreatedAt &lt; DATEADD(day, 1, @dayStart);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Evidence-driven changes target the measured bottleneck.</li>
+<li>A baseline and controlled comparison reduce regression risk.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Plan/runtime collection and representative load testing require time and access.</li>
+<li>Parameter sensitivity and changing data distributions can make one plan or benchmark misleading.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use this workflow for regressions and expensive queries before changing schema or query shape.</p><p><strong>Avoid:</strong> Avoid optimizing from elapsed time alone or treating a single plan screenshot as a representative workload.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Adding an index before checking whether the query is blocked or returning too many rows.</li>
+<li>Using only average duration and missing tail latency or parameter variation.</li>
+<li>Applying a rewrite without comparing semantics and result cardinality.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Correlate API traces with database query identity and Query Store.</li>
+<li>Record parameter ranges, plan, actual rows, reads, CPU, waits, and result size.</li>
+<li>Roll out risky changes gradually with monitoring and a rollback path.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which metrics distinguish CPU-bound from I/O-bound work?</li>
+<li>What does a large estimated-versus-actual row difference suggest?</li>
+<li>How do parameter-sensitive plans affect query tuning?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An API’s p95 latency doubled after data growth. Correlate request traces with Query Store, compare plan IDs and logical reads, inspect waits and row estimates, test a sargable predicate/index change on representative parameters, then monitor p95 and write costs after rollout.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Query optimization is a measured process of identifying the dominant cost (I/O, CPU, waits, blocking, network, or client processing) and changing the query, index, statistics, or workload safely. A slow endpoint is not always a slow SQL statement. Guessing or rewriting before collecting a baseline can optimize the wrong layer and cause regressions.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/sql/relational-databases/performance/monitoring-performance-by-using-the-query-store" target="_blank" rel="noopener noreferrer">Microsoft Learn: Query Store</a></li></ul>
+</section>
+</div>

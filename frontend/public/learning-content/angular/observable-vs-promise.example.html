@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A typeahead benefits from Observable cancellation and debounce; a one-off browser API wrapper may be easier to consume as a Promise.</p><ol>
+<li>Subscribe once or share deliberately when multiple consumers must not duplicate a cold request.</li>
+<li>Use firstValueFrom only for a guaranteed first emission and lastValueFrom only for a stream that completes.</li>
+<li>Keep errors in the same model as the chosen abstraction.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>const user$ = this.http.get&lt;User&gt;(&#39;/api/users/42&#39;);
+const user = await firstValueFrom(user$);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Observable operators model time, retries, and cancellation</li>
+<li>Promise syntax is concise for one eventual result</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Promises have no standard cancellation</li>
+<li>Unsubscribing an Observable does not undo server work already performed</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use Observable when the source can emit repeatedly, must be cancelled, or composes with Angular streams; use Promise for a true one-shot boundary.</p><p><strong>Avoid:</strong> Avoid converting a long-lived stream with firstValueFrom or lastValueFrom unless its emission and completion semantics are guaranteed.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming every Observable is infinite or every HTTP observable is shared.</li>
+<li>Using lastValueFrom on a stream that never completes.</li>
+<li>Assuming Promise.race cancels the losing operation.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Treat emission count, completion, and cancellation as explicit API contracts.</li>
+<li>Prefer async pipe for template consumption and compose streams before subscribing.</li>
+<li>Use an AbortSignal-aware API when Promise-based work must support cancellation.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>When does an Observable execute?</li>
+<li>Can a Promise be cancelled?</li>
+<li>What must be true before using lastValueFrom?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A search box issues a new request for every keystroke. Keep it as an Observable so switchMap can replace stale client work; use a Promise for a single confirmation dialog result that settles exactly once.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A Promise settles once with a value or error; an Observable can emit zero, one, or many values and then complete or error. Angular HttpClient observables normally emit one response and complete, but share the Observable contract. Observables are lazy by default: subscribing starts execution, and separate subscriptions can start separate executions. Promises represent work already started when created and cannot be cancelled through the standard Promise API.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://rxjs.dev/guide/overview" target="_blank" rel="noopener noreferrer">RxJS overview</a></li><li><a href="https://angular.dev/guide/http" target="_blank" rel="noopener noreferrer">Angular HTTP</a></li></ul>
+</section>
+</div>

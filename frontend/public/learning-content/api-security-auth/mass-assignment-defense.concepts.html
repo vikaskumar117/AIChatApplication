@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Over-posting is an unsafe binding pattern where extra request properties are accepted and mapped to privileged or internal fields.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>A normal update endpoint may unintentionally let a caller change ownership, approval state, account role, or price if those fields exist on the bound entity.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use purpose-specific request DTOs with only editable fields, validate them, and assign changes explicitly after authorization. Enforce important invariants in the domain and database as well.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Receive a narrow request DTO</strong><span>Binding a persistence entity exposes the entity’s writable surface as the API contract.</span></div></div>
+<div><span>2</span><div><strong>Validate allowed fields</strong><span>A DTO is an allowlist; new entity properties do not automatically become client-editable.</span></div></div>
+<div><span>3</span><div><strong>Authorize the requested change</strong><span>Authorization and business invariants remain necessary even with a narrow DTO.</span></div></div>
+<div><span>4</span><div><strong>Map explicitly to domain state</strong></div></div>
+</figure>
+<figcaption>Input shape is an authorization boundary: only fields deliberately exposed should be writable.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Treat request DTOs as field-level allowlists.</li>
+<li>Map changes explicitly after authorization.</li>
+<li>Protect business invariants beyond the API binding layer.</li>
+</ul>
+</section>
+</div>

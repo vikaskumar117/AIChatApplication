@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Use middleware for request-wide correlation; use an action filter for a legacy MVC-only action convention that requires action arguments.</p><ol>
+<li>Middleware receives HTTP request</li>
+<li>MVC selects filter pipeline</li>
+<li>Action and result execute within middleware</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>app.UseMiddleware&lt;RequestCorrelationMiddleware&gt;();
+services.AddControllers(options =&gt;
+    options.Filters.Add&lt;AuditActionFilter&gt;());</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Middleware covers broader endpoint types</li>
+<li>Filters provide MVC-specific lifecycle context</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Filters do not cover Minimal APIs or unrelated middleware endpoints</li>
+<li>Middleware lacks action-specific metadata before routing/endpoint selection</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use middleware for application-wide HTTP concerns and filters for MVC controller/action execution concerns.</p><p><strong>Avoid:</strong> Avoid using an MVC filter to enforce a security boundary across non-MVC endpoints.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming an action filter runs before every application middleware.</li>
+<li>Using a controller-only filter as the only API-wide authorization defense.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Place each concern at the narrowest layer that reliably covers it.</li>
+<li>Test actual endpoint coverage when MVC and Minimal APIs coexist.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which layer can see MVC action arguments?</li>
+<li>Does a filter run for a Minimal API endpoint?</li>
+<li>When is middleware preferable?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An audit rule must cover MVC actions but not health checks; implement and test an MVC filter while keeping authentication and global exception handling in their appropriate layers.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Middleware wraps the application request pipeline; MVC filters run inside MVC execution and have action or result context.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters" target="_blank" rel="noopener noreferrer">ASP.NET Core filters</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>SSRF occurs when a server makes a network request using an attacker-influenced URL or destination without adequate destination controls.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>The server may reach internal services or cloud metadata endpoints that an external caller cannot access directly; a syntactically valid URL is not necessarily a safe destination.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Prefer mapping a validated business identifier to a fixed trusted endpoint. If arbitrary destinations are essential, enforce strict scheme/host allowlists, safe DNS/IP validation, redirect restrictions, response limits, timeouts, and outbound network controls.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Caller supplies or influences destination</strong><span>Application-level checks alone can be bypassed by redirects, DNS changes, alternate IP encodings, or parser differences.</span></div></div>
+<div><span>2</span><div><strong>Server validates destination and request purpose</strong><span>Egress controls should block loopback, link-local, private, and metadata ranges unless explicitly required.</span></div></div>
+<div><span>3</span><div><strong>Egress policy restricts reachable networks</strong><span>Never forward internal credentials or unrestricted headers to a destination selected by an untrusted caller.</span></div></div>
+<div><span>4</span><div><strong>Bound response and record safe telemetry</strong></div></div>
+</figure>
+<figcaption>The safest SSRF defense is not making a request to a user-selected destination at all.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Treat outbound destinations as security-sensitive input.</li>
+<li>Prefer a fixed endpoint selected by trusted configuration.</li>
+<li>Use network egress controls as an independent security layer.</li>
+</ul>
+</section>
+</div>

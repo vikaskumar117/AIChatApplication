@@ -1,0 +1,81 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A controller requires the Orders.Read scope and then verifies that the current organization may access the specific order.</p><ol>
+<li>Client requests token for API resource</li>
+<li>API validates token and creates principal</li>
+<li>Policy and resource checks authorize request</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =&gt;
+    {
+        options.Authority = $&quot;https://login.microsoftonline.com/{tenantId}/v2.0&quot;;
+        options.Audience = &quot;api://orders-api&quot;;
+    });
+builder.Services.AddAuthorization(options =&gt;
+    options.AddPolicy(&quot;Orders.Read&quot;, p =&gt; p.RequireClaim(&quot;scp&quot;, &quot;Orders.Read&quot;)));
+app.UseAuthentication();
+app.UseAuthorization();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Standard issuer metadata and key rollover</li>
+<li>Centralized user and workload identity with API permission models</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Claim names and issuer behavior vary by token version and flow</li>
+<li>Misconfigured tenant or audience can either block legitimate callers or trust the wrong tokens</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use a supported Microsoft identity integration package or carefully configured bearer middleware with explicit tenant and audience policy.</p><p><strong>Avoid:</strong> Avoid writing custom JWT parsing or accepting any tenant/token based only on a valid signature.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Validating only the signature and accepting a token for another API.</li>
+<li>Assuming a scope claim and an app-role claim are interchangeable.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use platform libraries, explicit audience and tenant constraints, and authorization policies.</li>
+<li>Test anonymous, wrong-audience, wrong-tenant, insufficient-scope, app-only, and user-delegated cases.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does the API audience identify?</li>
+<li>How do delegated scopes differ from application roles?</li>
+<li>Why is UseAuthentication ordered before UseAuthorization?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A service token has an app role but no delegated scope; design separate policies for delegated user calls and application-only calls, then test both principal types and tenant boundaries.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>An ASP.NET Core API integrates with Entra as a resource server: validate bearer access tokens for the API, then apply application authorization.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/entra/identity-platform/scenario-protected-web-api-overview" target="_blank" rel="noopener noreferrer">Protect an ASP.NET Core web API with Microsoft identity platform</a></li><li><a href="https://learn.microsoft.com/en-us/entra/msal/dotnet/microsoft-identity-web/" target="_blank" rel="noopener noreferrer">Microsoft.Identity.Web</a></li></ul>
+</section>
+</div>

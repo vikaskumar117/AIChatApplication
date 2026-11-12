@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>PUT requests that the target resource be created or replaced with the supplied representation according to the API contract.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>A representation that is unchanged can still produce the same intended state, but repeated database writes may update audit fields, trigger events, invalidate caches, or create contention.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Compare normalized persisted values when worthwhile, avoid generating change-only effects for unchanged data, and retain concurrency checks and PUT’s replacement semantics regardless of whether a physical write is skipped.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Receive full replacement representation</strong><span>PUT defines replacement of the target representation; omitted-field behavior must be explicit in the API contract.</span></div></div>
+<div><span>2</span><div><strong>Compare with current resource under concurrency rules</strong><span>An unchanged representation has no intended resource-state change, even if a database UPDATE command would otherwise run.</span></div></div>
+<div><span>3</span><div><strong>Persist only meaningful changes or confirm unchanged state</strong><span>Avoiding a write may reduce triggers and churn but must not weaken version checks, audit requirements, or external effect handling.</span></div></div>
+</figure>
+<figcaption>This is a storage and side-effect optimization, distinct from idempotency keys used to deduplicate non-idempotent business requests.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>PUT idempotence concerns intended state, not the count of SQL writes.</li>
+<li>Unnecessary writes may trigger observable downstream work.</li>
+<li>No-op optimization must preserve concurrency and audit requirements.</li>
+</ul>
+</section>
+</div>

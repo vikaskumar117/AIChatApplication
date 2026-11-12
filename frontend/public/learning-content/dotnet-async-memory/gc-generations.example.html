@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Request-scoped temporary objects often die in Gen 0; a global cache may retain objects long enough to promote, increasing Gen 2 footprint.</p><ol>
+<li>Observe an object’s current generation with GC.GetGeneration.</li>
+<li>Track collection counts around representative work.</li>
+<li>Use heap snapshots to identify why objects survive and promote.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>int gen = GC.GetGeneration(someObject);
+int gen0Collections = GC.CollectionCount(0);
+ProcessRequests();
+Console.WriteLine($&quot;Generation={gen}, Gen0 collections={GC.CollectionCount(0) - gen0Collections}&quot;);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Young collections reclaim many short-lived objects cheaply</li>
+<li>Survival history guides collection work</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Promoted retention increases long-lived heap</li>
+<li>Large/pinned objects have specialized costs</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use generation counters as clues, not a standalone diagnosis.</p><p><strong>Avoid:</strong> Avoid forcing promotion or collections to “manage” generations.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming every object starts in Gen 0 regardless of allocation category.</li>
+<li>Treating LOH as simply a regular generation.</li>
+<li>Calling Collect to force desired promotion behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Correlate collection counts with allocation and heap snapshots.</li>
+<li>Review cache and static roots.</li>
+<li>Avoid large transient allocations where measurements justify it.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What causes promotion?</li>
+<li>Why are Gen 0 collections common?</li>
+<li>How does long-lived cache retention affect Gen 2?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A service’s Gen 2 size grows over hours. Compare heap snapshots and cache roots for unintended long-lived objects and check LOH allocation separately.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Generational GC collects young objects frequently and promotes survivors; use generation data alongside retention and allocation profiles.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

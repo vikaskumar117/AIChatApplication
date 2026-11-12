@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>An HTTP method is idempotent when multiple identical requests have the same intended effect on server state as one request.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Idempotence lets clients and intermediaries reason about retries after communication failure, but it does not promise identical response codes or zero repeated processing.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Implement GET without intended mutation, make PUT represent replacement and DELETE repeated deletion leave the same desired state, and add idempotency mechanisms when a POST business action must be safely retried.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Issue request once</strong><span>A safe method such as GET is intended not to change server state and is idempotent.</span></div></div>
+<div><span>2</span><div><strong>Repeat same request</strong><span>PUT replacement and DELETE removal are idempotent by their intended effect, though logging or other ancillary processing may still occur.</span></div></div>
+<div><span>3</span><div><strong>Intended final state remains equivalent</strong><span>POST is not inherently idempotent; client retry safety requires a defined API contract or idempotency key for duplicate-sensitive actions.</span></div></div>
+</figure>
+<figcaption>Idempotent describes intended effect on resource state; it does not require the server to avoid all internal writes or side effects.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>PUT and DELETE are idempotent by intended effect.</li>
+<li>Idempotence does not mean identical response or no database write.</li>
+<li>POST retries need operation-specific protection when duplicates matter.</li>
+</ul>
+</section>
+</div>

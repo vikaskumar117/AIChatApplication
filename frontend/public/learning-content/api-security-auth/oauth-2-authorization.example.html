@@ -1,0 +1,76 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A reporting client requests orders.read, receives a token through Authorization Code with PKCE, and cannot use that token for the Billing API.</p><ol>
+<li>Client requests narrow authorization</li>
+<li>Authorization server authenticates and issues token</li>
+<li>Resource API validates access and permission</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>GET /authorize?response_type=code&amp;client_id=reporting
+  &amp;redirect_uri=https%3A%2F%2Fapp.example%2Fcallback
+  &amp;scope=orders.read&amp;state=&lt;unpredictable-value&gt;
+  &amp;code_challenge=&lt;S256-PKCE-challenge&gt;
+POST /token  // redeem one-time code with code_verifier</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Delegates limited access without password sharing</li>
+<li>Scopes, audiences, and consent provide policy boundaries</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Redirect and token flows have security-sensitive parameters</li>
+<li>Stolen bearer tokens can be replayed until expiry or revocation</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use Authorization Code with PKCE for interactive public clients and supported workload grants for services.</p><p><strong>Avoid:</strong> Avoid Resource Owner Password Credentials, custom token protocols, broad scopes, and treating OAuth alone as user identity.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Embedding a confidential client secret in a public SPA or mobile app.</li>
+<li>Assuming a requested scope guarantees authorization to every record.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use established identity platform libraries and exact redirect URI registration.</li>
+<li>Request only necessary scopes and validate audience at each API.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What are the roles in OAuth?</li>
+<li>Why use PKCE?</li>
+<li>What distinguishes an access token from an authorization code?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A native app can no longer protect a client secret; register it as a public client and use Authorization Code with PKCE, exact redirect URIs, minimal scopes, and API audience checks.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>OAuth 2.0 lets a client obtain limited access to a protected resource without sharing the resource owner’s password with that client.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc6749" target="_blank" rel="noopener noreferrer">RFC 6749: The OAuth 2.0 Authorization Framework</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc7636" target="_blank" rel="noopener noreferrer">RFC 7636: PKCE</a></li></ul>
+</section>
+</div>

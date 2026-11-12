@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>forkJoin waits for every source to complete, then emits their last values once. combineLatest waits until every source has emitted, then emits a new tuple whenever any source emits, using each source’s latest value.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>merge forwards each source emission independently as it arrives; it does not create a tuple or wait for all sources. Each operator preserves Observable completion/error rules, and a source error normally errors the result.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use forkJoin for finite initialization batches, combineLatest for continuously changing derived views, and merge for a unified event stream. Select by cardinality and completion, not by a vague notion of “combining.”</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Inspect source lifetimes</strong><span>Determine whether inputs are finite HTTP calls, ongoing state, or event streams.</span></div></div>
+<div><span>2</span><div><strong>Inspect desired shape</strong><span>Decide between one final tuple, repeated latest-value tuples, and one interleaved event stream.</span></div></div>
+<div><span>3</span><div><strong>Select operator</strong><span>forkJoin waits for completion; combineLatest waits for first values; merge forwards as values arrive.</span></div></div>
+<div><span>4</span><div><strong>Verify edge cases</strong><span>Check empty, never-emitting, completing, and erroring sources against the required UI behavior.</span></div></div>
+</figure>
+<figcaption>The distinguishing questions are when the first output is possible, how many outputs follow, and what completion means.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>forkJoin waits for every source to complete, then emits their last values once. combineLatest waits until every source has emitted, then emits a new tuple whenever any source emits, using each source’s latest value.</li>
+<li>merge forwards each source emission independently as it arrives; it does not create a tuple or wait for all sources. Each operator preserves Observable completion/error rules, and a source error normally errors the result.</li>
+<li>Use forkJoin for finite initialization batches, combineLatest for continuously changing derived views, and merge for a unified event stream. Select by cardinality and completion, not by a vague notion of “combining.”</li>
+</ul>
+</section>
+</div>

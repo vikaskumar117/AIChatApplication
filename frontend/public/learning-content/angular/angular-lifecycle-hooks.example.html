@@ -1,0 +1,80 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A chart needs a rendered host element, while data derived from an input must respond to every relevant input change.</p><ol>
+<li>Prefer input-driven derivations over copying input values once in ngOnInit.</li>
+<li>Use afterNextRender for DOM work that must follow rendering.</li>
+<li>Tie subscriptions and imperative resources to DestroyRef.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>private readonly destroyRef = inject(DestroyRef);
+
+ngOnInit(): void {
+  this.feed.events$
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe(event =&gt; this.apply(event));
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Hooks clarify readiness and ownership</li>
+<li>DestroyRef offers concise lifecycle-bound cleanup</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Misplaced work causes stale inputs or DOM timing bugs</li>
+<li>Heavy checked hooks can dominate render cost</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use the narrowest hook matching input, view, or destruction readiness.</p><p><strong>Avoid:</strong> Avoid subscriptions and expensive computation in ngDoCheck or repeated after-check hooks.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Reading a view query before it is initialized.</li>
+<li>Assuming ngOnInit runs again whenever an input changes.</li>
+<li>Doing network or expensive computation in ngDoCheck.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep constructors free of work that depends on inputs or rendered DOM.</li>
+<li>Make cleanup ownership explicit.</li>
+<li>Use lifecycle hooks sparingly when declarative signals or template bindings suffice.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>When are initial inputs available?</li>
+<li>Why is ngAfterViewInit appropriate for view queries?</li>
+<li>How can a service subscription follow component destruction?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A reusable chart receives changing data and owns a live stream. Recompute from input changes, initialize chart integration only when its host exists, and dispose observers/third-party instances with DestroyRef.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Angular constructs a component, assigns inputs, checks the view, and eventually destroys it. Hooks such as ngOnChanges, ngOnInit, ngAfterViewInit, and ngOnDestroy are callbacks for those phases, not arbitrary scheduling utilities. Choose a hook according to dependency readiness: input-dependent work belongs in ngOnChanges or an input transform/signal; one-time setup belongs in ngOnInit; DOM/view-dependent work belongs after view initialization; owned cleanup belongs at destruction.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/guide/components/lifecycle" target="_blank" rel="noopener noreferrer">Angular component lifecycle</a></li></ul>
+</section>
+</div>

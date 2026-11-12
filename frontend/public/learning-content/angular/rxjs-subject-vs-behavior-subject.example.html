@@ -1,0 +1,79 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A route-level account selector needs a current account for a component that subscribes after initialization; a toast event should not replay to a later page.</p><ol>
+<li>Expose account$ as read-only observable.</li>
+<li>Use null or an explicit state union when “no account” is meaningful.</li>
+<li>Use async pipe or takeUntilDestroyed for component-owned subscriptions.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>private readonly accountSubject = new BehaviorSubject&lt;Account | null&gt;(null);
+readonly account$ = this.accountSubject.asObservable();
+
+selectAccount(account: Account): void {
+  this.accountSubject.next(account);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>BehaviorSubject provides immediate current state to late subscribers</li>
+<li>Subject is a lightweight event broadcast</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>A writable subject can create hidden shared mutation</li>
+<li>BehaviorSubject seed and stale values can misrepresent loading or logout state</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use BehaviorSubject when consumers need the latest value and a stream API is intentional; use Subject for non-replay events.</p><p><strong>Avoid:</strong> Avoid exposing either subject as a public writable API or treating completion as automatic component cleanup.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>A Subject is not a cache; late subscribers miss prior events.</li>
+<li>Do not seed BehaviorSubject with a fake domain object merely to avoid nullable state.</li>
+<li>Do not use a BehaviorSubject as a generic global store without defining ownership.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Keep the subject private and expose asObservable().</li>
+<li>Represent loading, success, and failure explicitly when consumers need more than a nullable value.</li>
+<li>Choose replay intentionally for commands versus durable state.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does a late subscriber receive from each type?</li>
+<li>Why is a Subject not automatically application state?</li>
+<li>How should a service expose a BehaviorSubject safely?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A page opened after account selection must show the selected account immediately, but a newly mounted notification panel must not replay old toasts. Give the two needs separate stream contracts and test late subscriptions.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A Subject is both an Observer and an Observable: calling next broadcasts to current subscribers, but it does not retain a current value. A BehaviorSubject additionally requires a seed and synchronously emits its latest value to each new subscriber. Replay determines whether a consumer starting late can render immediately. This matters for current state such as the selected account, while replaying transient events can incorrectly repeat commands or notifications.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://rxjs.dev/guide/overview" target="_blank" rel="noopener noreferrer">Model intent</a></li><li><a href="https://rxjs.dev/api/index/class/BehaviorSubject" target="_blank" rel="noopener noreferrer">BehaviorSubject API</a></li></ul>
+</section>
+</div>

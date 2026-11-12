@@ -1,0 +1,84 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A link service handles 100 writes/second and 10,000 redirects/second. Keep the mapping store authoritative, cache hot codes, reserve keys transactionally, and decouple click analytics so an analytics outage does not block redirects.</p><ol>
+<li>Normalize and validate the submitted URL before storing it.</li>
+<li>Insert the code under a unique constraint; generate another code on conflict.</li>
+<li>Resolve redirect from cache or the indexed mapping table.</li>
+<li>Publish click analytics asynchronously and tolerate duplicate events.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>POST /links { &quot;url&quot;: &quot;https://example.com/article&quot; }
+  -&gt; validate scheme/domain policy
+  -&gt; generate unique code; retry on unique-key conflict
+  -&gt; persist(code, destination, owner, expiresAt)
+  -&gt; return https://sho.rt/{code}
+
+GET /{code}
+  -&gt; cache lookup -&gt; store on miss -&gt; apply expiry/safety
+  -&gt; redirect; emit click event asynchronously</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Read path can be fast with cache and compact indexed key lookup</li>
+<li>Analytics and creation can scale independently</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Hot links create cache/key hotspots</li>
+<li>Redirect safety, privacy, abuse, and analytics retention add operational complexity</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use when durable links, ownership, expiry, and measurable redirect behavior are clear requirements.</p><p><strong>Avoid:</strong> Avoid inventing a globally distributed design before traffic, availability, and data residency needs justify it.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming random code generation cannot collide.</li>
+<li>Allowing arbitrary untrusted destinations without abuse controls.</li>
+<li>Making analytics synchronous and turning its outage into redirect failure.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use idempotent creation where clients may retry.</li>
+<li>Protect hot keys and bound analytics backlog.</li>
+<li>Choose redirect status and caching policy from product semantics.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How do you prevent short-code collisions?</li>
+<li>What is the difference between 301 and 302 redirects?</li>
+<li>What should happen if analytics is unavailable?</li>
+<li>How do you prevent the service from becoming a malicious redirector?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A marketing campaign creates a hot link and millions of redirect requests while a user submits a phishing destination. Apply URL policy and reputation controls at creation, rate-limit abusive clients, cache the hot mapping safely, and send analytics through a bounded queue.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A URL shortener is a read-heavy key-to-URL system; unique persistence, safe destinations, caching, and decoupled analytics are its core decisions.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/azure/architecture/" target="_blank" rel="noopener noreferrer">Azure Architecture Center</a></li></ul>
+</section>
+</div>

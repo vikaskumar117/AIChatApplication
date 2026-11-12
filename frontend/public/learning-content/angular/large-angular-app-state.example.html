@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A multi-step onboarding flow uses route-scoped state for its draft, server data cache for reference data, and local signals for a dialog’s open state.</p><ol>
+<li>Keep server-owned data distinct from client-owned UI state.</li>
+<li>Model loading/error/empty states instead of parallel booleans.</li>
+<li>Use selectors/computed derivations and explicit mutations; test transitions and invalidation.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>interface OrderState {
+  status: &#39;idle&#39; | &#39;loading&#39; | &#39;ready&#39; | &#39;error&#39;;
+  order: Order | null;
+}
+
+readonly state = signal&lt;OrderState&gt;({ status: &#39;idle&#39;, order: null });
+readonly canSubmit = computed(() =&gt;
+  this.state().status === &#39;ready&#39; &amp;&amp; this.state().order !== null
+);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Explicit ownership prevents conflicting copies</li>
+<li>Scoped state limits lifetime and unintended coupling</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>A global store adds ceremony and migration cost</li>
+<li>Cache invalidation and stale duplicated state remain hard</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use the smallest state container that meets sharing, observability, and team needs.</p><p><strong>Avoid:</strong> Avoid putting transient UI state or credentials in a global persistent store by default.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Promoting every local boolean into global state.</li>
+<li>Keeping multiple independently mutable copies of the same entity.</li>
+<li>Persisting secrets or user-specific cached data without a threat and invalidation model.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Start local and elevate only when sharing or coordination is real.</li>
+<li>Align provider/store lifetime with feature and user-session boundaries.</li>
+<li>Define logout clearing, cache invalidation, and concurrent update behavior.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which state belongs in a component versus a route service?</li>
+<li>What problem does a selector solve?</li>
+<li>When does a store’s coordination value justify its complexity?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A growing commerce app has stale cart badges and duplicated account state. Define a canonical owner, expose derived selectors, invalidate server-backed caches after mutations, and scope checkout draft state to the workflow.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Separate ephemeral view state, route/workflow state, server/cache state, and durable cross-feature client state. Each category has different lifetime, freshness, concurrency, and persistence requirements. Start with component signals or local observables, elevate state to a route-scoped service when siblings share it, and adopt a store when explicit transitions, selectors, effects, tooling, or team coordination justify its cost.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/guide/signals" target="_blank" rel="noopener noreferrer">Angular signals</a></li><li><a href="https://ngrx.io/docs" target="_blank" rel="noopener noreferrer">NgRx documentation</a></li></ul>
+</section>
+</div>

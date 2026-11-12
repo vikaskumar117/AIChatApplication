@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>OpenID Connect (OIDC) is a protocol for user authentication built on OAuth 2.0 and signaled by requesting the openid scope.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>A validated identity result lets the client establish a sign-in session without handling the identity provider’s password directly.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use Authorization Code with PKCE where appropriate, validate state and nonce, validate the ID token’s signature, issuer, client audience, expiry, and nonce, then create the application session and obtain separate access tokens for APIs.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Client initiates OIDC request</strong><span>The authorization request includes openid scope, state, nonce, and PKCE parameters according to client type.</span></div></div>
+<div><span>2</span><div><strong>Provider authenticates and returns code</strong><span>The provider authenticates the user and returns an authorization code to the registered callback.</span></div></div>
+<div><span>3</span><div><strong>Client validates ID token and establishes session</strong><span>The client validates protocol response and ID token, then creates a local session; an API access token has a different audience and purpose.</span></div></div>
+</figure>
+<figcaption>Use the stable issuer-and-subject pair to identify an external account; email addresses can change or be reassigned.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>OIDC provides sign-in semantics on OAuth.</li>
+<li>ID token audience identifies the client, not the API.</li>
+<li>Validate state, nonce, issuer, audience, signature, and lifetime.</li>
+</ul>
+</section>
+</div>

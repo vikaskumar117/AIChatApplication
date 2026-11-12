@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A factory centralizes object creation when construction depends on input, configuration, or a family of related products.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>It hides construction details from consumers and can enforce valid object setup; a factory is unnecessary when ordinary constructor injection already expresses stable dependencies.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Make selection criteria explicit, return an abstraction where behavior varies, and keep factories focused on creation rather than accumulating business workflow or service-location responsibilities.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Creation request</strong><span>Caller specifies validated input such as format or product kind.</span></div></div>
+<div><span>2</span><div><strong>Selection</strong><span>Factory applies a focused creation rule and handles unsupported cases.</span></div></div>
+<div><span>3</span><div><strong>Construction</strong><span>Product receives required dependencies and valid configuration.</span></div></div>
+<div><span>4</span><div><strong>Abstraction</strong><span>Caller uses the created product without depending on concrete construction.</span></div></div>
+</figure>
+<figcaption>A factory encapsulates a creation decision; dependency injection composes object graphs and manages lifetimes.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Resolving any arbitrary type from a general factory.</li>
+<li>Repeating a large format switch in multiple callers.</li>
+<li>Returning null for unsupported creation.</li>
+</ul>
+</section>
+</div>

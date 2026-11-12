@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A .NET API streams generated text to an Angular client over server-sent events. It forwards disconnect cancellation to the model, emits explicit completion or error events, and chooses per-chunk moderation or short buffering according to the product’s risk tolerance.</p><ol>
+<li>Set input data policy, prompt template, context/output limits, and per-user token budget.</li>
+<li>Choose buffering or per-chunk moderation based on the harm and latency tradeoff.</li>
+<li>Use correct SSE framing and safe serialization; propagate disconnect cancellation and emit terminal status.</li>
+<li>Test long prompts, throttling, client disconnects, partial failures, unsafe output, and cost limits.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>await foreach (var chunk in model.StreamAsync(
+    prompt, cancellationToken))
+{
+    await response.WriteAsync(
+        $&quot;data: {SerializeForSse(chunk)}\n\n&quot;,
+        cancellationToken);
+    await response.Body.FlushAsync(cancellationToken);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Streaming improves perceived responsiveness</li>
+<li>Token and context limits support predictable resource use</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Partial output complicates moderation, retries, and user trust</li>
+<li>Guardrails lower risk but cannot guarantee truthful or harmless output</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use explicit context and output budgets, input classification, cancellation, safe transport encoding, and completion/error states.</p><p><strong>Avoid:</strong> Avoid exposing secrets, assuming chunk boundaries are sentence boundaries, or showing unmoderated output when the use case requires pre-display review.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Rendering model output as trusted HTML or logging complete prompts and outputs indiscriminately.</li>
+<li>Treating final-response moderation as sufficient when earlier streamed chunks are already visible.</li>
+<li>Retrying a partially delivered generation as though the client never received any content.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Minimize and classify data before sending it; redact telemetry and never include credentials in prompts.</li>
+<li>Use bounded context, request deadlines, cancellation, token budgets, and per-user rate limits.</li>
+<li>Define moderation timing, safe rendering, SSE terminal/error semantics, and client behavior for partial results.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which prompt components count toward the context window and token bill?</li>
+<li>How does SSE differ from WebSockets?</li>
+<li>What should cancellation do after the client disconnects?</li>
+<li>Why can output filtering not guarantee factual correctness?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A streamed response begins revealing sensitive content before the final moderation result. Classify data before model submission; for high-risk output, buffer or moderate chunks before display, terminate on policy violations, redact telemetry, and explain to clients when a stream ends partially.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Build prompts and streams as bounded, untrusted data flows; moderation, transport, privacy, and cost need explicit policies.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/azure/ai-services/openai/concepts/content-filter" target="_blank" rel="noopener noreferrer">Azure OpenAI content filtering</a></li><li><a href="https://learn.microsoft.com/legal/cognitive-services/openai/data-privacy" target="_blank" rel="noopener noreferrer">Azure OpenAI data, privacy, and security</a></li><li><a href="https://learn.microsoft.com/azure/ai-services/openai/quotas-limits" target="_blank" rel="noopener noreferrer">Azure OpenAI quotas and limits</a></li><li><a href="https://html.spec.whatwg.org/multipage/server-sent-events.html" target="_blank" rel="noopener noreferrer">Server-sent events specification</a></li></ul>
+</section>
+</div>

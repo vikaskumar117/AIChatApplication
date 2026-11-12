@@ -1,0 +1,74 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A browser application obtains a fresh API token through the identity provider’s supported session and refresh-token policy rather than posting refresh tokens to an API.</p><ol>
+<li>Client uses access token at API</li>
+<li>Access expires or nears expiry</li>
+<li>Client redeems protected refresh token at issuer</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Access token: Authorization: Bearer &lt;resource access token&gt;
+// Refresh token: submit only to the configured authorization server&#39;s
+// supported token endpoint; never send it to the resource API.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Short access-token lifetime limits routine exposure</li>
+<li>Refresh rotation can detect stolen-token replay</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Refresh-token theft has prolonged account impact</li>
+<li>Rotation and concurrent refreshes require issuer/client coordination</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use provider-supported refresh-token policy and secure storage; revoke sessions or token families when compromise is suspected.</p><p><strong>Avoid:</strong> Avoid treating a refresh token like an ordinary API token or persisting it in an insecure browser location.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Sending a refresh token as a bearer credential to a business API.</li>
+<li>Assuming a short access lifetime alone prevents refresh-token theft.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use least-privilege access tokens, provider rotation, and revocation.</li>
+<li>Design refresh concurrency and replay responses, then monitor and test them.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which token is sent to the resource API?</li>
+<li>Why rotate refresh tokens?</li>
+<li>What should happen when a rotated token is reused?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Telemetry identifies reuse of a refresh token after rotation; revoke the affected token family, investigate session compromise, and verify refresh concurrency and reauthentication recovery.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Access tokens are presented to resource APIs; refresh tokens are high-value credentials used with the authorization server to obtain renewed access.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc9700" target="_blank" rel="noopener noreferrer">OAuth 2.0 Security Best Current Practice (RFC 9700)</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Five API calls expire together; a single-flight refresh prevents five competing token rotations and each original call is retried at most once.</p><ol>
+<li>Use short-lived access credentials and server-side refresh rotation/revocation.</li>
+<li>Mark requests already refreshed to prevent loops and cap replay at one.</li>
+<li>Treat replay safety separately for mutations; use server idempotency where needed.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>const refresh$ = this.refreshInFlight ??= this.auth.refresh().pipe(
+  tap(token =&gt; this.auth.storeAccessToken(token)),
+  finalize(() =&gt; this.refreshInFlight = undefined),
+  shareReplay({ bufferSize: 1, refCount: false })
+);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Seamless renewal can reduce avoidable sign-ins</li>
+<li>Single-flight refresh handles concurrent failures</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Refresh races can invalidate rotated credentials</li>
+<li>Replay may duplicate a mutation or loop on persistent 401</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Coordinate one refresh, replay an eligible request once, and fail closed when refresh fails.</p><p><strong>Avoid:</strong> Avoid infinite 401 retries or trusting client-side exp checks as security enforcement.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Launching one refresh per failed request.</li>
+<li>Refreshing on every 401, including invalid permissions and the refresh endpoint.</li>
+<li>Assuming a client-side expiry timer prevents server rejection or clock skew.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Define an explicit refresh state machine and test concurrent failures.</li>
+<li>Clear session data on refresh failure and do not leave a half-authenticated UI.</li>
+<li>Exclude credentials from logs and telemetry.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why should simultaneous 401 responses share refresh work?</li>
+<li>How do you prevent a refresh loop?</li>
+<li>What should happen when refresh fails?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A token rotation endpoint revokes the previous refresh token. Under concurrent 401s, serialize or share refresh, preserve request context, and verify that failed refresh clears session state without exposing tokens in logs.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>An access token’s exp claim indicates the time after which a conforming server should reject it, but the client clock can be skewed and a decoded token is not proof of validity. The server remains authoritative. Refresh may occur proactively near expiry or reactively after an eligible 401. Concurrent failures should share a single refresh operation; retry each original request at most once and exclude refresh endpoints to prevent recursion.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/guide/http/interceptors" target="_blank" rel="noopener noreferrer">Angular interceptors</a></li><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP Session Management</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Microsoft Entra ID is Microsoft’s cloud identity and access management service, with tenant, application-registration, and identity-platform capabilities.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Using a managed identity provider centralizes sign-in policy such as MFA and conditional access instead of building password authentication into each application.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Register the client application and redirect URI, use the Microsoft identity platform with OIDC Authorization Code flow and PKCE for public clients, request only needed API scopes, and let the API validate tokens issued for its registration.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Register client and API</strong><span>Application registration defines client identity, redirect URIs, supported account types, and exposed API permissions.</span></div></div>
+<div><span>2</span><div><strong>User signs in at Entra</strong><span>Entra authenticates according to tenant policies and returns an authorization response through a supported flow.</span></div></div>
+<div><span>3</span><div><strong>Client obtains API-scoped access token</strong><span>The client requests a resource-specific access token; the API validates issuer, tenant policy, audience, and authorization claims.</span></div></div>
+</figure>
+<figcaption>Entra is an identity provider; the application remains responsible for authorization to its own data and operations.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Entra performs identity and token issuance under configured tenant policy.</li>
+<li>The client needs an API access token, not just an ID token.</li>
+<li>Tenant and resource authorization are application design decisions.</li>
+</ul>
+</section>
+</div>

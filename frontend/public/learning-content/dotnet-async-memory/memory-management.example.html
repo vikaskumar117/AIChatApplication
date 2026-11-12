@@ -1,0 +1,78 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A long-lived cache root keeps old response objects reachable, so GC cannot reclaim them even though application code no longer needs them.</p><ol>
+<li>Create and store an object in a cache.</li>
+<li>Observe that a cache root keeps it reachable.</li>
+<li>Remove the reference and separately dispose any external resource it owned.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var cache = new Dictionary&lt;string, object&gt;();
+cache[&quot;latest&quot;] = LoadSnapshot(); // static/cache ownership may retain graph
+
+// Remove values when no longer needed:
+cache.Remove(&quot;latest&quot;);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Runtime reclaims unreachable managed objects</li>
+<li>Ownership scopes make native resource lifetimes explicit</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Reachable leaks remain live</li>
+<li>Managed heap metrics do not show every native resource</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Track roots and ownership; profile both managed heap and native handles.</p><p><strong>Avoid:</strong> Avoid assuming garbage collection replaces disposal or cache eviction.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Calling GC.Collect to fix a rooted object leak.</li>
+<li>Assuming a small managed heap means no handle leak.</li>
+<li>Keeping unbounded caches.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Bound caches and clear references deliberately.</li>
+<li>Dispose owned resources deterministically.</li>
+<li>Profile heap, allocation, and native handles separately.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What makes an object reachable?</li>
+<li>Can a managed memory leak exist?</li>
+<li>Why measure handles separately from heap size?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A worker’s memory grows between jobs. Compare heap snapshots for retained roots, inspect native handles, and set bounded cache policies before tuning GC.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>The GC reclaims unreachable managed objects; application code must manage reachability and deterministic cleanup of external resources.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

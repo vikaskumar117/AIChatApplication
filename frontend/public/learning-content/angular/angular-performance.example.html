@@ -1,0 +1,79 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A slow table is profiled first: the trace shows thousands of DOM rows and repeated formatting, so virtualization and precomputed view models are tested before changing unrelated HTTP code.</p><ol>
+<li>Set bundle and interaction budgets in CI where feasible.</li>
+<li>Use stable keys for repeated views and avoid expensive template calls.</li>
+<li>Load noncritical features lazily and virtualize only when DOM volume is the bottleneck.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>readonly rows = computed(() =&gt;
+  this.records().map(record =&gt; ({
+    ...record,
+    displayDate: formatDate(record.createdAt)
+  }))
+);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Profiling directs effort to actual bottlenecks</li>
+<li>Layered improvements can reduce payload and rendering cost</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Premature optimization adds complexity</li>
+<li>Caching and virtualization can increase memory or correctness risks</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Profile representative production-like flows and optimize the limiting resource.</p><p><strong>Avoid:</strong> Avoid broad rewrites based on assumptions or adding memoization without measuring invalidation and memory cost.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Optimizing development-mode traces as if they were production.</li>
+<li>Adding caching that serves stale or cross-user data.</li>
+<li>Assuming OnPush alone fixes a long task or oversized bundle.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Measure cold and warm paths, network conditions, and realistic data sizes.</li>
+<li>Recheck accessibility and keyboard behavior after virtualization.</li>
+<li>Prefer small, reversible changes with recorded before/after metrics.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Which measurements distinguish bundle cost from rendering cost?</li>
+<li>When is list virtualization justified?</li>
+<li>How do you validate an optimization without regressing correctness?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A large analytics route is slow on midrange devices. Compare cold-start, route-entry, and scroll traces; reduce its lazy chunk, virtualize the proven DOM bottleneck, and add a repeatable performance budget.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Performance includes startup and route loading, interaction latency, rendering/scroll smoothness, network waterfalls, and memory retention. A change that improves one dimension can worsen another. Angular tools such as DevTools, browser performance traces, and bundle analysis identify expensive components, template work, long tasks, and oversized dependencies. OnPush/signals, lazy routes, stable list identity, and code splitting address different bottleneck classes.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://angular.dev/best-practices" target="_blank" rel="noopener noreferrer">Angular performance best practices</a></li><li><a href="https://angular.dev/tools/devtools" target="_blank" rel="noopener noreferrer">Angular DevTools</a></li></ul>
+</section>
+</div>

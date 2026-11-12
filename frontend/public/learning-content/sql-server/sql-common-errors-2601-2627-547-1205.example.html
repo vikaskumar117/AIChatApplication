@@ -1,0 +1,88 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A repeated import gets 2601/2627 on an idempotency key: treat the unique constraint as authoritative and return the already-created result where appropriate.</p><ol>
+<li>Log the SQL exception number, constraint/index, statement context, and correlation ID without secrets.</li>
+<li>For 2601/2627, determine whether the write is a legitimate idempotent replay or a true conflict.</li>
+<li>For 547, inspect violated FK/CHECK invariant and transaction operation order.</li>
+<li>For 1205, inspect deadlock graph and retry only a safe whole transaction with bounded policy.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>try
+{
+    await repository.InsertAsync(entity, ct);
+}
+catch (SqlException ex) when (ex.Number is 2601 or 2627)
+{
+    // Only treat as idempotent success after verifying the conflicting key
+    // represents this same request; otherwise propagate the conflict.
+    var existing = await repository.FindByRequestKeyAsync(requestKey, ct);
+    if (existing is null || existing.PayloadHash != payloadHash) throw;
+}
+// A 547 needs relationship/business correction; a 1205 needs graph diagnosis
+// and at most a bounded retry of a safe database transaction.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Cause-focused handling preserves database constraints and business semantics.</li>
+<li>Structured errors improve diagnosis and safe recovery.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Exception classification must account for provider and constraint context.</li>
+<li>Overly broad catches can hide data corruption or programming errors.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use targeted handling for known constraint conflicts and transient deadlock victims with verified idempotency.</p><p><strong>Avoid:</strong> Avoid retrying every SqlException, suppressing a foreign-key conflict, or using error number as the only diagnostic evidence.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Retrying unique-key violations as though they were transient outages.</li>
+<li>Disabling constraints to bypass a 547 without repairing data integrity.</li>
+<li>Treating every database exception as retryable or logging sensitive parameters.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Handle uniqueness conflicts according to idempotency and business semantics.</li>
+<li>Keep FK/check/unique constraints as authoritative safeguards.</li>
+<li>Use bounded retry only for classified transient failures.</li>
+<li>Log safe structured diagnostics and preserve the original exception.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What do 2601/2627, 547, and 1205 broadly indicate?</li>
+<li>Why can 2601/2627 require different caller behavior?</li>
+<li>What should be captured with an error number?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An import service floods retries after duplicate-key errors. Keep the unique key as the concurrency authority, look up and validate the existing request for idempotent replay, surface mismatches as conflicts, and diagnose 547/1205 independently.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>SQL Server error numbers identify a failure category, but the constraint, statement, transaction state, and surrounding context explain the root cause. 2601 and 2627 indicate unique-key violations; 547 indicates a CHECK or FOREIGN KEY constraint conflict; 1205 means the transaction was selected as a deadlock victim. Fixing the invariant or concurrency behavior is more reliable than memorizing numbers or retrying every database exception.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/sql/relational-databases/errors-events/database-engine-events-and-errors" target="_blank" rel="noopener noreferrer">Microsoft Learn: Database Engine events and errors</a></li></ul>
+</section>
+</div>

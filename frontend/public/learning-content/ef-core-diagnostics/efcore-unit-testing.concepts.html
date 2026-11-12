@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A unit test verifies a focused unit of behavior with controlled inputs and collaborators, typically without booting the web host or connecting to a production-like database.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Fast isolated tests support frequent feedback and precise business-rule coverage, but they do not prove EF translation, SQL constraints, provider behavior, or deployment wiring.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Keep domain rules in testable units, use real simple values for pure logic, inject ports for external effects, and assert observable behavior. Keep tests independent of implementation details and reserve relational boundaries for integration tests.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Arrange</strong><span>Construct domain values and deterministic dependencies.</span></div></div>
+<div><span>2</span><div><strong>Act</strong><span>Execute one public behavior or state transition.</span></div></div>
+<div><span>3</span><div><strong>Assert</strong><span>Check the outcome and meaningful observable side effects.</span></div></div>
+<div><span>4</span><div><strong>Boundary coverage</strong><span>Leave database/provider and host wiring to integration tests.</span></div></div>
+</figure>
+<figcaption>Validate the behavior against the deployed EF Core/provider version, generated SQL, database schema, and production configuration.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Unit tests are best for focused deterministic logic.</li>
+<li>Mocks do not prove database or framework behavior.</li>
+<li>Test behavior rather than private implementation details.</li>
+<li>Complement unit tests with integration coverage at critical boundaries.</li>
+</ul>
+</section>
+</div>

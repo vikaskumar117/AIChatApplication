@@ -1,0 +1,83 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A new service owns its schema and uses reviewed migrations; a legacy shared database is scaffolded read-only and deployed through the DBA pipeline.</p><ol>
+<li>Identify the authoritative schema owner and deployment pipeline.</li>
+<li>Select migrations or scaffolding to match that ownership.</li>
+<li>Review SQL/data impact and environment differences.</li>
+<li>Test upgrade from a production-like prior schema and plan compatibility/rollback.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Code First: create a migration from reviewed model changes.
+dotnet ef migrations add AddOrderStatus
+dotnet ef migrations script --idempotent
+
+// Database First: scaffold selected schema from the existing database.
+dotnet ef dbcontext scaffold &quot;&lt;connection-string-from-secret-store&gt;&quot; \
+  Microsoft.EntityFrameworkCore.SqlServer \
+  --context AppDbContext --schema sales --table Order --no-onconfiguring</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Code First keeps model evolution and migration history close to application code.</li>
+<li>Database First can integrate with an established schema and DBA governance.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Migrations need careful review for data loss, locks, and deployment sequencing.</li>
+<li>Scaffolding can be overwritten and database drift complicates model ownership.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use Code First when the application team owns schema evolution; scaffold when the database is authoritative or externally governed.</p><p><strong>Avoid:</strong> Avoid applying unreviewed migrations automatically at production startup or editing generated scaffolding in place without a regeneration strategy.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming Code First means the database is created only at runtime.</li>
+<li>Applying migrations automatically in production without deployment controls.</li>
+<li>Editing scaffolded files directly and losing changes on regeneration.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Document schema ownership and drift policy.</li>
+<li>Generate and review SQL scripts before production deployment.</li>
+<li>Use partial classes/configuration for custom scaffold behavior.</li>
+<li>Test migration compatibility across deployment order.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Who owns the schema in each workflow?</li>
+<li>How should a production migration be deployed?</li>
+<li>How do you preserve custom behavior across re-scaffolding?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A new API shares a legacy database with several consumers. Treat the database as authoritative, scaffold only the owned schema surface, place custom mapping separately, and coordinate additive changes through the database deployment process.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Code First treats the EF model and migrations as the schema-evolution source of truth. Database First starts from an existing database and scaffolds entity types and DbContext from its schema; the generated code can be refreshed as the database changes. The approach must fit ownership and deployment governance. A database may be shared across applications or controlled by DBAs, while a product team may own migrations alongside application code.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Managing migrations</a></li><li><a href="https://learn.microsoft.com/en-us/ef/core/managing-schemas/scaffolding/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Reverse engineering</a></li></ul>
+</section>
+</div>

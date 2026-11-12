@@ -1,0 +1,75 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A background inventory worker uses its managed identity to obtain an Orders API token with only the required application permission.</p><ol>
+<li>Workload proves application identity</li>
+<li>Issuer returns audience-scoped credential</li>
+<li>Target validates identity and application permission</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Conceptual managed identity token acquisition:
+var token = await credential.GetTokenAsync(
+    new TokenRequestContext([&quot;api://orders/.default&quot;]),
+    cancellationToken);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Avoids embedding long-lived shared secrets</li>
+<li>Provides distinct audit identity and narrow application permission</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Identity federation and permission configuration span services</li>
+<li>Certificate, token, or mesh operations need lifecycle ownership</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use managed workload identity or federation and narrowly scoped application permissions for machine callers.</p><p><strong>Avoid:</strong> Avoid committing client secrets, sharing one identity across unrelated workloads, or treating a service mesh as application authorization.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Using a developer’s personal token in a scheduled job.</li>
+<li>Assuming a private subnet or service-mesh identity alone authorizes every operation.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Assign a distinct workload identity per trust boundary.</li>
+<li>Rotate/revoke credentials and continuously review granted app roles and scopes.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>When is Client Credentials appropriate?</li>
+<li>How does mTLS differ from a bearer token?</li>
+<li>Why is a service mesh not a replacement for API authorization?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A client secret leaked from deployment settings; revoke and rotate it, migrate to workload identity, audit downstream permissions, and inspect logs for its prior use.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Workload identity authenticates an application or service without pretending it is an end user.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/entra/identity-platform/v2-oauth2-client-creds-grant-flow" target="_blank" rel="noopener noreferrer">Microsoft identity platform Client Credentials flow</a></li></ul>
+</section>
+</div>

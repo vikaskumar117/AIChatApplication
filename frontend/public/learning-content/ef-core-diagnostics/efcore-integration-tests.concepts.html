@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>An integration test exercises multiple real components across a boundary, such as HTTP routing, dependency injection, serialization, EF Core translation, and a relational database.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Integration tests catch configuration, mapping, provider, constraint, and middleware failures that isolated unit tests cannot observe.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Use WebApplicationFactory for an in-process ASP.NET Core test host and a disposable relational database such as SQL Server in a container or SQLite when its semantics are sufficient. Isolate test data, apply schema deliberately, and clean up reliably.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Test host</strong><span>WebApplicationFactory boots the actual ASP.NET Core pipeline and DI configuration.</span></div></div>
+<div><span>2</span><div><strong>Relational provider</strong><span>A disposable database executes real SQL, constraints, and transactions.</span></div></div>
+<div><span>3</span><div><strong>HTTP boundary</strong><span>Test client sends real serialized requests through routing and middleware.</span></div></div>
+<div><span>4</span><div><strong>Assertions / cleanup</strong><span>Verify response and persisted state; isolate and dispose test resources.</span></div></div>
+</figure>
+<figcaption>Validate the behavior against the deployed EF Core/provider version, generated SQL, database schema, and production configuration.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Integration tests validate wiring and real boundary behavior.</li>
+<li>EF InMemory is not a relational database substitute.</li>
+<li>Use production-compatible provider testing for SQL-specific behavior.</li>
+<li>Isolation and cleanup are essential for repeatable parallel runs.</li>
+</ul>
+</section>
+</div>

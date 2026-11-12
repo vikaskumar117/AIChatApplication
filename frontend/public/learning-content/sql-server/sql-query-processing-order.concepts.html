@@ -1,0 +1,40 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A SELECT statement has a logical binding order: FROM, ON, JOIN, WHERE, GROUP BY, GROUPING SETS/CUBE/ROLLUP, HAVING, SELECT, DISTINCT, ORDER BY, then TOP/OFFSET-FETCH. FROM establishes input rowsets; ON evaluates the join predicate; JOIN combines matches (and preserves unmatched rows for outer joins); WHERE filters individual rows; GROUP BY forms groups; HAVING filters groups; SELECT computes output expressions and aliases; DISTINCT removes duplicate projected rows; ORDER BY orders output; TOP limits it.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Logical binding explains why a SELECT alias is generally unavailable in WHERE but available in ORDER BY, why WHERE and HAVING are not interchangeable, and where join multiplication occurs. It describes meaning and scope, not a mandatory physical sequence of CPU operations.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>The optimizer transforms the relational expression and selects physical operators such as seeks, scans, nested loops, hash joins, aggregates, and sorts. It may push a safe predicate earlier or reorder inner joins while preserving semantics. Outer-join null preservation, nondeterministic expressions, and other semantic boundaries constrain transformations. Inspect the actual execution plan for implementation, not as a restatement of logical clause order.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>FROM / ON</strong><span>Name source rowsets and evaluate candidate join predicates.</span><code>Employee e JOIN Department d ON ...</code></div></div>
+<div><span>2</span><div><strong>JOIN</strong><span>Produce matching rows; outer joins also preserve specified unmatched rows.</span></div></div>
+<div><span>3</span><div><strong>WHERE</strong><span>Filter rows before aggregate groups exist.</span><code>e.IsActive = 1</code></div></div>
+<div><span>4</span><div><strong>GROUP BY / HAVING</strong><span>Form groups, compute aggregates, then filter groups.</span><code>HAVING COUNT(*) &gt; 10</code></div></div>
+<div><span>5</span><div><strong>SELECT / DISTINCT</strong><span>Compute output expressions and aliases; optionally remove duplicate projected rows.</span></div></div>
+<div><span>6</span><div><strong>ORDER BY / TOP</strong><span>Sort output and limit rows. The optimizer chooses a possibly very different physical plan.</span></div></div>
+</figure>
+<figcaption>The diagram is a reasoning aid for this topic; confirm behavior against the actual schema, constraints, isolation settings, and execution plan in your environment.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>WHERE filters rows; HAVING filters aggregate groups.</li>
+<li>SELECT aliases are bound after WHERE; ORDER BY can generally use output aliases.</li>
+<li>Joins can multiply rows before grouping; check key cardinality and result grain.</li>
+<li>The optimizer may reorder or transform work; inspect the actual physical plan separately.</li>
+</ul>
+</section>
+</div>

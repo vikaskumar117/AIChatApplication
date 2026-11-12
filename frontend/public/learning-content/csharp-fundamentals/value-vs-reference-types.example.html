@@ -1,0 +1,81 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Copying a struct with a List field copies the list reference, not the list contents; value copying does not make an object graph deeply independent.</p><ol>
+<li>Create a struct containing a List reference.</li>
+<li>Copy the struct value.</li>
+<li>Mutate the list and observe shared referenced state.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public struct CartView
+{
+    public List&lt;string&gt; Items;
+}
+
+var original = new CartView { Items = new() { &quot;book&quot; } };
+var copy = original;       // struct fields are copied
+copy.Items.Add(&quot;pen&quot;);     // both fields reference the same List
+Console.WriteLine(original.Items.Count); // 2</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Value copies avoid shared top-level state</li>
+<li>References allow shared object identity</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Aliasing can cause unintended shared mutation</li>
+<li>Large value copies can be expensive</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Explain assignment semantics at API boundaries and prefer immutable values when copy behavior should be simple.</p><p><strong>Avoid:</strong> Avoid teaching or optimizing with an absolute “value=stack, reference=heap” rule.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Assuming a struct copy recursively duplicates all objects.</li>
+<li>Assuming every local reference necessarily allocates or stays on the heap.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use immutable value types for predictable copying.</li>
+<li>Make mutable shared ownership explicit.</li>
+<li>Use memory profiling for layout and allocation questions.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does assigning a reference type copy?</li>
+<li>Can a value type contain a reference?</li>
+<li>Why does a struct copy not imply deep copy?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A cache returns a mutable DTO shared between requests. Decide whether callers need an independent snapshot; copy or expose immutable values rather than relying on class/struct labels.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Value types copy their fields; reference variables copy object references, and either type can participate in more complex memory layouts.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

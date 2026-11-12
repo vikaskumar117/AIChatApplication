@@ -1,0 +1,85 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Return order summaries and line counts in a projection; load a full order aggregate with Include only for a bounded command.</p><ol>
+<li>Define the response/entity graph and whether each relation is always required.</li>
+<li>Prefer a projection for API output or Include for a bounded entity graph.</li>
+<li>Use explicit loading for conditional secondary data.</li>
+<li>Inspect generated SQL, number of commands, and result volume.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Projection for a read model:
+var summaries = await db.Orders
+    .Select(o =&gt; new OrderSummaryDto(
+        o.Id, o.Number, o.Lines.Count))
+    .ToListAsync(ct);
+
+// Explicit loading for a conditional detail path:
+var order = await db.Orders.SingleAsync(o =&gt; o.Id == id, ct);
+if (needLines)
+    await db.Entry(order).Collection(o =&gt; o.Lines).LoadAsync(ct);</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Eager loading makes graph shape visible at the query site.</li>
+<li>Projection returns only required data; explicit loading is deliberate and conditional.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Eager collection joins can duplicate parent columns and inflate results.</li>
+<li>Lazy loading hides additional queries; explicit loading can increase round trips.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use projection for APIs, eager loading for bounded required graphs, and explicit loading for intentionally conditional access.</p><p><strong>Avoid:</strong> Avoid uncontrolled lazy loading in serialization, loops, or code where hidden I/O violates latency expectations.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Enabling lazy loading without accounting for serializers and loops.</li>
+<li>Adding several collection Includes without checking cartesian multiplication.</li>
+<li>Assuming Include is needed when a DTO projection can express the result.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Make query shape explicit at the service boundary.</li>
+<li>Count database commands in tests and diagnostics.</li>
+<li>Use split-query behavior intentionally and verify transactional consistency.</li>
+<li>Avoid serializing tracked entities directly from an API.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How do the three loading strategies differ?</li>
+<li>When can Include create a large joined result?</li>
+<li>How can split queries affect consistency and round trips?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>An API serializer touches navigation properties after the service returns. Disable or constrain lazy loading, define the response graph in a projection, and verify SQL command count and result size.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Eager loading fetches related data as part of the original query using Include/ThenInclude or projection. Lazy loading loads a navigation on access, commonly through proxies. Explicit loading deliberately issues a later query through the entry API. Loading strategy controls round trips, row multiplication, memory, and when data access occurs. A navigation access can otherwise hide database I/O.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/ef/core/querying/related-data/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Loading related data</a></li></ul>
+</section>
+</div>

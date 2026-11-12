@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A report API accepts a partner ID and resolves it to a preconfigured partner endpoint instead of accepting an arbitrary fetch URL.</p><ol>
+<li>Caller supplies or influences destination</li>
+<li>Server validates destination and request purpose</li>
+<li>Egress policy restricts reachable networks</li>
+<li>Bound response and record safe telemetry</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Map an approved business key to configuration; do not fetch a caller URL.
+if (!partnerEndpoints.TryGetValue(partnerId, out Uri? endpoint))
+    return BadRequest(&quot;Unknown partner.&quot;);
+
+using var request = new HttpRequestMessage(HttpMethod.Get, endpoint);
+using var response = await httpClient.SendAsync(
+    request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+response.EnsureSuccessStatusCode();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Fixed destinations sharply reduce the reachable attack surface</li>
+<li>Network egress restrictions add defense if application validation fails</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Legitimate dynamic-fetch use cases need careful destination governance</li>
+<li>DNS, redirect, proxy, and IPv6 behavior require operational testing</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use fixed integrations where possible; otherwise combine strict allowlisting with network-level egress enforcement and bounded requests.</p><p><strong>Avoid:</strong> Avoid accepting arbitrary URLs for server-side fetching or assuming a hostname string check is sufficient.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Blocking only a few literal IP strings.</li>
+<li>Following redirects without revalidating the destination.</li>
+<li>Returning raw internal response bodies or forwarding caller credentials.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use dedicated outbound clients with short timeouts and response-size limits.</li>
+<li>Disable redirects or validate every redirect target and resolved address.</li>
+<li>Restrict workload egress and test DNS, IPv4/IPv6, proxies, and metadata protections.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why can a backend reach destinations unavailable to a browser?</li>
+<li>How can redirects undermine a host allowlist?</li>
+<li>Why are egress controls important in addition to URL validation?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A document-preview service fetches arbitrary URLs. Disable arbitrary fetching, rotate any credentials that may have been exposed, review egress logs, replace URLs with approved document IDs, and restrict outbound access at the network layer.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>SSRF abuses a server feature that fetches a caller-influenced destination, potentially crossing network trust boundaries.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html" target="_blank" rel="noopener noreferrer">OWASP SSRF Prevention Cheat Sheet</a></li></ul>
+</section>
+</div>

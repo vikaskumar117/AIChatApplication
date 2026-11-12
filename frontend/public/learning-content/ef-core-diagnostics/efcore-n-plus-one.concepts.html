@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>N+1 is a query pattern where one query loads N parent records and subsequent navigation access issues roughly one additional query per parent.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Round-trip latency and database work can dominate endpoint time and grow linearly with page size, even when each individual SQL statement is quick.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Count commands and inspect EF Core database logs/traces. Replace repeated navigation access with a projection, an appropriate Include, or an intentional grouped query. Compare generated SQL, rows transferred, and latency; an overly broad join can also be inefficient.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Initial query</strong><span>Fetch N parent entities.</span></div></div>
+<div><span>2</span><div><strong>Navigation loop</strong><span>Each access triggers a relationship query, often via lazy loading.</span></div></div>
+<div><span>3</span><div><strong>N extra round trips</strong><span>Database calls grow with parent count and network latency.</span></div></div>
+<div><span>4</span><div><strong>Bounded shape</strong><span>Projection, grouped query, or deliberate Include fetches the required result.</span></div></div>
+</figure>
+<figcaption>Validate the behavior against the deployed EF Core/provider version, generated SQL, database schema, and production configuration.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>N+1 means one parent query plus per-parent relationship queries.</li>
+<li>Count commands; one slow query is not the only performance problem.</li>
+<li>Projection often avoids both N+1 and over-fetching.</li>
+<li>Validate that the fix reduces total work, not just command count.</li>
+</ul>
+</section>
+</div>

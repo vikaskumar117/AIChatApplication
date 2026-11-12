@@ -1,0 +1,82 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A customer can read only orders in their own tenant, even if they guess or receive another order ID.</p><ol>
+<li>Authenticate caller</li>
+<li>Resolve resource within authorized scope</li>
+<li>Authorize operation</li>
+<li>Return only permitted data</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>var tenantId = currentUser.GetRequiredTenantId();
+var order = await db.Orders
+    .SingleOrDefaultAsync(
+        x =&gt; x.Id == orderId &amp;&amp; x.TenantId == tenantId,
+        cancellationToken);
+
+if (order is null)
+    return NotFound();</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Enforces least privilege at the resource boundary</li>
+<li>Tenant-scoped queries reduce accidental data exposure</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Rules must be consistently applied across every access path</li>
+<li>Incorrect tenant or ownership claims can still invalidate the boundary</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Authorize every object access using server-trusted identity and ownership data, including nested and asynchronous operations.</p><p><strong>Avoid:</strong> Avoid relying on opaque IDs, UI filtering, route-level authentication, or client-supplied tenant IDs as authorization.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Checking only that a user has the Customer role.</li>
+<li>Trusting tenantId in the request body or query string.</li>
+<li>Protecting GET while leaving update, delete, export, or background paths unscoped.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Centralize resource access policies and scope data queries.</li>
+<li>Use negative authorization tests with two distinct tenants.</li>
+<li>Audit logs should identify actor and resource without recording sensitive payloads.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is authentication insufficient to prevent BOLA?</li>
+<li>Where should tenant scoping be enforced?</li>
+<li>How do you test cross-tenant access?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A penetration test discovers that changing an order ID returns another tenant’s record. Add tenant-scoped repository queries, audit all read/write/export paths, invalidate exposed credentials if needed, and add cross-tenant regression tests.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>BOLA occurs when an API checks who the caller is but fails to check whether they may access the specific record they requested.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/" target="_blank" rel="noopener noreferrer">OWASP API1: Broken Object Level Authorization</a></li></ul>
+</section>
+</div>

@@ -1,0 +1,87 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A singleton event publisher holds a delegate to a transient subscriber, keeping the subscriber and its object graph reachable until it unsubscribes.</p><ol>
+<li>Run the same workload several times and record counters.</li>
+<li>Compare heap snapshots and inspect retaining paths.</li>
+<li>Unsubscribe or bound the identified owner, then repeat the workload.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public sealed class Feed
+{
+    public event Action? Changed;
+    public void Publish() =&gt; Changed?.Invoke();
+}
+
+public sealed class ViewModel : IDisposable
+{
+    private readonly Feed feed;
+    public ViewModel(Feed feed) =&gt; this.feed = feed;
+    public void Attach() =&gt; feed.Changed += OnChanged;
+    private void OnChanged() { }
+    public void Dispose() =&gt; feed.Changed -= OnChanged;
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Root paths identify retention owners</li>
+<li>Repeatable snapshots confirm trends</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Snapshots can perturb runtime state</li>
+<li>Native leaks may not appear in managed heap</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Compare snapshots after equivalent workloads and inspect retaining paths.</p><p><strong>Avoid:</strong> Avoid concluding “leak” from one heap-size sample or allocation count.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Forcing GC before understanding roots.</li>
+<li>Treating one memory sample as proof of a leak.</li>
+<li>Pooling objects before determining whether retention is the issue.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use repeatable workloads and comparable snapshots.</li>
+<li>Inspect roots and dominators, including event subscriptions.</li>
+<li>Validate the fix over repeated lifecycle cycles.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What is a root path?</li>
+<li>How can an event subscription retain an object?</li>
+<li>How do allocation and retained heap differ?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A worker process grows after each batch. Compare snapshots and handle counters, locate the retained owner, unsubscribe or bound its cache, then repeat the same workload to verify stabilization.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Diagnose leaks by tracing unintended reachability or undisposed native resources, then confirm stabilization under repeatable load.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming scenarios</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-scenarios" target="_blank" rel="noopener noreferrer">Microsoft Learn: Asynchronous programming with async and await</a></li></ul>
+</section>
+</div>

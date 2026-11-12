@@ -1,0 +1,71 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>Reserve inventory, authorize payment, then confirm. If payment is declined, release the reservation; if a refund is required, record it as a new financial transaction.</p><ol>
+<li>Persist progress and each step’s operation identity.</li>
+<li>Model timeout as an uncertain result until reconciled.</li>
+<li>Make compensation idempotent and auditable.</li>
+<li>Provide stuck-saga alerts and controlled operator recovery.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>// Orchestrated saga outline:
+await inventory.ReserveAsync(orderId, stepKey, ct);
+try { await payments.AuthorizeAsync(orderId, stepKey, ct); }
+catch (PaymentDeclinedException) { await inventory.ReleaseAsync(orderId, stepKey, ct); }</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Coordinates a business flow across independent ownership and databases.</li>
+<li>Makes intermediate state and recovery behavior explicit.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Compensations may fail or be impossible to reverse perfectly.</li>
+<li>Workflow state, retries, timeout handling, and operator tooling add substantial complexity.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use for multi-step, long-running workflows that span service-owned transactions.</p><p><strong>Avoid:</strong> Avoid a saga for a short operation that fits in one service-owned database transaction.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid a saga for a short operation that fits in one service-owned database transaction.</li>
+<li>Assuming saga pattern guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Use explicit state transitions and terminal outcomes.</li>
+<li>Do not introduce a saga where one local transaction is sufficient.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>How does orchestration differ from choreography?</li>
+<li>Why is compensation not rollback?</li>
+<li>How should an uncertain participant outcome be reconciled?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Payment times out after inventory reservation. Query or deduplicate by operation ID before repeating authorization, persist saga progress, and release inventory only after a confirmed rejection or explicit expiry policy.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A saga trades global atomic rollback for durable coordination, idempotent local steps, and compensating business actions.</p>
+</section>
+</div>

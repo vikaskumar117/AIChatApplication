@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A fat interface groups many unrelated operations; clients may be forced to implement or reference methods irrelevant to their role. Segregation means contracts align with client needs.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Small capability contracts reduce accidental coupling: changing an unrelated operation does not force every consumer to change or every implementation to add meaningless behavior.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Split interfaces by cohesive capabilities, then compose them for clients that need several. Do not create a separate interface for every method if clients and change axes remain the same.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Reporting client</strong><span>Needs only FindAsync to load its report.</span></div></div>
+<div><span>2</span><div><strong>Read capability</strong><span>IReader exposes the precise dependency.</span></div></div>
+<div><span>3</span><div><strong>Writer capability</strong><span>IWriter remains separate for clients with persistence authority.</span></div></div>
+</figure>
+<figcaption>Follow the labeled stages; each node names a concrete decision or runtime effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>ISP is about client-specific dependencies.</li>
+<li>Focused contracts reduce fake/no-op implementations.</li>
+<li>Avoid splitting without a distinct client or change reason.</li>
+</ul>
+</section>
+</div>

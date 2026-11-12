@@ -1,0 +1,37 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>Cross-service consistency describes how independently committed data copies and service-owned states converge and what stale or intermediate state consumers may observe.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Each service should own its authoritative data; synchronous reads can provide fresher answers but increase coupling, while event-driven projections trade freshness for availability and autonomy.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Define the invariant, acceptable staleness, and source of truth; propagate changes reliably, expose version/last-updated state if needed, and provide reconciliation for missed or inconsistent work.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Authority</strong><span>One service owns the invariant and commits the canonical state.</span></div></div>
+<div><span>2</span><div><strong>Propagation</strong><span>Outbox/event or explicit request communicates a versioned change.</span></div></div>
+<div><span>3</span><div><strong>Local view</strong><span>Consumers build projections that can temporarily lag or replay.</span></div></div>
+<div><span>4</span><div><strong>Reconcile</strong><span>Compare versions/state and repair gaps with observable procedures.</span></div></div>
+</figure>
+<figcaption>Eventual consistency means replicas may temporarily disagree but converge if updates are delivered and processing succeeds; it is not a guarantee of a fixed delay.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Assuming eventual consistency always converges without delivery and repair.</li>
+<li>Reading a projection immediately and treating stale data as canonical.</li>
+<li>Updating the same invariant in multiple services.</li>
+</ul>
+</section>
+</div>

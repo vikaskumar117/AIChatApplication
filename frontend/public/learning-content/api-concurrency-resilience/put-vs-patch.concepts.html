@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>PUT requests creation or replacement of the target resource representation, whereas PATCH carries instructions to modify only part of the resource.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Clear semantics prevent omitted fields from being accidentally cleared or preserved contrary to client expectations.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Define whether PUT requires a complete representation, select and document a PATCH format such as JSON Merge Patch or JSON Patch, validate allowed paths and invariants, and protect both with concurrency preconditions.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Client selects replacement or patch document</strong><span>PUT is idempotent in intended effect and its request representation is the replacement contract; omitted-field semantics must be clear.</span></div></div>
+<div><span>2</span><div><strong>API validates representation and version</strong><span>PATCH describes modifications and is not automatically idempotent; its format defines how operations apply.</span></div></div>
+<div><span>3</span><div><strong>Apply full replacement or partial operation</strong><span>The API validates authorization, allowed fields, domain invariants, and concurrency before persisting changes.</span></div></div>
+</figure>
+<figcaption>PATCH semantics depend on the chosen patch media type; the method itself does not define whether repeating a particular patch has the same effect.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>PUT is replacement; PATCH is format-defined modification.</li>
+<li>PATCH is not automatically idempotent.</li>
+<li>Validate resulting state, mutable fields, permissions, and version.</li>
+</ul>
+</section>
+</div>

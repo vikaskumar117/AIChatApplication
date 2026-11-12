@@ -1,0 +1,36 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>A duplicate order or payment is an unintended second business effect caused by repeated delivery or repeated client submission.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>Network timeouts, user double-clicks, proxy retries, and webhook redelivery make duplicate delivery normal rather than exceptional.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>Combine client idempotency keys with database uniqueness and a durable operation state machine; coordinate payment-provider idempotency, transactional outbox/inbox delivery, and reconciliation for failures crossing system boundaries.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Receive operation key and command</strong><span>Each logical checkout has a stable, scoped key and request fingerprint.</span></div></div>
+<div><span>2</span><div><strong>Atomically create durable operation/order</strong><span>A unique constraint guarantees only one local operation can own the key and create the order state.</span></div></div>
+<div><span>3</span><div><strong>Coordinate provider effect and replay final result</strong><span>A durable outbox and provider-supported idempotency key handle payment delivery; reconciliation resolves ambiguous external outcomes.</span></div></div>
+</figure>
+<figcaption>Distributed systems provide at-least-once delivery in many designs; practical safety comes from idempotent processing, durable deduplication, and reconciliation.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Duplicate delivery is expected in distributed workflows.</li>
+<li>Persist local intent and deduplicate by a stable operation identity.</li>
+<li>Use downstream idempotency and reconcile uncertain outcomes.</li>
+</ul>
+</section>
+</div>

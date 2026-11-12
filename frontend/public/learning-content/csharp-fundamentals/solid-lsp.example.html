@@ -1,0 +1,85 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A read-only storage implementation should not implement a writable repository interface and then throw on Save; separate read and write capabilities.</p><ol>
+<li>Write down operations a client is promised.</li>
+<li>Give read-only implementation only the read capability.</li>
+<li>Run shared contract tests against every implementation.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IReadStore&lt;T&gt;
+{
+    Task&lt;T?&gt; FindAsync(Guid id, CancellationToken token);
+}
+public interface IWriteStore&lt;T&gt;
+{
+    Task SaveAsync(T value, CancellationToken token);
+}
+public sealed class ReadOnlyStore&lt;T&gt; : IReadStore&lt;T&gt;
+{
+    public Task&lt;T?&gt; FindAsync(Guid id, CancellationToken token)
+        =&gt; Task.FromResult&lt;T?&gt;(default);
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Reliable polymorphic behavior</li>
+<li>Contracts remain honest</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Bad inheritance can violate assumptions</li>
+<li>Overly strict contracts make legitimate subtypes impossible</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Specify observable behavior, errors, and invariants in contracts.</p><p><strong>Avoid:</strong> Avoid subtypes that reject operations promised by their base abstraction.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Throwing for a normal base operation in a subtype.</li>
+<li>Assuming identical method signatures guarantee substitutability.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Test contracts against all implementations.</li>
+<li>Separate optional capabilities.</li>
+<li>Prefer composition or explicit variants for incompatible behaviors.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Why is throwing NotSupportedException from an override a warning?</li>
+<li>How do preconditions and postconditions relate to LSP?</li>
+<li>What design alternative helps a read-only subtype?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>A storage abstraction has remote, cached, and read-only implementations. Split capabilities and test each implementation against the same behavioral contract.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A valid subtype preserves the base contract’s behavior; split incompatible capabilities rather than relying on signature compatibility.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# fundamentals</a></li><li><a href="https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/" target="_blank" rel="noopener noreferrer">Microsoft Learn: C# language reference</a></li></ul>
+</section>
+</div>

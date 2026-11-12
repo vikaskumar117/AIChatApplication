@@ -1,0 +1,77 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A client repeats PUT for an unchanged profile; the API preserves the same representation and avoids creating a duplicate “profile changed” event.</p><ol>
+<li>Receive full replacement representation</li>
+<li>Compare with current resource under concurrency rules</li>
+<li>Persist only meaningful changes or confirm unchanged state</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>if (!Equivalent(current, request))
+{
+    ApplyReplacement(current, request);
+    await db.SaveChangesAsync(ct);
+}
+// Still enforce the expected row version / If-Match condition.</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Can reduce database churn, trigger work, and noisy audit events</li>
+<li>Keeps change events aligned with actual domain changes</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Equality comparison adds complexity and can miss semantic differences</li>
+<li>Skipping persistence can conflict with audit or freshness policies</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Avoid writes only when equality semantics and side effects are defined and measured.</p><p><strong>Avoid:</strong> Avoid conflating a no-op optimization with request idempotency or skipping stale-version checks.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Claiming idempotence requires that the server perform no second database write.</li>
+<li>Skipping an If-Match or version check because the values appear equal.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Define canonical equality and whether audit updates count as meaningful changes.</li>
+<li>Measure write amplification and test event/outbox behavior on unchanged PUTs.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>Can a repeated PUT be idempotent while issuing SQL UPDATE twice?</li>
+<li>Why might an unchanged write still have side effects?</li>
+<li>Should equality comparison bypass concurrency validation?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>Repeated client synchronization causes update triggers and cache invalidations for unchanged records; compare canonical values, suppress change events for true no-ops, and preserve ETag checks.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>A PUT request can be idempotent even if the server writes each time; avoiding needless writes is a separate optimization and side-effect concern.</p>
+</section>
+<section>
+<p><small>FURTHER READING</small></p>
+<h2>References</h2>
+<ul><li><a href="https://www.rfc-editor.org/rfc/rfc9110#section-9.3.4" target="_blank" rel="noopener noreferrer">RFC 9110: PUT</a></li></ul>
+</section>
+</div>

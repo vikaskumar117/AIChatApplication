@@ -1,0 +1,38 @@
+<div>
+<section>
+<p><small>THE IDEA</small></p>
+<h2>What is it?</h2>
+<p>WHAT — An order API accepts a customer command and coordinates state changes across services. Idempotency means repeating the same logical request does not create an additional order or charge; an outbox atomically records an event beside local database changes.</p>
+</section>
+<section>
+<p><small>WHY IT MATTERS</small></p>
+<h2>What problem does it solve?</h2>
+<p>WHY — Bursts, timeouts, retries, and partial failures are normal in distributed systems. A durable order state and queued work let the API respond predictably without requiring every dependency to be available in one synchronous request.</p>
+</section>
+<section>
+<p><small>UNDER THE HOOD</small></p>
+<h2>How does it work?</h2>
+<p>HOW — Authenticate and validate, claim an idempotency key, then persist the order and an outbox event in one database transaction. A publisher delivers the event at least once; idempotent consumers reserve inventory, authorize payment, and advance a versioned state machine. Retry transient failures and use explicit compensation for business failures.</p>
+</section>
+<section>
+<p><small>FOLLOW THE PROCESS</small></p>
+<h2>Flow diagram</h2>
+<figure>
+<div><span>1</span><div><strong>Request boundary</strong><span>Validate identity and key; duplicate key returns the stored outcome.</span></div></div>
+<div><span>2</span><div><strong>Order + outbox transaction</strong><span>One local commit prevents a saved order with a silently missing event.</span></div></div>
+<div><span>3</span><div><strong>At-least-once delivery</strong><span>Publisher retries; consumers must tolerate duplicate messages.</span></div></div>
+<div><span>4</span><div><strong>Order workflow</strong><span>Reserve stock, authorize payment, and advance only legal states.</span></div></div>
+<div><span>5</span><div><strong>Recovery path</strong><span>Retry transient failures; compensate, reconcile, or alert on terminal cases.</span></div></div>
+</figure>
+<figcaption>The database transaction protects only local order and outbox writes. It does not make inventory, payment, and order storage one atomic transaction.</figcaption>
+</section>
+<section>
+<p><small>KEY TAKEAWAYS</small></p>
+<h2>Remember</h2>
+<ul>
+<li>Persist acceptance before acknowledging it.</li>
+<li>Assume message delivery and client requests can be repeated.</li>
+<li>Model business recovery explicitly; technical retries alone cannot undo a completed payment.</li>
+</ul>
+</section>
+</div>

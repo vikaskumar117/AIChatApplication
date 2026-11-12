@@ -1,0 +1,72 @@
+<div>
+<section>
+<p><small>APPLY THE IDEA</small></p>
+<h2>Worked example</h2>
+<p>A document importer creates a CSV or JSON parser based on a validated file format.</p><ol>
+<li>Keep product selection deterministic and testable.</li>
+<li>Fail clearly for unknown or ambiguous formats.</li>
+<li>Use DI for stable application wiring and a factory for runtime choice.</li>
+</ol>
+</section>
+<section>
+<p><small>CODE OR QUERY</small></p>
+<h2>Try it</h2>
+<pre><code>public interface IImportParser { Task&lt;ImportResult&gt; ParseAsync(Stream input, CancellationToken ct); }
+public sealed class ImportParserFactory(IEnumerable&lt;IImportParser&gt; parsers)
+{
+    public IImportParser For(string format) =&gt;
+        parsers.Single(p =&gt; p.Supports(format));
+}</code></pre>
+</section>
+<section>
+<p><small>TRADE-OFFS</small></p>
+<h2>Benefits and limitations</h2>
+<div><div><h3>Benefits</h3><ul>
+<li>Encapsulates variable or complex construction.</li>
+<li>Centralizes validation and product-family consistency.</li>
+</ul></div><div><h3>Limitations</h3><ul>
+<li>Can become a service locator or giant switch with hidden dependencies.</li>
+<li>Adds little value when the type is known and constructor injection suffices.</li>
+</ul></div></div>
+</section>
+<section>
+<p><small>DECISION GUIDE</small></p>
+<h2>When to use it</h2>
+<p><strong>Use:</strong> Use when creation or product selection is genuinely variable or complex.</p><p><strong>Avoid:</strong> Avoid a factory that resolves arbitrary services or owns unrelated business behavior.</p>
+</section>
+<section>
+<p><small>COMMON MISTAKES</small></p>
+<h2>Watch out</h2>
+<ul>
+<li>Avoid a factory that resolves arbitrary services or owns unrelated business behavior.</li>
+<li>Assuming factory pattern guarantees outcomes beyond its stated scope.</li>
+</ul>
+</section>
+<section>
+<p><small>BEST PRACTICES</small></p>
+<h2>In practice</h2>
+<ul>
+<li>Return a useful abstraction and keep creation side-effect expectations clear.</li>
+<li>Avoid adding a factory for a single obvious new operation.</li>
+</ul>
+</section>
+<section>
+<p><small>INTERVIEW PRACTICE</small></p>
+<h2>Common questions</h2>
+<ol>
+<li>What does a factory hide from its client?</li>
+<li>How is a factory different from a DI container?</li>
+<li>When would direct constructor injection be simpler?</li>
+</ol>
+</section>
+<section>
+<p><small>SENIOR-LEVEL SCENARIO</small></p>
+<h2>Production thinking</h2>
+<p>New import formats arrive monthly. Add a parser and register it; reject unsupported formats explicitly instead of silently selecting a default parser.</p>
+</section>
+<section>
+<p><small>SUMMARY</small></p>
+<h2>In one minute</h2>
+<p>Factories are useful when creation is a real variability point, not just because an object has a constructor.</p>
+</section>
+</div>
