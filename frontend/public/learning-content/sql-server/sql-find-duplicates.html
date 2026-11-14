@@ -1,0 +1,952 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Find Duplicate Rows by Business Key in SQL Server</h1>
+
+        <p>
+            Learn how to identify duplicate records using business keys,
+            GROUP BY, HAVING, composite keys, and practical SQL Server
+            queries. Understand how duplicate data affects real-world
+            applications and how to prevent it.
+        </p>
+    </header>
+
+    <!-- 1. Introduction -->
+    <section class="content-section">
+        <h2>1. What Are Duplicate Rows?</h2>
+
+        <p>
+            Duplicate rows are records that represent the same
+            business entity or business information more than once.
+        </p>
+
+        <p>
+            In real-world applications, duplicate records can occur
+            because of:
+        </p>
+
+        <ul class="learning-list">
+            <li>A user submitting the same form multiple times.</li>
+            <li>An application retrying a failed database request.</li>
+            <li>Importing the same file more than once.</li>
+            <li>Missing validation in an application.</li>
+            <li>Incorrect data migration.</li>
+            <li>Multiple systems creating the same business record.</li>
+        </ul>
+
+        <h3>Real-world example</h3>
+
+        <div class="info-box">
+            A company maintains customer records. The customer
+            registration system accidentally inserts the same customer
+            twice with the same email address.
+
+            The records have different CustomerId values, but both
+            represent the same customer.
+        </div>
+
+        <p>
+            Our task is to identify such duplicate records.
+        </p>
+    </section>
+
+    <!-- 2. Business key -->
+    <section class="content-section">
+        <h2>2. What Is a Business Key?</h2>
+
+        <p>
+            A business key is an attribute, or a combination of
+            attributes, that identifies a business entity according
+            to business rules.
+        </p>
+
+        <h3>Example: Customer table</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>CustomerId</th>
+                    <th>CustomerName</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>101</td>
+                    <td>John Smith</td>
+                    <td>john@example.com</td>
+                </tr>
+                <tr>
+                    <td>102</td>
+                    <td>John Smith</td>
+                    <td>john@example.com</td>
+                </tr>
+                <tr>
+                    <td>103</td>
+                    <td>Mary Johnson</td>
+                    <td>mary@example.com</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            CustomerId is the primary key. It uniquely identifies
+            each database row.
+        </p>
+
+        <p>
+            Email is the business key in this example, assuming
+            the business rule says that each customer must have
+            a unique email address.
+        </p>
+
+        <div class="info-box">
+            <strong>Important distinction:</strong>
+            Different primary keys do not necessarily mean that
+            the records represent different business entities.
+        </div>
+
+        <h3>Primary key vs business key</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Primary Key</th>
+                    <th>Business Key</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Identifies a database row.</td>
+                    <td>Identifies a business entity.</td>
+                </tr>
+                <tr>
+                    <td>Often an identity or generated value.</td>
+                    <td>Comes from business rules.</td>
+                </tr>
+                <tr>
+                    <td>Example: CustomerId.</td>
+                    <td>Example: Email or CustomerCode.</td>
+                </tr>
+                <tr>
+                    <td>Usually unique by database constraint.</td>
+                    <td>Should be unique according to business rules.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- 3. Sample database -->
+    <section class="content-section">
+        <h2>3. Create a Sample Customer Table</h2>
+
+        <p>
+            Let's create a customer table with a generated primary key
+            and a separate business key.
+        </p>
+
+        <pre class="sql-code"><code>
+CREATE TABLE Customers
+(
+    CustomerId INT IDENTITY(1,1) PRIMARY KEY,
+    CustomerCode VARCHAR(20),
+    CustomerName VARCHAR(100),
+    Email VARCHAR(150),
+    City VARCHAR(50)
+);
+        </code></pre>
+
+        <h3>Insert sample data</h3>
+
+        <pre class="sql-code"><code>
+INSERT INTO Customers
+    (CustomerCode, CustomerName, Email, City)
+VALUES
+    ('C001', 'John Smith', 'john@example.com', 'Pune'),
+    ('C001', 'John Smith', 'john@example.com', 'Pune'),
+    ('C002', 'Mary Johnson', 'mary@example.com', 'Mumbai'),
+    ('C003', 'David Brown', 'david@example.com', 'Delhi'),
+    ('C003', 'David Brown', 'david@example.com', 'Delhi'),
+    ('C004', 'Sarah Wilson', 'sarah@example.com', 'Pune'),
+    ('C005', 'Robert Miller', 'robert@example.com', 'Chennai'),
+    ('C005', 'Robert Miller', 'robert@example.com', 'Chennai');
+        </code></pre>
+
+        <h3>View the records</h3>
+
+        <pre class="sql-code"><code>
+SELECT *
+FROM Customers
+ORDER BY CustomerId;
+        </code></pre>
+
+        <h3>Input data</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>CustomerId</th>
+                    <th>CustomerCode</th>
+                    <th>CustomerName</th>
+                    <th>Email</th>
+                    <th>City</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>C001</td><td>John Smith</td><td>john@example.com</td><td>Pune</td></tr>
+                <tr><td>2</td><td>C001</td><td>John Smith</td><td>john@example.com</td><td>Pune</td></tr>
+                <tr><td>3</td><td>C002</td><td>Mary Johnson</td><td>mary@example.com</td><td>Mumbai</td></tr>
+                <tr><td>4</td><td>C003</td><td>David Brown</td><td>david@example.com</td><td>Delhi</td></tr>
+                <tr><td>5</td><td>C003</td><td>David Brown</td><td>david@example.com</td><td>Delhi</td></tr>
+                <tr><td>6</td><td>C004</td><td>Sarah Wilson</td><td>sarah@example.com</td><td>Pune</td></tr>
+                <tr><td>7</td><td>C005</td><td>Robert Miller</td><td>robert@example.com</td><td>Chennai</td></tr>
+                <tr><td>8</td><td>C005</td><td>Robert Miller</td><td>robert@example.com</td><td>Chennai</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            Notice that CustomerId is different for every row.
+            However, CustomerCode appears multiple times.
+        </p>
+    </section>
+
+    <!-- 4. Find duplicates using GROUP BY -->
+    <section class="content-section">
+        <h2>4. Find Duplicate Rows Using GROUP BY</h2>
+
+        <p>
+            GROUP BY groups records that have the same values
+            in the selected columns.
+        </p>
+
+        <p>
+            When we group by a business key, all records with
+            the same business key are placed in the same group.
+        </p>
+
+        <h3>Basic query</h3>
+
+        <pre class="sql-code"><code>
+SELECT
+    CustomerCode,
+    COUNT(*) AS DuplicateCount
+FROM Customers
+GROUP BY CustomerCode;
+        </code></pre>
+
+        <h3>Result</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>CustomerCode</th>
+                    <th>DuplicateCount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>C001</td><td>2</td></tr>
+                <tr><td>C002</td><td>1</td></tr>
+                <tr><td>C003</td><td>2</td></tr>
+                <tr><td>C004</td><td>1</td></tr>
+                <tr><td>C005</td><td>2</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            This query displays the number of records in each
+            CustomerCode group. It does not yet filter out
+            groups that occur only once.
+        </p>
+
+        <h3>How GROUP BY works</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Input rows</strong>
+                <p>8 customer records</p>
+            </div>
+            <div class="flow-step">
+                <strong>GROUP BY</strong>
+                <p>Group by CustomerCode</p>
+            </div>
+            <div class="flow-step">
+                <strong>COUNT</strong>
+                <p>Count records per group</p>
+            </div>
+            <div class="flow-step">
+                <strong>Result</strong>
+                <p>5 groups</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. HAVING -->
+    <section class="content-section">
+        <h2>5. Use HAVING to Find Only Duplicate Groups</h2>
+
+        <p>
+            HAVING filters groups created by GROUP BY.
+        </p>
+
+        <p>
+            A group is considered duplicated when its record count
+            is greater than one.
+        </p>
+
+        <h3>Query</h3>
+
+        <pre class="sql-code"><code>
+SELECT
+    CustomerCode,
+    COUNT(*) AS DuplicateCount
+FROM Customers
+GROUP BY CustomerCode
+HAVING COUNT(*) > 1;
+        </code></pre>
+
+        <h3>Result</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>CustomerCode</th>
+                    <th>DuplicateCount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>C001</td><td>2</td></tr>
+                <tr><td>C003</td><td>2</td></tr>
+                <tr><td>C005</td><td>2</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Key concept:</strong>
+            GROUP BY creates groups. HAVING filters those groups.
+            COUNT(*) counts the rows in each group.
+        </div>
+    </section>
+
+    <!-- 6. Find complete duplicate records -->
+    <section class="content-section">
+        <h2>6. Retrieve the Complete Rows That Are Duplicated</h2>
+
+        <p>
+            The previous query returns only CustomerCode and its
+            count. In a real application, we often need the
+            complete customer records.
+        </p>
+
+        <p>
+            One approach is to identify duplicate business keys
+            first and then join them back to the original table.
+        </p>
+
+        <h3>Query using a CTE</h3>
+
+        <pre class="sql-code"><code>
+WITH DuplicateCustomers AS
+(
+    SELECT
+        CustomerCode
+    FROM Customers
+    GROUP BY CustomerCode
+    HAVING COUNT(*) > 1
+)
+SELECT
+    c.CustomerId,
+    c.CustomerCode,
+    c.CustomerName,
+    c.Email,
+    c.City
+FROM Customers AS c
+INNER JOIN DuplicateCustomers AS d
+    ON c.CustomerCode = d.CustomerCode
+ORDER BY c.CustomerCode, c.CustomerId;
+        </code></pre>
+
+        <h3>Result</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>CustomerId</th>
+                    <th>CustomerCode</th>
+                    <th>CustomerName</th>
+                    <th>Email</th>
+                    <th>City</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>C001</td><td>John Smith</td><td>john@example.com</td><td>Pune</td></tr>
+                <tr><td>2</td><td>C001</td><td>John Smith</td><td>john@example.com</td><td>Pune</td></tr>
+                <tr><td>4</td><td>C003</td><td>David Brown</td><td>david@example.com</td><td>Delhi</td></tr>
+                <tr><td>5</td><td>C003</td><td>David Brown</td><td>david@example.com</td><td>Delhi</td></tr>
+                <tr><td>7</td><td>C005</td><td>Robert Miller</td><td>robert@example.com</td><td>Chennai</td></tr>
+                <tr><td>8</td><td>C005</td><td>Robert Miller</td><td>robert@example.com</td><td>Chennai</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            The CTE identifies duplicated CustomerCode values.
+            The JOIN retrieves every original row belonging to
+            those duplicate groups.
+        </p>
+    </section>
+
+    <!-- 7. Composite business key -->
+    <section class="content-section">
+        <h2>7. Find Duplicates Using a Composite Business Key</h2>
+
+        <p>
+            A business key does not always consist of a single
+            column. Sometimes multiple columns together identify
+            a business record.
+        </p>
+
+        <h3>Real-world example</h3>
+
+        <p>
+            An employee's attendance record may be uniquely
+            identified by:
+        </p>
+
+        <ul class="learning-list">
+            <li>EmployeeId</li>
+            <li>AttendanceDate</li>
+        </ul>
+
+        <p>
+            The business rule is that an employee should have
+            only one attendance record per day.
+        </p>
+
+        <h3>Create a sample attendance table</h3>
+
+        <pre class="sql-code"><code>
+CREATE TABLE EmployeeAttendance
+(
+    AttendanceId INT IDENTITY(1,1) PRIMARY KEY,
+    EmployeeId INT NOT NULL,
+    AttendanceDate DATE NOT NULL,
+    Status VARCHAR(20)
+);
+
+INSERT INTO EmployeeAttendance
+    (EmployeeId, AttendanceDate, Status)
+VALUES
+    (101, '2026-11-01', 'Present'),
+    (101, '2026-11-01', 'Present'),
+    (101, '2026-11-02', 'Present'),
+    (102, '2026-11-01', 'Absent'),
+    (102, '2026-11-01', 'Absent'),
+    (103, '2026-11-01', 'Present');
+        </code></pre>
+
+        <h3>Find duplicate attendance records</h3>
+
+        <pre class="sql-code"><code>
+SELECT
+    EmployeeId,
+    AttendanceDate,
+    COUNT(*) AS DuplicateCount
+FROM EmployeeAttendance
+GROUP BY
+    EmployeeId,
+    AttendanceDate
+HAVING COUNT(*) > 1;
+        </code></pre>
+
+        <h3>Result</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>AttendanceDate</th>
+                    <th>DuplicateCount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>101</td><td>2026-11-01</td><td>2</td></tr>
+                <tr><td>102</td><td>2026-11-01</td><td>2</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Important:</strong>
+            When checking a composite business key, include every
+            column that participates in the business uniqueness rule.
+            Grouping by only EmployeeId would incorrectly treat
+            different attendance dates as duplicates.
+        </div>
+    </section>
+
+    <!-- 8. Business duplicates vs exact duplicates -->
+    <section class="content-section">
+        <h2>8. Business Duplicates vs Exact Duplicate Rows</h2>
+
+        <p>
+            These two concepts are related, but they are not
+            necessarily the same.
+        </p>
+
+        <h3>Business duplicates</h3>
+
+        <p>
+            Two records have the same business key even if some
+            other attributes are different.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>CustomerId</th>
+                    <th>Email</th>
+                    <th>City</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>101</td><td>john@example.com</td><td>Pune</td></tr>
+                <tr><td>102</td><td>john@example.com</td><td>Mumbai</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            If Email is the business key, these records are
+            business duplicates even though City is different.
+        </p>
+
+        <h3>Exact duplicate business data</h3>
+
+        <p>
+            Two records contain the same values across all
+            selected business columns.
+        </p>
+
+        <p>
+            For example, the same CustomerCode, CustomerName,
+            Email and City appear more than once.
+        </p>
+
+        <pre class="sql-code"><code>
+SELECT
+    CustomerCode,
+    CustomerName,
+    Email,
+    City,
+    COUNT(*) AS DuplicateCount
+FROM Customers
+GROUP BY
+    CustomerCode,
+    CustomerName,
+    Email,
+    City
+HAVING COUNT(*) > 1;
+        </code></pre>
+
+        <p>
+            This query checks duplication across all four
+            selected columns, rather than CustomerCode alone.
+        </p>
+    </section>
+
+    <!-- 9. NULL handling -->
+    <section class="content-section">
+        <h2>9. How NULL Values Affect Duplicate Detection</h2>
+
+        <p>
+            SQL Server GROUP BY places NULL values into the same
+            group for a grouped column.
+        </p>
+
+        <p>
+            Therefore, multiple rows with a NULL CustomerCode
+            will appear as one group when grouped by CustomerCode.
+        </p>
+
+        <h3>Example</h3>
+
+        <pre class="sql-code"><code>
+SELECT
+    CustomerCode,
+    COUNT(*) AS RecordCount
+FROM Customers
+GROUP BY CustomerCode
+HAVING COUNT(*) > 1;
+        </code></pre>
+
+        <p>
+            If multiple CustomerCode values are NULL, the NULL
+            group will also satisfy COUNT(*) greater than one.
+        </p>
+
+        <div class="info-box">
+            <strong>Business consideration:</strong>
+            Decide whether missing business keys should be treated
+            as duplicate groups, ignored, or handled as data-quality
+            errors. The correct choice depends on the business rule.
+        </div>
+
+        <h3>Exclude NULL business keys</h3>
+
+        <pre class="sql-code"><code>
+SELECT
+    CustomerCode,
+    COUNT(*) AS DuplicateCount
+FROM Customers
+WHERE CustomerCode IS NOT NULL
+GROUP BY CustomerCode
+HAVING COUNT(*) > 1;
+        </code></pre>
+
+        <p>
+            WHERE filters individual rows before grouping.
+            This query excludes rows whose CustomerCode is NULL.
+        </p>
+    </section>
+
+    <!-- 10. Case sensitivity -->
+    <section class="content-section">
+        <h2>10. Case Sensitivity and Whitespace</h2>
+
+        <p>
+            Text comparisons and grouping depend on the collation
+            of the relevant SQL Server expression or column.
+        </p>
+
+        <p>
+            Under a case-insensitive collation, values such as
+            john@example.com and JOHN@example.com may be treated
+            as equal.
+        </p>
+
+        <p>
+            Under a case-sensitive collation, they can be treated
+            as different values.
+        </p>
+
+        <h3>Inspect the column collation</h3>
+
+        <pre class="sql-code"><code>
+SELECT
+    COLUMN_NAME,
+    COLLATION_NAME
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'Customers'
+  AND COLUMN_NAME = 'Email';
+        </code></pre>
+
+        <h3>Check values after trimming surrounding spaces</h3>
+
+        <pre class="sql-code"><code>
+SELECT
+    LTRIM(RTRIM(Email)) AS NormalizedEmail,
+    COUNT(*) AS DuplicateCount
+FROM Customers
+WHERE Email IS NOT NULL
+GROUP BY LTRIM(RTRIM(Email))
+HAVING COUNT(*) > 1;
+        </code></pre>
+
+        <p>
+            LTRIM and RTRIM remove leading and trailing ordinary
+            space characters. They do not provide complete
+            normalization for every possible whitespace or
+            Unicode character.
+        </p>
+
+        <div class="info-box">
+            Do not normalize business keys blindly. For example,
+            case sensitivity may be meaningful in some systems.
+            Follow the business definition of equality.
+        </div>
+    </section>
+
+    <!-- 11. Performance -->
+    <section class="content-section">
+        <h2>11. Performance Considerations</h2>
+
+        <p>
+            Finding duplicates using GROUP BY can require SQL Server
+            to process a large number of rows.
+        </p>
+
+        <p>
+            Depending on available indexes, statistics, data
+            distribution and memory, SQL Server may use operators
+            such as:
+        </p>
+
+        <ul class="learning-list">
+            <li>Index Scan</li>
+            <li>Table Scan</li>
+            <li>Sort</li>
+            <li>Stream Aggregate</li>
+            <li>Hash Match Aggregate</li>
+        </ul>
+
+        <h3>Index on the business key</h3>
+
+        <pre class="sql-code"><code>
+CREATE NONCLUSTERED INDEX IX_Customers_CustomerCode
+ON Customers(CustomerCode);
+        </code></pre>
+
+        <p>
+            An index can provide an ordered access path for
+            grouping by CustomerCode and may help some queries.
+            It does not guarantee that SQL Server will use the
+            index or that the query will always be faster.
+        </p>
+
+        <h3>Check logical reads and execution time</h3>
+
+        <pre class="sql-code"><code>
+SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+SELECT
+    CustomerCode,
+    COUNT(*) AS DuplicateCount
+FROM Customers
+GROUP BY CustomerCode
+HAVING COUNT(*) > 1;
+
+SET STATISTICS TIME OFF;
+SET STATISTICS IO OFF;
+        </code></pre>
+
+        <p>
+            In SQL Server Management Studio, enable the Actual
+            Execution Plan and inspect the actual plan, logical
+            reads, row counts and execution operators.
+        </p>
+    </section>
+
+    <!-- 12. Prevent duplicates -->
+    <section class="content-section">
+        <h2>12. How to Prevent Duplicate Business Keys</h2>
+
+        <p>
+            Identifying duplicates is useful, but preventing
+            unwanted duplicates is even more important.
+        </p>
+
+        <p>
+            If CustomerCode must be unique and existing data
+            satisfies that rule, create a unique index:
+        </p>
+
+        <pre class="sql-code"><code>
+CREATE UNIQUE NONCLUSTERED INDEX
+    UX_Customers_CustomerCode
+ON Customers(CustomerCode);
+        </code></pre>
+
+        <div class="info-box">
+            <strong>Important:</strong>
+            This statement will fail if duplicate non-NULL
+            CustomerCode values already exist. SQL Server unique
+            indexes also enforce uniqueness for NULL keys according
+            to SQL Server's unique-index rules. Clean and validate
+            the data before creating the index.
+        </div>
+
+        <p>
+            For a composite business key, use a unique index
+            containing all key columns.
+        </p>
+
+        <pre class="sql-code"><code>
+CREATE UNIQUE NONCLUSTERED INDEX
+    UX_EmployeeAttendance_Employee_Date
+ON EmployeeAttendance(EmployeeId, AttendanceDate);
+        </code></pre>
+
+        <p>
+            This prevents multiple attendance records for the
+            same employee on the same date.
+        </p>
+    </section>
+
+    <!-- 13. Production considerations -->
+    <section class="content-section">
+        <h2>13. Production-Level Considerations</h2>
+
+        <h3>1. Identify the correct business key</h3>
+
+        <p>
+            Do not assume that every repeated column value
+            represents a duplicate. Confirm the business rules
+            with the application or data owner.
+        </p>
+
+        <h3>2. Check historical and valid records</h3>
+
+        <p>
+            Some systems intentionally allow multiple records
+            for the same customer, such as multiple addresses,
+            subscriptions or historical versions.
+        </p>
+
+        <h3>3. Consider soft-deleted records</h3>
+
+        <p>
+            If the application has an IsDeleted or IsActive
+            column, determine whether deleted or inactive records
+            should participate in duplicate detection.
+        </p>
+
+        <h3>4. Consider concurrent inserts</h3>
+
+        <p>
+            An application-side check followed by an INSERT
+            is not sufficient to guarantee uniqueness when
+            multiple requests arrive simultaneously.
+        </p>
+
+        <p>
+            A database unique constraint or unique index provides
+            the final enforcement. The application should handle
+            duplicate-key errors appropriately.
+        </p>
+
+        <h3>5. Do not delete records immediately</h3>
+
+        <p>
+            First identify duplicate groups, inspect the records,
+            understand which one is authoritative and check
+            dependencies such as orders, invoices and audit history.
+        </p>
+
+        <p>
+            Deleting duplicate records is a separate operation
+            that requires a carefully defined retention rule.
+        </p>
+    </section>
+
+    <!-- 14. Common mistakes -->
+    <section class="content-section">
+        <h2>14. Common Mistakes</h2>
+
+        <ul class="learning-list">
+            <li>
+                Grouping by the primary key instead of the business key.
+            </li>
+            <li>
+                Forgetting to use HAVING COUNT(*) greater than one.
+            </li>
+            <li>
+                Checking only one column when the business key
+                consists of multiple columns.
+            </li>
+            <li>
+                Treating every repeated name as a duplicate customer.
+            </li>
+            <li>
+                Ignoring NULL, case-sensitivity and whitespace rules.
+            </li>
+            <li>
+                Assuming an index automatically makes duplicate
+                detection fast.
+            </li>
+            <li>
+                Running a duplicate cleanup without checking
+                foreign-key dependencies and business history.
+            </li>
+        </ul>
+    </section>
+
+    <!-- 15. Exercises -->
+    <section class="content-section">
+        <h2>15. Hands-On Exercises</h2>
+
+        <p>
+            Use the Customers and EmployeeAttendance tables
+            created earlier.
+        </p>
+
+        <ol class="learning-list">
+            <li>
+                Find duplicate CustomerCode values.
+            </li>
+            <li>
+                Display the count of each CustomerCode.
+            </li>
+            <li>
+                Retrieve all customer rows that belong to
+                duplicate CustomerCode groups.
+            </li>
+            <li>
+                Find duplicates using Email instead of CustomerCode.
+            </li>
+            <li>
+                Find duplicates using CustomerCode and City together.
+            </li>
+            <li>
+                Find employees who have multiple attendance
+                records on the same date.
+            </li>
+            <li>
+                Find duplicate emails after trimming leading
+                and trailing spaces.
+            </li>
+            <li>
+                Explain the difference between a primary key
+                and a business key using a real application example.
+            </li>
+        </ol>
+    </section>
+
+    <!-- 16. Knowledge check -->
+    <section class="content-section">
+        <h2>16. Knowledge Check</h2>
+
+        <ol class="learning-list">
+            <li>
+                Why can two rows have different primary keys
+                but still represent the same business entity?
+            </li>
+            <li>
+                What is the difference between WHERE and HAVING?
+            </li>
+            <li>
+                Why do we use COUNT(*) greater than one?
+            </li>
+            <li>
+                What is a composite business key?
+            </li>
+            <li>
+                How does GROUP BY handle NULL values?
+            </li>
+            <li>
+                How can a unique index prevent duplicate business keys?
+            </li>
+            <li>
+                Why is application-side duplicate checking alone
+                insufficient under concurrent requests?
+            </li>
+        </ol>
+    </section>
+
+    <!-- 17. Summary -->
+    <section class="outcome-section">
+        <h2>What You Should Now Understand</h2>
+
+        <ul class="learning-list">
+            <li>What duplicate business records are.</li>
+            <li>The difference between primary keys and business keys.</li>
+            <li>How to identify duplicates using GROUP BY and HAVING.</li>
+            <li>How to retrieve complete duplicate records using a CTE and JOIN.</li>
+            <li>How to identify duplicates using composite business keys.</li>
+            <li>The difference between business duplicates and exact duplicates.</li>
+            <li>How NULL values, collation and whitespace affect comparisons.</li>
+            <li>How SQL Server executes grouping operations.</li>
+            <li>How unique indexes prevent unwanted duplicate keys.</li>
+            <li>How to approach duplicate detection safely in production.</li>
+        </ul>
+    </section>
+
+</main>

@@ -1,0 +1,1345 @@
+
+<main class="container sql-learning-page sequential">
+  <section class="page-header">
+    <h1>SQL Query Processing</h1>
+
+    <p class="description">
+      Have you ever wondered what happens after you execute a SQL query?
+      How does a database understand your query, find the required records,
+      optimize the execution, and return the result?
+    </p>
+  </section>
+
+  <section class="content-section">
+
+    <h2>1. What is SQL Query Processing?</h2>
+
+    <p>
+      SQL (Structured Query Language) is used to communicate with
+      relational databases.<br> We use SQL to retrieve, insert, update,
+      and delete data.
+    </p>
+
+    <p>
+      SQL Query Processing is the mechanism through which a database
+      understands a SQL statement, determines how to execute it,
+      retrieves the required data, and returns the result.
+    </p>
+
+    <h3>Let's understand with a simple example</h3>
+
+    <p>
+      Imagine you are working in an organization with 10,000 employees.
+      You want to retrieve employees whose salary is greater than 50,000.
+    </p>
+
+    <pre class="sql-code"><code>SELECT *
+FROM employees
+WHERE salary > 50000;</code></pre>
+
+    <p>
+      You submit this query to PostgreSQL. But how does PostgreSQL
+      know where the employees table is located? How does it check
+      the salary condition? Does it read every record? Can it use
+      an index?
+    </p>
+
+    <p>
+      All these activities are part of SQL Query Processing.
+    </p>
+
+    <h3>High-level query processing flow</h3>
+
+    <div class="processing-flow">
+      <div class="flow-step">SQL Query</div>
+      <div class="flow-step">Parsing</div>
+      <div class="flow-step">Validation</div>
+      <div class="flow-step">Optimization</div>
+      <div class="flow-step">Execution</div>
+      <div class="flow-step">Result</div>
+    </div>
+
+    <div class="info-box">
+      <strong>Remember:</strong>
+      A database does not simply read your SQL statement and execute
+      it line by line. It analyzes the query and creates an execution
+      strategy before retrieving the result.
+    </div>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- 2. DATABASE ENVIRONMENT -->
+  <!-- ================================================= -->
+
+  <section class="content-section">
+
+    <h2>2. Our Practical Database Environment</h2>
+
+    <p>
+      Before understanding query processing, let's create a small
+      database example that we will use throughout this tutorial.
+    </p>
+
+    <h3>Employees table</h3>
+
+    <p>
+      Consider an organization with the following employee records.
+    </p>
+
+    <pre class="sql-code"><code>CREATE TABLE employees (
+    employee_id INT PRIMARY KEY,
+    employee_name VARCHAR(100),
+    department_id INT,
+    salary NUMERIC(10, 2)
+);
+
+INSERT INTO employees VALUES
+(1, 'John', 10, 60000),
+(2, 'David', 10, 75000),
+(3, 'Peter', 10, 55000),
+(4, 'Alex', 10, 45000),
+(5, 'Mary', 10, 80000),
+(6, 'Steve', 10, 65000),
+(7, 'Robert', 10, 70000),
+(8, 'Sarah', 20, 90000),
+(9, 'James', 20, 40000),
+(10, 'Emma', 20, 55000),
+(11, 'Daniel', 20, 60000),
+(12, 'Sophia', 20, 65000),
+(13, 'Michael', 20, 70000),
+(14, 'Olivia', 20, 75000);</code></pre>
+
+    <h3>Understand the table structure</h3>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Column</th>
+          <th>Data Type</th>
+          <th>Purpose</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>employee_id</td>
+          <td>INT</td>
+          <td>Unique employee identifier</td>
+        </tr>
+        <tr>
+          <td>employee_name</td>
+          <td>VARCHAR</td>
+          <td>Employee name</td>
+        </tr>
+        <tr>
+          <td>department_id</td>
+          <td>INT</td>
+          <td>Department identifier</td>
+        </tr>
+        <tr>
+          <td>salary</td>
+          <td>NUMERIC</td>
+          <td>Employee salary</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Sample data</h3>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Department</th>
+          <th>Salary</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>John</td><td>10</td><td>60000</td></tr>
+        <tr><td>2</td><td>David</td><td>10</td><td>75000</td></tr>
+        <tr><td>3</td><td>Peter</td><td>10</td><td>55000</td></tr>
+        <tr><td>4</td><td>Alex</td><td>10</td><td>45000</td></tr>
+        <tr><td>5</td><td>Mary</td><td>10</td><td>80000</td></tr>
+        <tr><td>6</td><td>Steve</td><td>10</td><td>65000</td></tr>
+        <tr><td>7</td><td>Robert</td><td>10</td><td>70000</td></tr>
+        <tr><td>8</td><td>Sarah</td><td>20</td><td>90000</td></tr>
+        <tr><td>9</td><td>James</td><td>20</td><td>40000</td></tr>
+        <tr><td>10</td><td>Emma</td><td>20</td><td>55000</td></tr>
+        <tr><td>11</td><td>Daniel</td><td>20</td><td>60000</td></tr>
+        <tr><td>12</td><td>Sophia</td><td>20</td><td>65000</td></tr>
+        <tr><td>13</td><td>Michael</td><td>20</td><td>70000</td></tr>
+        <tr><td>14</td><td>Olivia</td><td>20</td><td>75000</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box">
+      We will use this employees table for filtering, grouping,
+      aggregation, sorting, query optimization, and execution plan
+      examples throughout this tutorial.
+    </div>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- 3. SQL LOGICAL PROCESSING ORDER -->
+  <!-- ================================================= -->
+
+  <section class="content-section">
+
+    <h2>3. SQL Logical Query Processing Order</h2>
+
+    <h3>Why do we need to understand this?</h3>
+
+    <p>
+      When writing SQL, we generally start with SELECT, followed by
+      FROM and WHERE. However, SQL clauses have a logical processing
+      order that is different from their written order.
+    </p>
+
+    <p>
+      Understanding this order helps us understand how filtering,
+      grouping, aggregation, and sorting work together.
+    </p>
+
+    <h3>Example query</h3>
+
+    <pre class="sql-code"><code>SELECT
+    department_id,
+    COUNT(*) AS total_employees
+FROM employees
+WHERE salary > 50000
+GROUP BY department_id
+HAVING COUNT(*) > 5
+ORDER BY total_employees DESC
+LIMIT 10;</code></pre>
+
+    <h3>Logical processing sequence</h3>
+
+    <div class="processing-flow">
+      <div class="flow-step">1. FROM</div>
+      <div class="flow-step">2. WHERE</div>
+      <div class="flow-step">3. GROUP BY</div>
+      <div class="flow-step">4. HAVING</div>
+      <div class="flow-step">5. SELECT</div>
+      <div class="flow-step">6. ORDER BY</div>
+      <div class="flow-step">7. LIMIT</div>
+    </div>
+
+    <p>
+      JOIN and ON are part of the FROM/join processing stage.
+      DISTINCT is applied after SELECT and before ORDER BY.
+    </p>
+
+    <!-- FROM -->
+
+    <h3>3.1 FROM – Identify the source table</h3>
+
+    <pre class="sql-code"><code>FROM employees</code></pre>
+
+    <p>
+      FROM tells PostgreSQL which table should provide the data.
+      In our example, the source table is employees, containing
+      14 records.
+    </p>
+
+    <div class="processing-flow">
+      <div class="flow-step">employees table</div>
+      <div class="flow-step">14 records identified</div>
+    </div>
+
+    <table class="table">
+      <thead><tr><th>Operation</th><th>Input</th><th>Output</th></tr></thead>
+      <tbody>
+        <tr><td>FROM employees</td><td>Database table</td><td>14 candidate records</td></tr>
+      </tbody>
+    </table>
+
+    <!-- WHERE -->
+
+    <h3>3.2 WHERE – Filter individual records</h3>
+
+    <pre class="sql-code"><code>WHERE salary > 50000</code></pre>
+
+    <p>
+      WHERE checks every candidate row against the specified
+      condition. Records that do not satisfy the condition
+      are excluded.
+    </p>
+
+    <div class="processing-flow">
+      <div class="flow-step">14 input records</div>
+      <div class="flow-step">salary > 50000</div>
+      <div class="flow-step">12 matching records</div>
+    </div>
+
+    <table class="table">
+      <thead>
+        <tr><th>Employee</th><th>Salary</th><th>Result</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>John</td><td>60000</td><td>Keep</td></tr>
+        <tr><td>Alex</td><td>45000</td><td>Remove</td></tr>
+        <tr><td>Sarah</td><td>90000</td><td>Keep</td></tr>
+        <tr><td>James</td><td>40000</td><td>Remove</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box">
+      WHERE filters rows before grouping and aggregation.
+      It cannot directly use an aggregate such as COUNT(*).
+    </div>
+
+    <!-- GROUP BY -->
+
+    <h3>3.3 GROUP BY – Create groups</h3>
+
+    <pre class="sql-code"><code>GROUP BY department_id</code></pre>
+
+    <p>
+      GROUP BY combines records having the same department_id
+      into logical groups.
+    </p>
+
+    <div class="processing-flow">
+      <div class="flow-step">12 filtered records</div>
+      <div class="flow-step">Group by department_id</div>
+      <div class="flow-step">Department 10</div>
+      <div class="flow-step">Department 20</div>
+    </div>
+
+    <table class="table">
+      <thead><tr><th>Department</th><th>Employees after filtering</th></tr></thead>
+      <tbody>
+        <tr><td>10</td><td>6</td></tr>
+        <tr><td>20</td><td>6</td></tr>
+      </tbody>
+    </table>
+
+    <!-- HAVING -->
+
+    <h3>3.4 HAVING – Filter groups</h3>
+
+    <pre class="sql-code"><code>HAVING COUNT(*) > 5</code></pre>
+
+    <p>
+      HAVING filters the groups created by GROUP BY.
+      Here we want only departments having more than five
+      qualifying employees.
+    </p>
+
+    <div class="processing-flow">
+      <div class="flow-step">Department 10: 6</div>
+      <div class="flow-step">Department 20: 6</div>
+      <div class="flow-step">COUNT(*) > 5</div>
+      <div class="flow-step">Both groups retained</div>
+    </div>
+
+    <table class="table">
+      <thead>
+        <tr><th>Department</th><th>Count</th><th>Condition</th><th>Result</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>10</td><td>6</td><td>6 > 5</td><td>Keep</td></tr>
+        <tr><td>20</td><td>6</td><td>6 > 5</td><td>Keep</td></tr>
+      </tbody>
+    </table>
+
+    <!-- SELECT -->
+
+    <h3>3.5 SELECT – Choose output columns</h3>
+
+    <pre class="sql-code"><code>SELECT
+    department_id,
+    COUNT(*) AS total_employees</code></pre>
+
+    <p>
+      SELECT determines which expressions appear in the final
+      query result. COUNT(*) calculates the number of records
+      in each group.
+    </p>
+
+    <table class="table">
+      <thead>
+        <tr><th>department_id</th><th>total_employees</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>10</td><td>6</td></tr>
+        <tr><td>20</td><td>6</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ORDER BY -->
+
+    <h3>3.6 ORDER BY – Sort the result</h3>
+
+    <pre class="sql-code"><code>ORDER BY total_employees DESC</code></pre>
+
+    <p>
+      ORDER BY sorts the result according to the specified column
+      or expression. DESC means descending order, while ASC means
+      ascending order.
+    </p>
+
+    <p>
+      Our two departments have equal counts, so their relative
+      ordering is not guaranteed. To guarantee deterministic
+      ordering, we could add department_id as a second sort key.
+    </p>
+
+    <pre class="sql-code"><code>ORDER BY total_employees DESC,
+         department_id ASC</code></pre>
+
+    <!-- LIMIT -->
+
+    <h3>3.7 LIMIT – Restrict the number of rows</h3>
+
+    <pre class="sql-code"><code>LIMIT 10;</code></pre>
+
+    <p>
+      LIMIT returns at most 10 rows from the sorted result.
+      Since our example produces only two rows, both are returned.
+    </p>
+
+    <h3>Final output</h3>
+
+    <table class="table">
+      <thead>
+        <tr><th>department_id</th><th>total_employees</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>10</td><td>6</td></tr>
+        <tr><td>20</td><td>6</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box">
+      Important distinction: Logical processing order describes
+      the meaning of a SQL query. It does not mean PostgreSQL
+      physically creates a separate table after every clause.
+    </div>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- 4. SQL PARSING -->
+  <!-- ================================================= -->
+
+  <section class="content-section">
+
+    <h2>4. SQL Parsing and Validation</h2>
+
+    <h3>What is SQL parsing?</h3>
+
+    <p>
+      Parsing is the process of analyzing the structure of a SQL
+      statement to understand whether it follows the SQL grammar.
+      PostgreSQL converts the statement into a structured
+      representation called a parse tree.
+    </p>
+
+    <h3>Example</h3>
+
+    <pre class="sql-code"><code>SELECT employee_name
+FROM employees
+WHERE salary > 50000;</code></pre>
+
+    <p>
+      PostgreSQL identifies different elements of this statement:
+    </p>
+
+    <table class="table">
+      <thead>
+        <tr><th>SQL element</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>SELECT</td><td>SQL keyword</td></tr>
+        <tr><td>employee_name</td><td>Column reference</td></tr>
+        <tr><td>FROM</td><td>SQL keyword</td></tr>
+        <tr><td>employees</td><td>Table reference</td></tr>
+        <tr><td>WHERE</td><td>SQL keyword</td></tr>
+        <tr><td>salary > 50000</td><td>Filter expression</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Parsing diagram</h3>
+
+    <div class="processing-flow">
+      <div class="flow-step">SQL Statement</div>
+      <div class="flow-step">Lexer</div>
+      <div class="flow-step">Parser</div>
+      <div class="flow-step">Parse Tree</div>
+    </div>
+
+    <h3>What happens if the SQL syntax is incorrect?</h3>
+
+    <p>Consider this invalid query:</p>
+
+    <pre class="sql-code"><code>SELEC employee_name
+FROM employees;</code></pre>
+
+    <p>
+      SELECT has been misspelled as SELEC. PostgreSQL cannot
+      recognize the statement according to its SQL grammar
+      and reports a syntax error.
+    </p>
+
+    <h3>What is semantic validation?</h3>
+
+    <p>
+      A query can have valid syntax but still refer to a table
+      or column that does not exist.
+    </p>
+
+    <pre class="sql-code"><code>SELECT employee_address
+FROM employees;</code></pre>
+
+    <p>
+      If employee_address does not exist in the employees table,
+      PostgreSQL reports a missing-column error during analysis.
+    </p>
+
+    <table class="table">
+      <thead>
+        <tr><th>Validation</th><th>Example</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Syntax</td>
+          <td>SELEC instead of SELECT</td>
+          <td>Check SQL grammar</td>
+        </tr>
+        <tr>
+          <td>Table resolution</td>
+          <td>Unknown table</td>
+          <td>Find the referenced table</td>
+        </tr>
+        <tr>
+          <td>Column resolution</td>
+          <td>Unknown column</td>
+          <td>Find the referenced column</td>
+        </tr>
+        <tr>
+          <td>Type checking</td>
+          <td>Incompatible expression types</td>
+          <td>Check expression compatibility</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info-box">
+      PostgreSQL separates parsing from parse analysis. Table and
+      column resolution, type checking, and other semantic checks
+      happen during analysis, not merely during syntax parsing.
+    </div>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- 5. QUERY OPTIMIZATION -->
+  <!-- ================================================= -->
+
+  <section class="content-section">
+
+    <h2>5. Query Optimization</h2>
+
+    <h3>What is query optimization?</h3>
+
+    <p>
+      A database may have multiple ways to retrieve the same data.
+      Query optimization is the process of choosing an efficient
+      execution strategy based on available information such as
+      table statistics, indexes, and estimated costs.
+    </p>
+
+    <h3>Example: Find an employee by ID</h3>
+
+    <pre class="sql-code"><code>SELECT *
+FROM employees
+WHERE employee_id = 100;</code></pre>
+
+    <p>
+      Assume employees contains 1 million records and employee_id
+      has a primary key index.
+    </p>
+
+    <p>The database could consider two approaches:</p>
+
+    <h3>Approach 1: Sequential Scan</h3>
+
+    <p>
+      Read table rows sequentially and check whether employee_id
+      equals 100.
+    </p>
+
+    <div class="processing-flow">
+      <div class="flow-step">Read table rows</div>
+      <div class="flow-step">Check employee_id</div>
+      <div class="flow-step">Find matching row</div>
+    </div>
+
+    <h3>Approach 2: Index Scan</h3>
+
+    <p>
+      Use the index on employee_id to locate the matching row,
+      then retrieve the corresponding table record.
+    </p>
+
+    <div class="processing-flow">
+      <div class="flow-step">Search index</div>
+      <div class="flow-step">Locate row reference</div>
+      <div class="flow-step">Retrieve table row</div>
+    </div>
+
+    <table class="table">
+      <thead>
+        <tr><th>Approach</th><th>How it works</th><th>Typical use</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Sequential Scan</td>
+          <td>Reads table pages sequentially</td>
+          <td>Large portion of table needed</td>
+        </tr>
+        <tr>
+          <td>Index Scan</td>
+          <td>Uses an index to locate matching rows</td>
+          <td>Selective lookup</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Does the database always use an index?</h3>
+
+    <p>
+      No. An index does not guarantee a faster query. If a query
+      needs a large percentage of the table, a sequential scan
+      may be more efficient.
+    </p>
+
+    <h3>Understand query plans using PostgreSQL</h3>
+
+    <pre class="sql-code"><code>EXPLAIN
+SELECT *
+FROM employees
+WHERE employee_id = 100;</code></pre>
+
+    <p>
+      EXPLAIN displays the execution plan chosen by PostgreSQL.
+      It helps us understand which operations the database
+      intends to perform.
+    </p>
+
+    <h3>Important optimization concepts</h3>
+
+    <table class="table">
+      <thead>
+        <tr><th>Concept</th><th>Simple explanation</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Statistics</td>
+          <td>Information about data distribution</td>
+          <td>Number of rows in a table</td>
+        </tr>
+        <tr>
+          <td>Cardinality</td>
+          <td>Expected number of rows from an operation</td>
+          <td>Expected matching employees</td>
+        </tr>
+        <tr>
+          <td>Cost estimation</td>
+          <td>Estimate the resources required</td>
+          <td>Comparing scan strategies</td>
+        </tr>
+        <tr>
+          <td>Index selection</td>
+          <td>Decide whether an index is useful</td>
+          <td>Primary key lookup</td>
+        </tr>
+        <tr>
+          <td>Join ordering</td>
+          <td>Choose the order of joining tables</td>
+          <td>Employees joined with departments</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- 6. PHYSICAL QUERY EXECUTION -->
+  <!-- ================================================= -->
+
+  <section class="content-section">
+
+    <h2>6. Physical Query Execution</h2>
+
+    <h3>What is physical query execution?</h3>
+
+    <p>
+      After the optimizer chooses an execution plan, PostgreSQL
+      executes that plan using physical execution operators.
+      These operators perform actual data retrieval, filtering,
+      joining, sorting, and aggregation.
+    </p>
+
+    <h3>Example: Retrieve high-salary employees</h3>
+
+    <pre class="sql-code"><code>SELECT *
+FROM employees
+WHERE salary > 50000;</code></pre>
+
+    <p>
+      One possible execution plan is a sequential scan with a
+      filter condition.
+    </p>
+
+    <div class="processing-flow">
+      <div class="flow-step">Sequential Scan</div>
+      <div class="flow-step">Filter salary > 50000</div>
+      <div class="flow-step">Return matching rows</div>
+    </div>
+
+    <h3>Common physical operators</h3>
+
+    <h4>6.1 Sequential Scan</h4>
+
+    <p>
+      Reads the table's pages sequentially and checks rows against
+      the query condition.
+    </p>
+
+    <pre class="sql-code"><code>EXPLAIN
+SELECT *
+FROM employees;</code></pre>
+
+    <h4>6.2 Index Scan</h4>
+
+    <p>
+      Uses an index to locate matching entries and fetches the
+      corresponding table rows.
+    </p>
+
+    <pre class="sql-code"><code>CREATE INDEX idx_employee_salary
+ON employees(salary);
+
+EXPLAIN
+SELECT *
+FROM employees
+WHERE salary = 60000;</code></pre>
+
+    <h4>6.3 Nested Loop Join</h4>
+
+    <p>
+      For each row from one input, PostgreSQL searches for
+      matching rows in the other input.
+    </p>
+
+    <pre class="sql-code"><code>SELECT e.employee_name, d.department_name
+FROM employees e
+JOIN departments d
+ON e.department_id = d.department_id;</code></pre>
+
+    <div class="processing-flow">
+      <div class="flow-step">Outer input</div>
+      <div class="flow-step">Nested Loop</div>
+      <div class="flow-step">Inner input lookup</div>
+      <div class="flow-step">Joined rows</div>
+    </div>
+
+    <h4>6.4 Hash Join</h4>
+
+    <p>
+      PostgreSQL builds a hash table from one input and probes
+      it using rows from the other input to find matching keys.
+    </p>
+
+    <div class="processing-flow">
+      <div class="flow-step">Build hash table</div>
+      <div class="flow-step">Probe hash table</div>
+      <div class="flow-step">Matching rows</div>
+    </div>
+
+    <h4>6.5 Sort</h4>
+
+    <p>
+      Sorts rows based on the requested ordering criteria.
+      Depending on the operation, sorting may use memory and
+      can spill to temporary disk files.
+    </p>
+
+    <pre class="sql-code"><code>SELECT *
+FROM employees
+ORDER BY salary DESC;</code></pre>
+
+    <h4>6.6 Aggregate</h4>
+
+    <p>
+      Calculates values such as COUNT, SUM, AVG, MIN, and MAX.
+      PostgreSQL can use different aggregation strategies,
+      including HashAggregate and GroupAggregate.
+    </p>
+
+    <pre class="sql-code"><code>SELECT department_id, AVG(salary)
+FROM employees
+GROUP BY department_id;</code></pre>
+
+    <table class="table">
+      <thead>
+        <tr><th>Operator</th><th>Purpose</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Seq Scan</td><td>Read table sequentially</td><td>Read employees</td></tr>
+        <tr><td>Index Scan</td><td>Retrieve rows using index</td><td>Find employee by ID</td></tr>
+        <tr><td>Nested Loop</td><td>Join using repeated lookups</td><td>Join two tables</td></tr>
+        <tr><td>Hash Join</td><td>Join using a hash table</td><td>Join department records</td></tr>
+        <tr><td>Sort</td><td>Order rows</td><td>Salary descending</td></tr>
+        <tr><td>Aggregate</td><td>Calculate grouped values</td><td>COUNT by department</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box">
+      PostgreSQL's executor uses a plan tree of operations.
+      The operators above are examples, not a fixed execution
+      sequence. The actual plan depends on the query and data.
+    </div>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- 7. DATABASE ENGINE INTERNALS -->
+  <!-- ================================================= -->
+
+  <section class="content-section">
+
+    <h2>7. Database Engine Internals</h2>
+
+    <h3>Why do we need to understand database internals?</h3>
+
+    <p>
+      Knowing SQL syntax is not enough when building high-performance
+      applications. We also need to understand how databases store,
+      retrieve, and manage data internally.
+    </p>
+
+    <h3>7.1 What happens when data is requested?</h3>
+
+    <p>
+      Imagine a query requests an employee record. PostgreSQL
+      needs to access the relevant table data. The required data
+      page may already be available in memory or may need to
+      be read from storage.
+    </p>
+
+    <div class="processing-flow">
+      <div class="flow-step">SQL Query</div>
+      <div class="flow-step">Executor</div>
+      <div class="flow-step">Shared Buffers</div>
+      <div class="flow-step">Storage</div>
+    </div>
+
+    <h3>7.2 What are database pages?</h3>
+
+    <p>
+      PostgreSQL stores table and index data in fixed-size pages.
+      The default page size in a standard PostgreSQL build is
+      commonly 8 KB.
+    </p>
+
+    <p>
+      A table is stored across multiple pages. Each page contains
+      a page header and row-related information.
+    </p>
+
+    <div class="processing-flow">
+      <div class="flow-step">Table</div>
+      <div class="flow-step">Page 1</div>
+      <div class="flow-step">Page 2</div>
+      <div class="flow-step">Page 3</div>
+    </div>
+
+    <h3>7.3 What is Shared Buffers?</h3>
+
+    <p>
+      Shared Buffers is PostgreSQL's main shared memory area
+      used to cache table and index pages. It helps avoid
+      repeatedly reading the same pages from disk.
+    </p>
+
+    <table class="table">
+      <thead>
+        <tr><th>Situation</th><th>What happens</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Page already in memory</td>
+          <td>PostgreSQL can access the cached page.</td>
+        </tr>
+        <tr>
+          <td>Page not in memory</td>
+          <td>PostgreSQL reads it from storage into shared buffers.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>7.4 What is MVCC?</h3>
+
+    <p>
+      MVCC stands for Multi-Version Concurrency Control.
+      PostgreSQL uses MVCC to allow transactions to work with
+      consistent snapshots of data while other transactions
+      may be modifying records.
+    </p>
+
+    <p>Example:</p>
+
+    <ul class="learning-list">
+      <li>Transaction A starts reading employee records.</li>
+      <li>Transaction B updates an employee salary.</li>
+      <li>Transaction A continues using its transaction snapshot.</li>
+      <li>Transaction A sees data according to its isolation level and snapshot.</li>
+    </ul>
+
+    <h3>Important internal components</h3>
+
+    <table class="table">
+      <thead>
+        <tr><th>Component</th><th>Responsibility</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Shared Buffers</td><td>Cache table and index pages</td></tr>
+        <tr><td>Storage</td><td>Persist database data</td></tr>
+        <tr><td>WAL</td><td>Record changes for durability and recovery</td></tr>
+        <tr><td>MVCC</td><td>Manage concurrent data visibility</td></tr>
+        <tr><td>Vacuum</td><td>Clean up obsolete row versions and maintain visibility information</td></tr>
+        <tr><td>Background Writer</td><td>Write dirty shared-buffer pages to storage</td></tr>
+      </tbody>
+    </table>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- 8. PERFORMANCE -->
+  <!-- ================================================= -->
+
+  <section class="content-section">
+
+    <h2>8. Query Performance and Optimization</h2>
+
+    <h3>Why are some SQL queries slow?</h3>
+
+    <p>
+      A query may be slow because it reads too much data,
+      uses inefficient joins, lacks appropriate indexes,
+      performs expensive sorting, or waits on resources.
+    </p>
+
+    <h3>Example: Analyze query performance</h3>
+
+    <pre class="sql-code"><code>EXPLAIN ANALYZE
+SELECT *
+FROM employees
+WHERE salary > 50000;</code></pre>
+
+    <p>
+      EXPLAIN ANALYZE executes the query and reports the
+      actual execution plan and runtime statistics.
+    </p>
+
+    <h3>Important execution plan metrics</h3>
+
+    <table class="table">
+      <thead>
+        <tr><th>Metric</th><th>Meaning</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Seq Scan</td>
+          <td>Table rows are scanned sequentially.</td>
+        </tr>
+        <tr>
+          <td>Index Scan</td>
+          <td>Rows are accessed through an index.</td>
+        </tr>
+        <tr>
+          <td>Estimated Rows</td>
+          <td>Rows the optimizer expects an operation to produce.</td>
+        </tr>
+        <tr>
+          <td>Actual Rows</td>
+          <td>Rows actually produced during execution.</td>
+        </tr>
+        <tr>
+          <td>Planning Time</td>
+          <td>Time spent planning the query.</td>
+        </tr>
+        <tr>
+          <td>Execution Time</td>
+          <td>Reported execution time.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>How can we improve performance?</h3>
+
+    <pre class="sql-code"><code>-- Create an index
+CREATE INDEX idx_employees_salary
+ON employees(salary);
+
+-- Analyze table statistics
+ANALYZE employees;
+
+-- Inspect the execution plan
+EXPLAIN ANALYZE
+SELECT *
+FROM employees
+WHERE salary > 50000;</code></pre>
+
+    <div class="info-box">
+      An index is not always the answer. Always examine the
+      execution plan and understand the workload before
+      adding indexes.
+    </div>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- 9. ARCHITECTURE -->
+  <!-- ================================================= -->
+
+  <section class="content-section">
+
+    <h2>9. Database Architecture and Production Scenarios</h2>
+
+    <h3>How does SQL Query Processing fit into an application?</h3>
+
+    <p>
+      In a real application, users do not normally connect to
+      database storage directly. Requests travel through
+      application services and database connections before
+      reaching the database engine.
+    </p>
+
+    <h3>Example: Employee management application</h3>
+
+    <div class="processing-flow">
+      <div class="flow-step">User</div>
+      <div class="flow-step">Frontend</div>
+      <div class="flow-step">Backend API</div>
+      <div class="flow-step">Connection Pool</div>
+      <div class="flow-step">PostgreSQL</div>
+    </div>
+
+    <p>
+      When a user opens the employee list:
+    </p>
+
+    <ol>
+      <li>The frontend sends a request to the backend.</li>
+      <li>The backend obtains a database connection.</li>
+      <li>The backend submits a SQL query.</li>
+      <li>PostgreSQL parses, plans, and executes the query.</li>
+      <li>The database returns rows.</li>
+      <li>The backend sends the response to the frontend.</li>
+    </ol>
+
+    <h3>Architect-level considerations</h3>
+
+    <table class="table">
+      <thead>
+        <tr><th>Area</th><th>Design question</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Connection Pooling</td>
+          <td>How many database connections should the application maintain?</td>
+        </tr>
+        <tr>
+          <td>Concurrency</td>
+          <td>How should multiple transactions access the same data?</td>
+        </tr>
+        <tr>
+          <td>Isolation</td>
+          <td>What transaction isolation level does the application require?</td>
+        </tr>
+        <tr>
+          <td>Indexing</td>
+          <td>Which indexes improve the workload without excessive write overhead?</td>
+        </tr>
+        <tr>
+          <td>Scalability</td>
+          <td>When should we consider read replicas or partitioning?</td>
+        </tr>
+        <tr>
+          <td>Reliability</td>
+          <td>How do we handle failures, backups, and recovery?</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- 10. COMPLETE QUERY PROCESSING -->
+  <!-- ================================================= -->
+
+  <section class="content-section">
+
+    <h2>10. Complete SQL Query Processing – Putting Everything Together</h2>
+
+    <p>
+      We have now studied SQL logical processing, parsing,
+      optimization, execution, and database internals.
+      Let's connect them into one complete picture.
+    </p>
+
+    <pre class="sql-code"><code>SELECT
+    department_id,
+    COUNT(*) AS total_employees
+FROM employees
+WHERE salary > 50000
+GROUP BY department_id
+HAVING COUNT(*) > 5
+ORDER BY total_employees DESC
+LIMIT 10;</code></pre>
+
+    <h3>Complete database processing pipeline</h3>
+
+    <div class="processing-flow">
+      <div class="flow-step">Client submits SQL</div>
+      <div class="flow-step">Parser creates parse tree</div>
+      <div class="flow-step">Analyzer resolves objects</div>
+      <div class="flow-step">Rewriter transforms query if required</div>
+      <div class="flow-step">Planner selects execution plan</div>
+      <div class="flow-step">Executor runs physical operators</div>
+      <div class="flow-step">Database returns results</div>
+    </div>
+
+    <h3>How the logical and physical layers relate</h3>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>SQL concept</th>
+          <th>Logical responsibility</th>
+          <th>Possible physical implementation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>FROM</td>
+          <td>Identify source relation</td>
+          <td>Sequential Scan or Index Scan</td>
+        </tr>
+        <tr>
+          <td>WHERE</td>
+          <td>Filter records</td>
+          <td>Filter, index condition</td>
+        </tr>
+        <tr>
+          <td>GROUP BY</td>
+          <td>Group records</td>
+          <td>HashAggregate or GroupAggregate</td>
+        </tr>
+        <tr>
+          <td>HAVING</td>
+          <td>Filter groups</td>
+          <td>Filter after aggregation</td>
+        </tr>
+        <tr>
+          <td>SELECT</td>
+          <td>Produce output expressions</td>
+          <td>Projection and expression evaluation</td>
+        </tr>
+        <tr>
+          <td>ORDER BY</td>
+          <td>Sort result</td>
+          <td>Sort or an order-preserving access path</td>
+        </tr>
+        <tr>
+          <td>LIMIT</td>
+          <td>Restrict output rows</td>
+          <td>Limit plan node</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info-box">
+      These are conceptual relationships, not a guaranteed
+      one-to-one mapping. The optimizer may combine, reorder,
+      or eliminate operations when the result remains correct.
+    </div>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- 11. KNOWLEDGE CHECK -->
+  <!-- ================================================= -->
+
+  <section class="content-section">
+
+    <h2>11. Knowledge Check – Test Your Understanding</h2>
+
+    <h3>Beginner Questions</h3>
+
+    <ol>
+      <li>What is SQL Query Processing?</li>
+      <li>What is the purpose of the FROM clause?</li>
+      <li>What is the difference between WHERE and HAVING?</li>
+      <li>Why is GROUP BY used?</li>
+      <li>What does LIMIT do?</li>
+    </ol>
+
+    <h3>Intermediate Questions</h3>
+
+    <ol>
+      <li>What happens during SQL parsing?</li>
+      <li>What is a parse tree?</li>
+      <li>What is query optimization?</li>
+      <li>What is the difference between Sequential Scan and Index Scan?</li>
+      <li>What information does EXPLAIN provide?</li>
+    </ol>
+
+    <h3>Advanced Questions</h3>
+
+    <ol>
+      <li>What is the difference between Hash Join and Nested Loop Join?</li>
+      <li>What is cardinality estimation?</li>
+      <li>How does PostgreSQL use Shared Buffers?</li>
+      <li>What is the purpose of MVCC?</li>
+      <li>How do you identify expensive execution plan operations?</li>
+    </ol>
+
+    <h3>Architect-level Questions</h3>
+
+    <ol>
+      <li>How would you design a database access layer for high concurrency?</li>
+      <li>How do connection pools affect database performance?</li>
+      <li>When would you introduce read replicas?</li>
+      <li>How would you investigate database performance degradation in production?</li>
+      <li>How do transaction isolation and MVCC influence application design?</li>
+    </ol>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- 12. PRACTICAL EXERCISES -->
+  <!-- ================================================= -->
+
+  <section class="content-section">
+
+    <h2>12. Hands-on Practice</h2>
+
+    <p>
+      Try these exercises using the employees table created
+      at the beginning of this tutorial.
+    </p>
+
+    <h3>Exercise 1: Basic filtering</h3>
+
+    <p>
+      Retrieve employees whose salary is greater than 60,000.
+    </p>
+
+    <pre class="sql-code"><code>SELECT *
+FROM employees
+WHERE salary > 60000;</code></pre>
+
+    <h3>Exercise 2: Sorting</h3>
+
+    <p>
+      Display employees from highest salary to lowest salary.
+    </p>
+
+    <pre class="sql-code"><code>SELECT *
+FROM employees
+ORDER BY salary DESC;</code></pre>
+
+    <h3>Exercise 3: Aggregation</h3>
+
+    <p>
+      Find the total number of employees in each department.
+    </p>
+
+    <pre class="sql-code"><code>SELECT
+    department_id,
+    COUNT(*) AS total_employees
+FROM employees
+GROUP BY department_id;</code></pre>
+
+    <h3>Exercise 4: Group filtering</h3>
+
+    <p>
+      Display departments having more than five employees.
+    </p>
+
+    <pre class="sql-code"><code>SELECT
+    department_id,
+    COUNT(*) AS total_employees
+FROM employees
+GROUP BY department_id
+HAVING COUNT(*) > 5;</code></pre>
+
+    <h3>Exercise 5: Query execution plan</h3>
+
+    <p>
+      Inspect how PostgreSQL executes the query.
+    </p>
+
+    <pre class="sql-code"><code>EXPLAIN ANALYZE
+SELECT *
+FROM employees
+WHERE salary > 50000;</code></pre>
+
+    <div class="info-box">
+      Try modifying the queries, predict their results,
+      and then execute them in PostgreSQL to validate
+      your understanding.
+    </div>
+
+  </section>
+
+
+  <!-- ================================================= -->
+  <!-- FINAL OUTCOME -->
+  <!-- ================================================= -->
+
+  <section class="outcome-section">
+
+    <h2>What You Should Understand Now</h2>
+
+    <p>
+      You started by understanding what happens when a SQL query
+      is submitted to a database. You then explored logical
+      query processing, parsing, validation, optimization,
+      physical execution, database storage, and production
+      architecture.
+    </p>
+
+    <p>
+      You should now be able to explain not only how to write
+      SQL queries, but also how PostgreSQL interprets them,
+      chooses an execution strategy, accesses data, and
+      returns results.
+    </p>
+
+    <strong>
+      The goal is to move from writing SQL queries to
+      understanding how database engines work internally.
+    </strong>
+
+  </section>
+
+</main>

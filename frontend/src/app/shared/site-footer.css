@@ -5,17 +5,18 @@
 
 .site-footer {
   display: flex;
-  min-height: 48px;
+  min-height: 56px;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   border-top: 1px solid #e6ebe7;
-  color: #87928b;
-  font-size: 10px;
+  color: #53645a;
+  font-size: 13px;
 }
 
 .footer-brand {
-  color: #53645a;
+  color: #33443a;
+  font-size: 14px;
   font-weight: 650;
   text-decoration: none;
 }
@@ -24,14 +25,39 @@
   color: #147d54;
 }
 
+.footer-linkedin {
+  color: #53645a;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.footer-linkedin:hover {
+  color: #147d54;
+  text-decoration: underline;
+}
+
 .footer-brand:focus-visible {
+  outline: 3px solid #6ccba0;
+  outline-offset: 3px;
+}
+
+.footer-linkedin:focus-visible {
   outline: 3px solid #6ccba0;
   outline-offset: 3px;
 }
 
 @media (max-width: 560px) {
   .site-footer {
-    min-height: 40px;
-    font-size: 9px;
+    min-height: 52px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 12px;
+    padding: 8px 0;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .footer-brand {
+    font-size: 13px;
   }
 }

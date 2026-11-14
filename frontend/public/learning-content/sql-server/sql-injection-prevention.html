@@ -1,0 +1,1321 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Prevent SQL Injection in SQL Server</h1>
+        <p>
+            Learn how SQL injection vulnerabilities occur and how to prevent
+            them using parameterized queries, safe dynamic SQL, stored
+            procedures, input validation, and database security controls.
+            Explore practical attack demonstrations, execution behavior,
+            application examples, and production security practices.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Learning Objectives</h2>
+        <ul class="learning-list">
+            <li>Understand SQL injection and how attackers exploit it.</li>
+            <li>Recognize unsafe dynamic SQL construction.</li>
+            <li>Understand how injected SQL changes query behavior.</li>
+            <li>Use parameterized queries to protect application inputs.</li>
+            <li>Use sp_executesql safely.</li>
+            <li>Write secure stored procedures.</li>
+            <li>Understand why stored procedures alone do not prevent SQL injection.</li>
+            <li>Validate input and safely handle dynamic identifiers.</li>
+            <li>Apply least-privilege database permissions.</li>
+            <li>Recognize second-order SQL injection.</li>
+            <li>Test and audit SQL Server applications for injection risks.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>2. What Is SQL Injection?</h2>
+
+        <p>
+            SQL injection is a security vulnerability in which untrusted
+            application input is interpreted as part of an SQL command
+            instead of being treated only as data.
+        </p>
+
+        <p>
+            It commonly happens when an application builds SQL statements
+            by concatenating user-supplied text into a query string.
+        </p>
+
+        <h3>Example application scenario</h3>
+
+        <p>
+            Imagine a login form that accepts:
+        </p>
+
+        <ul>
+            <li>Username</li>
+            <li>Password</li>
+        </ul>
+
+        <p>
+            The application sends those values to SQL Server to verify
+            whether the account exists.
+        </p>
+
+        <p>
+            If the application directly inserts the values into SQL
+            command text, a malicious user may change the meaning of
+            the query.
+        </p>
+
+        <h3>Normal input</h3>
+
+        <pre class="sql-code"><code>Username: alice
+Password: MyPassword123</code></pre>
+
+        <h3>Potential malicious input</h3>
+
+        <pre class="sql-code"><code>Username: ' OR 1=1 --
+Password: anything</code></pre>
+
+        <p>
+            The exact impact depends on how the application constructs
+            the SQL statement and what permissions its database account
+            has.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>3. Create Sample Tables for Demonstration</h2>
+
+        <p>
+            The following table is a simplified example of application
+            user records. Never store real user passwords as plain text.
+            A production authentication system should use a suitable
+            password-hashing mechanism in the application layer.
+        </p>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.AppUsers;
+
+CREATE TABLE dbo.AppUsers
+(
+    UserId INT IDENTITY(1,1)
+        CONSTRAINT PK_AppUsers PRIMARY KEY,
+
+    Username VARCHAR(50) NOT NULL,
+
+    PasswordHash VARCHAR(255) NOT NULL,
+
+    IsActive BIT NOT NULL
+);
+
+INSERT INTO dbo.AppUsers
+(
+    Username,
+    PasswordHash,
+    IsActive
+)
+VALUES
+    ('alice', 'ExampleHashA', 1),
+    ('bob', 'ExampleHashB', 1),
+    ('charlie', 'ExampleHashC', 0);
+
+SELECT *
+FROM dbo.AppUsers;</code></pre>
+
+        <h3>Sample data</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>UserId</th>
+                    <th>Username</th>
+                    <th>PasswordHash</th>
+                    <th>IsActive</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>alice</td><td>ExampleHashA</td><td>1</td></tr>
+                <tr><td>2</td><td>bob</td><td>ExampleHashB</td><td>1</td></tr>
+                <tr><td>3</td><td>charlie</td><td>ExampleHashC</td><td>0</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            These example hash strings are placeholders, not real password
+            hashes. SQL Server should not be used as a substitute for a
+            modern application authentication and password-hashing design.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>4. How SQL Injection Happens</h2>
+
+        <p>
+            Consider an application that creates a query using string
+            concatenation.
+        </p>
+
+        <h3>Unsafe SQL construction</h3>
+
+        <pre class="sql-code"><code>DECLARE @Username VARCHAR(100);
+
+SET @Username = 'alice';
+
+DECLARE @SQL NVARCHAR(MAX);
+
+SET @SQL =
+    'SELECT UserId, Username
+     FROM dbo.AppUsers
+     WHERE Username = '''
+     + @Username
+     + '''';
+
+PRINT @SQL;
+
+EXEC(@SQL);</code></pre>
+
+        <p>
+            For ordinary input, the generated SQL is:
+        </p>
+
+        <pre class="sql-code"><code>SELECT UserId, Username
+FROM dbo.AppUsers
+WHERE Username = 'alice';</code></pre>
+
+        <p>
+            The query appears to work correctly. The problem is that
+            @Username is being treated as part of the SQL command text.
+        </p>
+
+        <h3>Illustrative injection demonstration</h3>
+
+        <p>
+            In this isolated demonstration, a crafted input changes the
+            WHERE condition so that it becomes true for every row.
+        </p>
+
+        <pre class="sql-code"><code>DECLARE @Username VARCHAR(100);
+
+SET @Username = ''' OR 1=1 --';
+
+DECLARE @SQL NVARCHAR(MAX);
+
+SET @SQL =
+    'SELECT UserId, Username
+     FROM dbo.AppUsers
+     WHERE Username = '''
+     + @Username
+     + '''';
+
+PRINT @SQL;
+
+EXEC(@SQL);</code></pre>
+
+        <p>The resulting command is equivalent to:</p>
+
+        <pre class="sql-code"><code>SELECT UserId, Username
+FROM dbo.AppUsers
+WHERE Username = '' OR 1=1 --';</code></pre>
+
+        <p>
+            The expression 1=1 is always true. The double hyphen starts
+            a SQL Server single-line comment, so the remaining text on
+            that line is ignored.
+        </p>
+
+        <p>
+            The query can therefore return every user in the table,
+            rather than only the requested user.
+        </p>
+
+        <h3>Why this is dangerous</h3>
+
+        <ul>
+            <li>Authentication checks may be bypassed.</li>
+            <li>Private records may be exposed.</li>
+            <li>Data may be modified or deleted.</li>
+            <li>Application privileges may be abused.</li>
+            <li>Database objects may be exposed or damaged.</li>
+        </ul>
+
+        <div class="info-box">
+            Run demonstrations only against a local test database that
+            you control. Never test injection payloads against systems
+            without explicit authorization.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>5. SQL Injection Processing Flow</h2>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>User submits input</strong>
+                <p>An application receives a username or search value.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Application constructs SQL</strong>
+                <p>Unsafe code concatenates the input into SQL text.</p>
+            </div>
+            <div class="flow-step">
+                <strong>SQL Server parses the command</strong>
+                <p>The supplied text becomes part of the SQL syntax.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Query executes</strong>
+                <p>The database may execute a modified condition or command.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Unauthorized result or change</strong>
+                <p>Data can be exposed or modified beyond the intended operation.</p>
+            </div>
+        </div>
+
+        <h3>Secure processing flow</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>User submits input</strong>
+                <p>The application receives untrusted values.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Parameterized command</strong>
+                <p>SQL text and parameter values are supplied separately.</p>
+            </div>
+            <div class="flow-step">
+                <strong>SQL Server binds parameters</strong>
+                <p>Values are interpreted as data, not SQL syntax.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Query executes</strong>
+                <p>The intended SQL structure is preserved.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Controlled result</strong>
+                <p>The query processes the supplied value as data.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Solution 1 — Parameterized Queries</h2>
+
+        <p>
+            Parameterized queries are one of the most important defenses
+            against SQL injection.
+        </p>
+
+        <p>
+            Instead of inserting a value into SQL command text, define a
+            parameter placeholder and pass the value separately.
+        </p>
+
+        <h3>Unsafe approach</h3>
+
+        <pre class="sql-code"><code>DECLARE @Username VARCHAR(100) =
+    'alice';
+
+DECLARE @SQL NVARCHAR(MAX);
+
+SET @SQL =
+    'SELECT UserId, Username
+     FROM dbo.AppUsers
+     WHERE Username = '''
+     + @Username
+     + '''';
+
+EXEC(@SQL);</code></pre>
+
+        <h3>Safe approach with sp_executesql</h3>
+
+        <pre class="sql-code"><code>DECLARE @Username NVARCHAR(50) =
+    N'alice';
+
+DECLARE @SQL NVARCHAR(MAX);
+
+SET @SQL =
+    N'SELECT UserId, Username
+      FROM dbo.AppUsers
+      WHERE Username = @Username';
+
+EXEC sys.sp_executesql
+    @SQL,
+    N'@Username NVARCHAR(50)',
+    @Username = @Username;</code></pre>
+
+        <p>
+            SQL command text and the parameter value are passed separately.
+            SQL Server does not reinterpret the parameter value as
+            additional SQL syntax.
+        </p>
+
+        <h3>What happens with malicious input?</h3>
+
+        <pre class="sql-code"><code>DECLARE @Username NVARCHAR(50) =
+    N''' OR 1=1 --';
+
+DECLARE @SQL NVARCHAR(MAX) =
+    N'SELECT UserId, Username
+      FROM dbo.AppUsers
+      WHERE Username = @Username';
+
+EXEC sys.sp_executesql
+    @SQL,
+    N'@Username NVARCHAR(50)',
+    @Username = @Username;</code></pre>
+
+        <p>
+            The entire input is treated as one username value. SQL Server
+            searches for a username containing that text instead of
+            executing the input as a condition.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Solution 2 — Use Stored Procedures Safely</h2>
+
+        <p>
+            Stored procedures can provide a controlled database interface,
+            but they do not automatically prevent SQL injection.
+        </p>
+
+        <p>
+            A procedure that concatenates untrusted input into dynamic
+            SQL can still be vulnerable.
+        </p>
+
+        <h3>Unsafe stored procedure</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.SearchUserUnsafe
+    @Username NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @SQL NVARCHAR(MAX);
+
+    SET @SQL =
+        N'SELECT UserId, Username
+          FROM dbo.AppUsers
+          WHERE Username = '''
+        + @Username
+        + N'''';
+
+    EXEC(@SQL);
+END;
+GO</code></pre>
+
+        <p>
+            The stored procedure is vulnerable because the input is
+            concatenated into SQL command text.
+        </p>
+
+        <h3>Safe stored procedure</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.SearchUserSafe
+    @Username NVARCHAR(50)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        UserId,
+        Username,
+        IsActive
+    FROM dbo.AppUsers
+    WHERE Username = @Username;
+END;
+GO</code></pre>
+
+        <h3>Execute the procedure</h3>
+
+        <pre class="sql-code"><code>EXEC dbo.SearchUserSafe
+    @Username = N'alice';</code></pre>
+
+        <p>
+            SQL Server receives a fixed SQL statement and a separate
+            parameter value. The input cannot change the structure
+            of the SELECT statement.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>8. Solution 3 — Use sp_executesql Correctly</h2>
+
+        <p>
+            sp_executesql executes a Unicode SQL statement and supports
+            explicitly declared parameters.
+        </p>
+
+        <h3>Syntax</h3>
+
+        <pre class="sql-code"><code>EXEC sys.sp_executesql
+    @stmt,
+    @params,
+    @parameter_name = @parameter_value;</code></pre>
+
+        <h3>Example with multiple parameters</h3>
+
+        <pre class="sql-code"><code>DECLARE @SQL NVARCHAR(MAX);
+
+SET @SQL =
+    N'SELECT
+          UserId,
+          Username,
+          IsActive
+      FROM dbo.AppUsers
+      WHERE Username = @Username
+        AND IsActive = @IsActive';
+
+EXEC sys.sp_executesql
+    @SQL,
+    N'@Username NVARCHAR(50),
+      @IsActive BIT',
+    @Username = N'alice',
+    @IsActive = 1;</code></pre>
+
+        <h3>Example with a numeric parameter</h3>
+
+        <pre class="sql-code"><code>DECLARE @SQL NVARCHAR(MAX);
+
+SET @SQL =
+    N'SELECT *
+      FROM dbo.Employee
+      WHERE Salary >= @MinimumSalary';
+
+EXEC sys.sp_executesql
+    @SQL,
+    N'@MinimumSalary DECIMAL(12,2)',
+    @MinimumSalary = 50000.00;</code></pre>
+
+        <h3>Benefits</h3>
+
+        <ul>
+            <li>Separates SQL command structure from input values.</li>
+            <li>Supports strongly typed parameters.</li>
+            <li>Can support execution-plan reuse when statement text remains stable.</li>
+            <li>Supports dynamic queries without unsafe value concatenation.</li>
+        </ul>
+
+        <div class="info-box">
+            sp_executesql is not automatically safe if untrusted input is
+            concatenated into the SQL statement itself. Parameterize every
+            data value that can be supplied as a parameter.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>9. SQL Injection in Dynamic SQL</h2>
+
+        <p>
+            Dynamic SQL is useful when the application must construct a
+            query based on optional filters, selected columns, or sorting.
+            However, it must be designed carefully.
+        </p>
+
+        <h3>Unsafe dynamic SQL with a search filter</h3>
+
+        <pre class="sql-code"><code>DECLARE @SearchText NVARCHAR(100) =
+    N'alice';
+
+DECLARE @SQL NVARCHAR(MAX);
+
+SET @SQL =
+    N'SELECT UserId, Username
+      FROM dbo.AppUsers
+      WHERE Username LIKE N''%'
+      + @SearchText
+      + N'%''';
+
+EXEC(@SQL);</code></pre>
+
+        <p>
+            The search value is embedded in the SQL text. This creates
+            an injection risk.
+        </p>
+
+        <h3>Safe dynamic SQL with a parameter</h3>
+
+        <pre class="sql-code"><code>DECLARE @SearchText NVARCHAR(100) =
+    N'alice';
+
+DECLARE @SQL NVARCHAR(MAX);
+
+SET @SQL =
+    N'SELECT UserId, Username
+      FROM dbo.AppUsers
+      WHERE Username LIKE @SearchPattern';
+
+EXEC sys.sp_executesql
+    @SQL,
+    N'@SearchPattern NVARCHAR(202)',
+    @SearchPattern = N'%' + @SearchText + N'%';</code></pre>
+
+        <p>
+            The search value is passed separately. A value containing
+            SQL-looking text remains data.
+        </p>
+
+        <h3>Search wildcard behavior</h3>
+
+        <p>
+            Parameterization prevents SQL injection, but it does not
+            automatically make wildcard characters literal.
+        </p>
+
+        <p>
+            In a LIKE expression, the percent sign and underscore have
+            pattern meanings. If the application intends to search for
+            those characters literally, escape them and specify an
+            ESCAPE character.
+        </p>
+
+        <pre class="sql-code"><code>DECLARE @SearchText NVARCHAR(100) =
+    N'50%';
+
+SET @SearchText = REPLACE(@SearchText, N'~', N'~~');
+SET @SearchText = REPLACE(@SearchText, N'%', N'~%');
+SET @SearchText = REPLACE(@SearchText, N'_', N'~_');
+SET @SearchText = REPLACE(@SearchText, N'[', N'~[');
+
+SELECT UserId, Username
+FROM dbo.AppUsers
+WHERE Username LIKE N'%' + @SearchText + N'%'
+ESCAPE N'~';</code></pre>
+    </section>
+
+    <section class="content-section">
+        <h2>10. Dynamic Table Names and Column Names</h2>
+
+        <p>
+            SQL parameters can represent values, but they cannot directly
+            represent SQL identifiers such as table names, column names,
+            or sort directions.
+        </p>
+
+        <p>
+            For dynamic identifiers, use an allowlist and QUOTENAME.
+        </p>
+
+        <h3>Unsafe example</h3>
+
+        <pre class="sql-code"><code>DECLARE @ColumnName NVARCHAR(100) =
+    N'Username';
+
+DECLARE @SQL NVARCHAR(MAX);
+
+SET @SQL =
+    N'SELECT ' + @ColumnName +
+    N' FROM dbo.AppUsers';
+
+EXEC(@SQL);</code></pre>
+
+        <p>
+            An attacker-controlled identifier could change the SQL
+            statement structure.
+        </p>
+
+        <h3>Safe example with an allowlist</h3>
+
+        <pre class="sql-code"><code>DECLARE @ColumnName SYSNAME =
+    N'Username';
+
+DECLARE @SQL NVARCHAR(MAX);
+
+IF @ColumnName NOT IN
+(
+    N'UserId',
+    N'Username',
+    N'IsActive'
+)
+BEGIN
+    THROW 50010, 'Invalid column selection.', 1;
+END;
+
+SET @SQL =
+    N'SELECT ' + QUOTENAME(@ColumnName) +
+    N' FROM dbo.AppUsers';
+
+EXEC sys.sp_executesql @SQL;</code></pre>
+
+        <p>
+            QUOTENAME safely delimits a SQL Server identifier. It does
+            not determine whether the requested identifier is permitted.
+            The allowlist provides that authorization decision.
+        </p>
+
+        <h3>Safe dynamic sorting</h3>
+
+        <pre class="sql-code"><code>DECLARE @SortColumn SYSNAME = N'Username';
+DECLARE @SortDirection NVARCHAR(4) = N'ASC';
+
+DECLARE @SQL NVARCHAR(MAX);
+
+IF @SortColumn NOT IN
+(
+    N'UserId',
+    N'Username',
+    N'IsActive'
+)
+BEGIN
+    THROW 50011, 'Invalid sort column.', 1;
+END;
+
+IF @SortDirection NOT IN (N'ASC', N'DESC')
+BEGIN
+    THROW 50012, 'Invalid sort direction.', 1;
+END;
+
+SET @SQL =
+    N'SELECT UserId, Username, IsActive
+      FROM dbo.AppUsers
+      ORDER BY '
+    + QUOTENAME(@SortColumn)
+    + N' '
+    + @SortDirection;
+
+EXEC sys.sp_executesql @SQL;</code></pre>
+
+        <p>
+            The sort column and direction are validated against fixed
+            choices before they are added to the SQL statement.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Input Validation and Parameter Types</h2>
+
+        <p>
+            Parameterization is the primary defense against SQL injection
+            for data values. Input validation provides additional
+            protection by enforcing application rules.
+        </p>
+
+        <h3>Example: Validate an account identifier</h3>
+
+        <pre class="sql-code"><code>DECLARE @AccountId INT = 100;
+
+IF @AccountId <= 0
+BEGIN
+    THROW 50020, 'Invalid account identifier.', 1;
+END;
+
+SELECT *
+FROM dbo.BankAccount
+WHERE AccountId = @AccountId;</code></pre>
+
+        <h3>Example: Validate a username length</h3>
+
+        <pre class="sql-code"><code>DECLARE @Username NVARCHAR(50) =
+    N'alice';
+
+IF NULLIF(LTRIM(RTRIM(@Username)), N'') IS NULL
+BEGIN
+    THROW 50021, 'Username is required.', 1;
+END;
+
+IF LEN(@Username) > 50
+BEGIN
+    THROW 50022, 'Username is too long.', 1;
+END;
+
+SELECT UserId, Username
+FROM dbo.AppUsers
+WHERE Username = @Username;</code></pre>
+
+        <h3>Why parameter data types matter</h3>
+
+        <ul>
+            <li>Use INT for integer identifiers.</li>
+            <li>Use DECIMAL for exact monetary values.</li>
+            <li>Use DATE or DATETIME2 for date values.</li>
+            <li>Use NVARCHAR for Unicode text.</li>
+            <li>Match parameter lengths and types to the target columns where practical.</li>
+        </ul>
+
+        <p>
+            Correct parameter types also help avoid unnecessary implicit
+            conversions and can improve query-plan quality.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>12. SQL Injection Through Application Code</h2>
+
+        <p>
+            Many SQL injection vulnerabilities originate in application
+            code rather than in the SQL Server database itself.
+        </p>
+
+        <h3>Unsafe C# example</h3>
+
+        <pre class="sql-code"><code>string username = txtUsername.Text;
+
+string sql =
+    "SELECT UserId, Username " +
+    "FROM dbo.AppUsers " +
+    "WHERE Username = '" + username + "'";
+
+using (SqlCommand command = new SqlCommand(sql, connection))
+{
+    using (SqlDataReader reader = command.ExecuteReader())
+    {
+        while (reader.Read())
+        {
+            // Process results.
+        }
+    }
+}</code></pre>
+
+        <p>
+            The SQL statement is built using direct string concatenation.
+            User input can alter its structure.
+        </p>
+
+        <h3>Safe C# example with SqlParameter</h3>
+
+        <pre class="sql-code"><code>string username = txtUsername.Text;
+
+string sql =
+    "SELECT UserId, Username " +
+    "FROM dbo.AppUsers " +
+    "WHERE Username = @Username";
+
+using (SqlCommand command = new SqlCommand(sql, connection))
+{
+    command.Parameters.Add(
+        "@Username",
+        SqlDbType.NVarChar,
+        50
+    ).Value = username;
+
+    using (SqlDataReader reader = command.ExecuteReader())
+    {
+        while (reader.Read())
+        {
+            // Process results.
+        }
+    }
+}</code></pre>
+
+        <p>
+            The parameter is sent separately from the command text.
+            The SQL structure remains fixed even when the user supplies
+            unusual characters.
+        </p>
+
+        <h3>Safe parameterized INSERT</h3>
+
+        <pre class="sql-code"><code>string sql =
+    "INSERT INTO dbo.AppUsers " +
+    "(Username, PasswordHash, IsActive) " +
+    "VALUES (@Username, @PasswordHash, @IsActive)";
+
+using (SqlCommand command = new SqlCommand(sql, connection))
+{
+    command.Parameters.Add(
+        "@Username",
+        SqlDbType.NVarChar,
+        50
+    ).Value = username;
+
+    command.Parameters.Add(
+        "@PasswordHash",
+        SqlDbType.NVarChar,
+        255
+    ).Value = passwordHash;
+
+    command.Parameters.Add(
+        "@IsActive",
+        SqlDbType.Bit
+    ).Value = true;
+
+    command.ExecuteNonQuery();
+}</code></pre>
+
+        <div class="info-box">
+            Parameterize every user-controlled data value. Do not
+            construct SQL command text by concatenating form fields,
+            URL parameters, request headers, cookies, or other
+            untrusted input.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Second-Order SQL Injection</h2>
+
+        <p>
+            Second-order SQL injection occurs when malicious-looking
+            input is safely stored as data, but a later operation
+            retrieves that stored value and inserts it into dynamically
+            constructed SQL without parameterization.
+        </p>
+
+        <h3>Example scenario</h3>
+
+        <ol>
+            <li>An application accepts a search configuration or label.</li>
+            <li>The value is stored in a database using a parameterized INSERT.</li>
+            <li>A reporting procedure later reads the stored value.</li>
+            <li>The reporting procedure concatenates it into dynamic SQL.</li>
+            <li>The stored value is now interpreted as SQL syntax.</li>
+        </ol>
+
+        <h3>Important lesson</h3>
+
+        <p>
+            Data does not become trustworthy simply because it came from
+            your own database. Stored values may originally have come
+            from untrusted users.
+        </p>
+
+        <p>
+            Apply the same parameterization and identifier-validation
+            rules every time data is used to construct a SQL command.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Least-Privilege Database Permissions</h2>
+
+        <p>
+            Parameterization prevents input from changing SQL command
+            structure. Least privilege limits what an application can
+            do if a vulnerability exists elsewhere.
+        </p>
+
+        <p>
+            An application account should receive only the permissions
+            needed for its business operations.
+        </p>
+
+        <h3>Create a restricted application role</h3>
+
+        <pre class="sql-code"><code>CREATE ROLE AppUserRole;
+
+GRANT EXECUTE
+ON OBJECT::dbo.SearchUserSafe
+TO AppUserRole;</code></pre>
+
+        <p>
+            A database user can be added to the role through the
+            appropriate database provisioning process.
+        </p>
+
+        <pre class="sql-code"><code>-- Example for an existing database user:
+ALTER ROLE AppUserRole
+ADD MEMBER AppServiceUser;</code></pre>
+
+        <p>
+            This example assumes AppServiceUser already exists in the
+            database. Do not grant application accounts broad permissions
+            such as db_owner simply for convenience.
+        </p>
+
+        <h3>Review effective permissions</h3>
+
+        <pre class="sql-code"><code>SELECT
+    pr.name AS PrincipalName,
+    pe.permission_name,
+    pe.state_desc,
+    OBJECT_SCHEMA_NAME(pe.major_id) AS SchemaName,
+    OBJECT_NAME(pe.major_id) AS ObjectName
+FROM sys.database_permissions AS pe
+JOIN sys.database_principals AS pr
+    ON pe.grantee_principal_id = pr.principal_id
+ORDER BY
+    pr.name,
+    pe.permission_name;</code></pre>
+
+        <h3>Security principles</h3>
+
+        <ul>
+            <li>Use a dedicated database identity for the application.</li>
+            <li>Avoid sysadmin and db_owner privileges for ordinary application connections.</li>
+            <li>Grant EXECUTE only on required stored procedures where appropriate.</li>
+            <li>Separate application roles from administrative accounts.</li>
+            <li>Protect credentials and connection strings.</li>
+            <li>Review permissions periodically.</li>
+        </ul>
+
+        <p>
+            Be aware that dynamic SQL inside a stored procedure can have
+            different permission behavior from ordinary static SQL.
+            Test execution permissions and use an appropriate ownership
+            or signing strategy when required.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>15. Why Escaping Quotes Is Not Enough</h2>
+
+        <p>
+            A common but unreliable approach is to manually replace
+            quotation marks before concatenating user input into SQL.
+        </p>
+
+        <h3>Example of manual escaping</h3>
+
+        <pre class="sql-code"><code>DECLARE @Username NVARCHAR(100) =
+    N'alice';
+
+SET @Username = REPLACE(
+    @Username,
+    N'''',
+    N''''''
+);
+
+-- Escaping alone is not the preferred defense.
+-- Use a parameterized query instead.</code></pre>
+
+        <p>
+            Manual escaping is easy to implement incorrectly. Different
+            SQL contexts have different syntax rules, and escaping
+            quotation marks does not safely handle arbitrary identifiers,
+            operators, sort directions, or complete SQL fragments.
+        </p>
+
+        <p>
+            Prefer parameterized queries for values and allowlists for
+            identifiers and other SQL syntax choices.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Common SQL Injection Patterns</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Pattern</th>
+                    <th>Risk</th>
+                    <th>Recommended protection</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>String concatenation</td>
+                    <td>User input changes SQL syntax.</td>
+                    <td>Parameterized queries.</td>
+                </tr>
+                <tr>
+                    <td>Unsafe dynamic SQL</td>
+                    <td>Untrusted input is embedded in command text.</td>
+                    <td>sp_executesql with parameters.</td>
+                </tr>
+                <tr>
+                    <td>Dynamic table or column name</td>
+                    <td>Untrusted identifier changes the statement.</td>
+                    <td>Allowlist and QUOTENAME.</td>
+                </tr>
+                <tr>
+                    <td>Unsafe stored procedure</td>
+                    <td>Procedure concatenates input into SQL.</td>
+                    <td>Static SQL or parameterized dynamic SQL.</td>
+                </tr>
+                <tr>
+                    <td>Second-order injection</td>
+                    <td>Stored untrusted values are later used unsafely.</td>
+                    <td>Parameterize every later query as well.</td>
+                </tr>
+                <tr>
+                    <td>Excessive permissions</td>
+                    <td>Vulnerability has a larger impact.</td>
+                    <td>Least-privilege database accounts.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>17. SQL Server Execution and Plan Reuse</h2>
+
+        <p>
+            SQL Server processes SQL commands through parsing, binding,
+            optimization, and execution. Parameterized queries help keep
+            SQL structure separate from data values.
+        </p>
+
+        <h3>Parameterized query example</h3>
+
+        <pre class="sql-code"><code>DECLARE @SQL NVARCHAR(MAX) =
+    N'SELECT UserId, Username
+      FROM dbo.AppUsers
+      WHERE Username = @Username';
+
+EXEC sys.sp_executesql
+    @SQL,
+    N'@Username NVARCHAR(50)',
+    @Username = N'alice';</code></pre>
+
+        <h3>Execution flow</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>SQL statement</strong>
+                <p>The fixed statement text is supplied.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Parameter declaration</strong>
+                <p>SQL Server receives the parameter name and type.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Optimization</strong>
+                <p>The optimizer creates or reuses a suitable execution plan.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Parameter binding</strong>
+                <p>The value is supplied as data.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Execution</strong>
+                <p>The statement executes without treating the parameter as SQL syntax.</p>
+            </div>
+        </div>
+
+        <p>
+            Parameterization can improve plan reuse when the statement
+            text and parameter definitions remain stable. It does not
+            guarantee a single ideal execution plan for every value.
+            Parameter sniffing and data distribution can still affect
+            plan quality.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>18. How to Detect and Investigate SQL Injection Risks</h2>
+
+        <p>
+            Security reviews should focus on application code, database
+            permissions, dynamic SQL construction, and query execution
+            patterns.
+        </p>
+
+        <h3>Review dynamic SQL modules</h3>
+
+        <pre class="sql-code"><code>SELECT
+    OBJECT_SCHEMA_NAME(object_id) AS SchemaName,
+    OBJECT_NAME(object_id) AS ObjectName,
+    definition
+FROM sys.sql_modules
+WHERE definition LIKE '%EXEC(%'
+   OR definition LIKE '%EXECUTE(%'
+   OR definition LIKE '%sp_executesql%';</code></pre>
+
+        <p>
+            This query can help identify modules containing dynamic SQL
+            patterns. It is not a vulnerability scanner. Safe and unsafe
+            code can both match these patterns, and encrypted or
+            externally generated SQL may not be visible.
+        </p>
+
+        <h3>Review permissions</h3>
+
+        <pre class="sql-code"><code>SELECT
+    name,
+    type_desc,
+    is_disabled
+FROM sys.server_principals
+ORDER BY name;</code></pre>
+
+        <p>
+            Review application identities, their database roles,
+            server-level privileges, and any unnecessary elevated access.
+        </p>
+
+        <h3>Use application security testing</h3>
+
+        <ul>
+            <li>Perform static analysis of application code.</li>
+            <li>Review every dynamic SQL construction point.</li>
+            <li>Test parameterized query behavior in an authorized test environment.</li>
+            <li>Use approved dynamic application security testing tools.</li>
+            <li>Review database audit events and application logs.</li>
+            <li>Investigate unusual query patterns and permission failures.</li>
+        </ul>
+
+        <div class="info-box">
+            Do not rely on a single keyword search or a list of suspicious
+            strings to prove that an application is secure. SQL injection
+            review requires understanding how data flows from the user
+            into the SQL command.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>19. Secure Coding Checklist</h2>
+
+        <ul class="learning-list">
+            <li>Use parameterized queries for all user-controlled values.</li>
+            <li>Use sp_executesql when dynamic SQL is necessary.</li>
+            <li>Never concatenate untrusted input directly into SQL command text.</li>
+            <li>Use allowlists for dynamic identifiers and sort directions.</li>
+            <li>Use QUOTENAME for validated SQL identifiers.</li>
+            <li>Use correct parameter data types and lengths.</li>
+            <li>Validate inputs against business rules.</li>
+            <li>Use least-privilege database accounts.</li>
+            <li>Review stored procedures for unsafe dynamic SQL.</li>
+            <li>Do not assume stored procedures are automatically secure.</li>
+            <li>Handle database errors without exposing sensitive internals to users.</li>
+            <li>Review second-order SQL injection risks.</li>
+            <li>Use code review and security testing before production release.</li>
+            <li>Protect credentials, connection strings, and secrets.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>20. Real-World Applications</h2>
+
+        <h3>Banking Applications</h3>
+        <p>
+            Account lookups, transaction history, beneficiary searches,
+            and transfer procedures should use parameterized SQL.
+            Application database accounts should have only the permissions
+            needed for those operations.
+        </p>
+
+        <h3>E-commerce Applications</h3>
+        <p>
+            Product search, order lookup, customer details, and inventory
+            queries frequently accept user-controlled values. These
+            operations should use typed parameters.
+        </p>
+
+        <h3>Reporting Systems</h3>
+        <p>
+            Reporting interfaces often allow users to select columns,
+            filters, and sort orders. Data filters should be parameters,
+            while dynamic identifiers should be validated against
+            explicit allowlists.
+        </p>
+
+        <h3>Administrative Dashboards</h3>
+        <p>
+            Administrative interfaces may have access to sensitive data.
+            Use separate database roles and tightly controlled stored
+            procedures to reduce the impact of application vulnerabilities.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>21. Hands-On Exercises</h2>
+
+        <ol>
+            <li>Create the AppUsers table and insert sample records.</li>
+            <li>Build an unsafe dynamic SQL query in a local test database and inspect the generated SQL.</li>
+            <li>Compare the unsafe query with a parameterized sp_executesql statement.</li>
+            <li>Create a safe SearchUserSafe stored procedure.</li>
+            <li>Build a dynamic search query using a parameterized LIKE expression.</li>
+            <li>Create a dynamic sorting procedure using an allowlist and QUOTENAME.</li>
+            <li>Review a stored procedure that uses EXEC() and identify whether it is vulnerable.</li>
+            <li>Create a restricted database role that can execute only selected procedures.</li>
+            <li>Build an application query using typed SqlParameter objects.</li>
+            <li>Review a second-order injection scenario and rewrite the unsafe query.</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>22. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>What is SQL injection?</p>
+        <ul>
+            <li>A. A database backup technique.</li>
+            <li>B. An attack that changes SQL command behavior through untrusted input.</li>
+            <li>C. An indexing strategy.</li>
+            <li>D. A transaction isolation level.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — SQL injection occurs when untrusted input changes the meaning of SQL command text.</p>
+
+        <h3>Question 2</h3>
+        <p>What is the preferred defense for user-supplied SQL values?</p>
+        <ul>
+            <li>A. String concatenation.</li>
+            <li>B. Removing every space.</li>
+            <li>C. Parameterized queries.</li>
+            <li>D. Using SELECT *.</li>
+        </ul>
+        <p><strong>Answer:</strong> C — Parameterized queries separate data values from SQL syntax.</p>
+
+        <h3>Question 3</h3>
+        <p>Does using a stored procedure automatically prevent SQL injection?</p>
+        <ul>
+            <li>A. Yes, always.</li>
+            <li>B. No, unsafe dynamic SQL inside a procedure can still be vulnerable.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — Stored procedures must also use safe SQL construction.</p>
+
+        <h3>Question 4</h3>
+        <p>What is sp_executesql commonly used for?</p>
+        <ul>
+            <li>A. Parameterized dynamic SQL.</li>
+            <li>B. Creating backups.</li>
+            <li>C. Deleting database files.</li>
+            <li>D. Changing server configuration.</li>
+        </ul>
+        <p><strong>Answer:</strong> A — It executes dynamic SQL with separately declared parameters.</p>
+
+        <h3>Question 5</h3>
+        <p>Can SQL parameters directly replace table names or column names?</p>
+        <ul>
+            <li>A. Yes.</li>
+            <li>B. No.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — Identifiers require controlled SQL construction, allowlists, and appropriate quoting.</p>
+
+        <h3>Question 6</h3>
+        <p>What does QUOTENAME do?</p>
+        <ul>
+            <li>A. Hashes a password.</li>
+            <li>B. Delimits a SQL Server identifier.</li>
+            <li>C. Encrypts a database.</li>
+            <li>D. Creates a parameterized query automatically.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — QUOTENAME safely delimits an identifier but does not authorize it.</p>
+
+        <h3>Question 7</h3>
+        <p>What is least privilege?</p>
+        <ul>
+            <li>A. Giving every user administrator access.</li>
+            <li>B. Giving an account only the permissions it needs.</li>
+            <li>C. Disabling database permissions.</li>
+            <li>D. Using only read-only tables.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — Least privilege limits the impact of security failures.</p>
+
+        <h3>Question 8</h3>
+        <p>What is second-order SQL injection?</p>
+        <ul>
+            <li>A. An attack using two database servers.</li>
+            <li>B. Stored untrusted data being used unsafely in a later SQL command.</li>
+            <li>C. A second transaction in a session.</li>
+            <li>D. A query with two parameters.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — Previously stored input can become dangerous if later concatenated into dynamic SQL.</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>23. Key Takeaways</h2>
+
+        <ul class="learning-list">
+            <li>SQL injection happens when untrusted input changes SQL command structure.</li>
+            <li>String concatenation is a common cause of injection vulnerabilities.</li>
+            <li>Parameterized queries are the primary defense for data values.</li>
+            <li>sp_executesql supports safely parameterized dynamic SQL.</li>
+            <li>Stored procedures can still be vulnerable if they construct unsafe dynamic SQL.</li>
+            <li>Dynamic identifiers must be validated against allowlists and safely delimited.</li>
+            <li>QUOTENAME is useful for identifiers but is not a substitute for validation.</li>
+            <li>Input validation supplements parameterization; it does not replace it.</li>
+            <li>Least-privilege permissions limit the potential impact of a vulnerability.</li>
+            <li>Second-order injection requires reviewing how stored data is used later.</li>
+            <li>Application code, database code, and permissions must all be reviewed together.</li>
+        </ul>
+
+        <p>
+            Preventing SQL injection requires treating every external value
+            as untrusted, keeping SQL syntax separate from data, restricting
+            database permissions, and testing the complete application
+            data flow. Parameterization should be the default approach
+            whenever application values are supplied to SQL Server.
+        </p>
+    </section>
+
+</main>

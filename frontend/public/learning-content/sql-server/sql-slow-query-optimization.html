@@ -1,0 +1,1639 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Slow Query Optimization Method in SQL Server</h1>
+        <p>
+            Learn a systematic, production-oriented approach to diagnosing
+            slow SQL queries, identifying bottlenecks, analyzing execution
+            plans, improving indexes, reducing logical reads, and validating
+            performance improvements.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Learning Objectives</h2>
+        <ul class="learning-list">
+            <li>Identify why a SQL Server query is slow.</li>
+            <li>Distinguish CPU, I/O, memory, blocking, and network problems.</li>
+            <li>Measure query performance before making changes.</li>
+            <li>Analyze execution plans and expensive operators.</li>
+            <li>Identify table scans, key lookups, sorts, and spills.</li>
+            <li>Optimize queries using appropriate indexes.</li>
+            <li>Rewrite non-SARGable predicates.</li>
+            <li>Understand parameter sniffing and cardinality estimation.</li>
+            <li>Use Query Store and DMVs for investigation.</li>
+            <li>Validate improvements safely in production.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>2. What Is Query Optimization?</h2>
+
+        <p>
+            Query optimization is the process of improving a SQL query
+            so that SQL Server can retrieve or modify the required data
+            using fewer resources.
+        </p>
+
+        <p>
+            A query may be slow because it:
+        </p>
+
+        <ul>
+            <li>Reads too many data pages.</li>
+            <li>Performs expensive joins.</li>
+            <li>Uses inefficient indexes.</li>
+            <li>Processes more rows than necessary.</li>
+            <li>Performs unnecessary sorting or aggregation.</li>
+            <li>Waits for locks held by another transaction.</li>
+            <li>Experiences memory pressure or tempdb spills.</li>
+            <li>Receives an inefficient execution plan.</li>
+            <li>Transfers too much data to the application.</li>
+        </ul>
+
+        <div class="info-box">
+            A slow query is not always a query-writing problem. The cause
+            may be an index, blocking session, resource bottleneck,
+            inaccurate statistics, parameter-sensitive plan, or
+            application behavior.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>3. Understand the Query Optimization Process</h2>
+
+        <p>
+            Use a consistent process instead of randomly changing SQL
+            statements or creating indexes.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Step 1: Identify the slow query</strong>
+                <p>Find the exact query, execution frequency, and affected users.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 2: Establish a baseline</strong>
+                <p>Measure elapsed time, CPU time, logical reads, and row counts.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 3: Identify the bottleneck</strong>
+                <p>Determine whether the query is CPU-bound, I/O-bound, blocked, or waiting for resources.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 4: Inspect the execution plan</strong>
+                <p>Find expensive operators, cardinality problems, and missing access paths.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 5: Optimize</strong>
+                <p>Improve predicates, indexes, joins, filtering, or query structure.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 6: Validate</strong>
+                <p>Compare the new execution plan and measured resource usage.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 7: Monitor</strong>
+                <p>Confirm that the improvement is stable under real workload conditions.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>4. Create a Sample Environment</h2>
+
+        <p>
+            The following examples use an Orders table containing
+            customer orders. We will deliberately begin with a query
+            that can benefit from optimization.
+        </p>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.Orders;
+
+CREATE TABLE dbo.Orders
+(
+    OrderId BIGINT IDENTITY(1,1) PRIMARY KEY,
+    CustomerId INT NOT NULL,
+    OrderDate DATETIME2 NOT NULL,
+    OrderStatus VARCHAR(20) NOT NULL,
+    TotalAmount DECIMAL(12,2) NOT NULL,
+    Region VARCHAR(30) NOT NULL
+);</code></pre>
+
+        <h3>Generate sample records</h3>
+
+        <p>
+            The following script generates 100,000 sample orders.
+            It is suitable for demonstrating indexing and query
+            performance in a development database.
+        </p>
+
+        <pre class="sql-code"><code>DECLARE @NumberOfRows INT = 100000;
+
+;WITH Numbers AS
+(
+    SELECT TOP (@NumberOfRows)
+        ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS N
+    FROM sys.all_objects AS A
+    CROSS JOIN sys.all_objects AS B
+)
+INSERT INTO dbo.Orders
+(
+    CustomerId,
+    OrderDate,
+    OrderStatus,
+    TotalAmount,
+    Region
+)
+SELECT
+    CONVERT(INT, (N % 10000) + 1),
+    DATEADD
+    (
+        DAY,
+        -CONVERT(INT, N % 1000),
+        SYSDATETIME()
+    ),
+    CASE N % 4
+        WHEN 0 THEN 'Pending'
+        WHEN 1 THEN 'Completed'
+        WHEN 2 THEN 'Cancelled'
+        ELSE 'Shipped'
+    END,
+    CONVERT(DECIMAL(12,2), (N % 50000) + 100),
+    CASE N % 4
+        WHEN 0 THEN 'North'
+        WHEN 1 THEN 'South'
+        WHEN 2 THEN 'East'
+        ELSE 'West'
+    END
+FROM Numbers;</code></pre>
+
+        <h3>Verify the sample data</h3>
+
+        <pre class="sql-code"><code>SELECT COUNT(*) AS TotalOrders
+FROM dbo.Orders;
+
+SELECT TOP (10) *
+FROM dbo.Orders
+ORDER BY OrderId;</code></pre>
+
+        <p>Expected total record count:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Table</th>
+                    <th>Records</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Orders</td><td>100,000</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>5. Step One — Identify the Slow Query</h2>
+
+        <p>
+            Before optimizing anything, identify which query is actually
+            slow.
+        </p>
+
+        <p>
+            Common sources include:
+        </p>
+
+        <ul>
+            <li>Application monitoring and database logs.</li>
+            <li>SQL Server Query Store.</li>
+            <li>Dynamic Management Views.</li>
+            <li>Extended Events.</li>
+            <li>SQL Server monitoring tools.</li>
+        </ul>
+
+        <h3>Find currently executing requests</h3>
+
+        <pre class="sql-code"><code>SELECT
+    R.session_id,
+    R.status,
+    R.command,
+    R.cpu_time,
+    R.total_elapsed_time,
+    R.logical_reads,
+    R.reads,
+    R.writes,
+    R.wait_type,
+    R.blocking_session_id,
+    DB_NAME(R.database_id) AS DatabaseName,
+    SUBSTRING
+    (
+        T.text,
+        (R.statement_start_offset / 2) + 1,
+        (
+            (
+                CASE R.statement_end_offset
+                    WHEN -1 THEN DATALENGTH(T.text)
+                    ELSE R.statement_end_offset
+                END
+                - R.statement_start_offset
+            ) / 2
+        ) + 1
+    ) AS RunningStatement
+FROM sys.dm_exec_requests AS R
+CROSS APPLY sys.dm_exec_sql_text(R.sql_handle) AS T
+WHERE R.session_id <> @@SPID
+ORDER BY R.total_elapsed_time DESC;</code></pre>
+
+        <h3>Important columns</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Column</th>
+                    <th>Meaning</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>cpu_time</td><td>CPU time consumed by the request, in milliseconds.</td></tr>
+                <tr><td>total_elapsed_time</td><td>Total elapsed time, in milliseconds.</td></tr>
+                <tr><td>logical_reads</td><td>Number of logical page reads.</td></tr>
+                <tr><td>reads</td><td>Physical reads reported for the request.</td></tr>
+                <tr><td>writes</td><td>Writes performed by the request.</td></tr>
+                <tr><td>wait_type</td><td>Current or most recent wait type for the request.</td></tr>
+                <tr><td>blocking_session_id</td><td>Session currently blocking this request, if any.</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            These values are useful diagnostic signals, not a complete
+            diagnosis by themselves. For example, physical reads can
+            be affected by caching, and a query with low CPU time may
+            still spend a long time waiting for another transaction.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Step Two — Establish a Performance Baseline</h2>
+
+        <p>
+            Always measure the original query before modifying it.
+            Otherwise, you cannot reliably determine whether your
+            optimization improved performance.
+        </p>
+
+        <h3>Enable performance statistics</h3>
+
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+SELECT
+    OrderId,
+    CustomerId,
+    OrderDate,
+    TotalAmount
+FROM dbo.Orders
+WHERE CustomerId = 500;
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <p>
+            In SQL Server Management Studio, the messages tab displays
+            logical reads, physical reads, CPU time, and elapsed time.
+        </p>
+
+        <h3>Understand STATISTICS IO</h3>
+
+        <p>Example illustrative output:</p>
+
+        <pre class="sql-code"><code>Table 'Orders'.
+Scan count 1,
+logical reads 850,
+physical reads 0,
+read-ahead reads 0.</code></pre>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Meaning</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Logical reads</td><td>Pages accessed from the SQL Server buffer pool.</td></tr>
+                <tr><td>Physical reads</td><td>Pages read from storage into memory.</td></tr>
+                <tr><td>Read-ahead reads</td><td>Pages read ahead of demand by the storage engine.</td></tr>
+                <tr><td>Scan count</td><td>Number of scan or seek operations reported for the table access.</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Understand STATISTICS TIME</h3>
+
+        <p>Example illustrative output:</p>
+
+        <pre class="sql-code"><code>SQL Server Execution Times:
+CPU time = 120 ms,
+elapsed time = 180 ms.</code></pre>
+
+        <ul>
+            <li>CPU time measures processing time on the CPU.</li>
+            <li>Elapsed time measures total wall-clock execution time.</li>
+        </ul>
+
+        <p>
+            Elapsed time can be greater than CPU time because a query
+            may spend time waiting for I/O, locks, memory grants, or
+            other resources.
+        </p>
+
+        <div class="info-box">
+            Do not rely on a single execution. Cache state, concurrency,
+            compilation, parallelism, and storage activity can change
+            measurements. Compare repeated executions under reasonably
+            consistent conditions.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Step Three — Understand the Type of Bottleneck</h2>
+
+        <p>
+            Different bottlenecks require different solutions.
+            Adding an index will not fix every performance problem.
+        </p>
+
+        <h3>7.1 CPU-bound queries</h3>
+
+        <p>
+            A CPU-bound query spends a large amount of time performing
+            calculations, joins, sorting, aggregation, or processing
+            many rows.
+        </p>
+
+        <p>Potential causes:</p>
+
+        <ul>
+            <li>Large scans and expensive joins.</li>
+            <li>Complex scalar expressions.</li>
+            <li>Repeated computations.</li>
+            <li>Excessive row processing.</li>
+        </ul>
+
+        <p>Potential solutions:</p>
+
+        <ul>
+            <li>Reduce the number of rows processed.</li>
+            <li>Improve filtering and join conditions.</li>
+            <li>Remove unnecessary calculations.</li>
+            <li>Review expensive operators in the execution plan.</li>
+        </ul>
+
+        <h3>7.2 I/O-bound queries</h3>
+
+        <p>
+            An I/O-bound query spends substantial time accessing data
+            pages from storage or waiting for data access.
+        </p>
+
+        <p>Potential causes:</p>
+
+        <ul>
+            <li>Large table scans.</li>
+            <li>Missing or unsuitable indexes.</li>
+            <li>Retrieving unnecessary columns.</li>
+            <li>Reading a large number of rows.</li>
+        </ul>
+
+        <p>Potential solutions:</p>
+
+        <ul>
+            <li>Build appropriate indexes.</li>
+            <li>Return only required columns.</li>
+            <li>Improve selective predicates.</li>
+            <li>Reduce unnecessary data access.</li>
+        </ul>
+
+        <h3>7.3 Blocking and locking</h3>
+
+        <p>
+            A query may be slow because another transaction holds
+            incompatible locks.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    session_id,
+    blocking_session_id,
+    wait_type,
+    wait_time,
+    wait_resource
+FROM sys.dm_exec_requests
+WHERE blocking_session_id <> 0;</code></pre>
+
+        <p>
+            Common blocking-related waits include LCK_M_* wait types.
+        </p>
+
+        <p>Potential solutions:</p>
+
+        <ul>
+            <li>Find the blocking transaction.</li>
+            <li>Keep transactions short.</li>
+            <li>Review transaction isolation requirements.</li>
+            <li>Ensure indexes support frequently executed statements.</li>
+            <li>Consider row versioning where appropriate.</li>
+        </ul>
+
+        <p>
+            Do not automatically kill a blocking session. First inspect
+            the transaction, its business purpose, and rollback impact.
+        </p>
+
+        <h3>7.4 Memory and tempdb pressure</h3>
+
+        <p>
+            Sort and hash operations may need memory grants. If memory
+            is insufficient, SQL Server may spill intermediate data
+            to tempdb.
+        </p>
+
+        <p>Potential indicators:</p>
+
+        <ul>
+            <li>Sort warnings.</li>
+            <li>Hash warnings.</li>
+            <li>Spill information in execution plans.</li>
+            <li>Long-running sorts and hash joins.</li>
+        </ul>
+
+        <p>
+            Investigate row estimates, memory grants, indexes that
+            provide useful ordering, and the amount of data processed.
+        </p>
+
+        <h3>7.5 Network and application delays</h3>
+
+        <p>
+            SQL Server may complete a query quickly while the application
+            remains slow because it transfers too many rows or performs
+            expensive client-side processing.
+        </p>
+
+        <p>Potential solutions:</p>
+
+        <ul>
+            <li>Return only required columns.</li>
+            <li>Apply filtering in SQL Server.</li>
+            <li>Implement pagination where appropriate.</li>
+            <li>Review application data-reading behavior.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>8. Step Four — Identify Table Scans and Index Scans</h2>
+
+        <p>
+            SQL Server uses scans and seeks to access data. A scan
+            is not automatically bad, and a seek is not automatically
+            good. The important question is how much work the operation
+            performs relative to the rows returned.
+        </p>
+
+        <h3>Table Scan</h3>
+
+        <p>
+            A table scan reads the data pages of a heap to locate
+            qualifying rows.
+        </p>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.Orders
+WHERE CustomerId = 500;</code></pre>
+
+        <p>
+            If no useful index exists, SQL Server may scan the table.
+        </p>
+
+        <h3>Clustered Index Scan</h3>
+
+        <p>
+            If a table has a clustered index, SQL Server may scan
+            the clustered index to evaluate the predicate.
+        </p>
+
+        <h3>Index Seek</h3>
+
+        <p>
+            An index seek navigates the index structure to locate
+            a range or key value.
+        </p>
+
+        <h3>Index Scan</h3>
+
+        <p>
+            An index scan reads index entries. It may be efficient
+            when the index is smaller than the base table or when
+            a large proportion of rows is needed.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Operator</th>
+                    <th>Typical behavior</th>
+                    <th>What to investigate</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Table Scan</td><td>Reads heap data pages.</td><td>Could a selective index help?</td></tr>
+                <tr><td>Clustered Index Scan</td><td>Reads clustered index rows.</td><td>Are too many rows being processed?</td></tr>
+                <tr><td>Index Scan</td><td>Reads index entries.</td><td>Is the scan appropriate for the result size?</td></tr>
+                <tr><td>Index Seek</td><td>Navigates index keys.</td><td>Are residual predicates or lookups expensive?</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>9. Step Five — Optimize Using an Index</h2>
+
+        <p>
+            Let's optimize the original query that retrieves orders
+            for a specific customer.
+        </p>
+
+        <h3>Original query</h3>
+
+        <pre class="sql-code"><code>SELECT
+    OrderId,
+    CustomerId,
+    OrderDate,
+    TotalAmount
+FROM dbo.Orders
+WHERE CustomerId = 500;</code></pre>
+
+        <p>
+            Without a suitable index, SQL Server may need to scan
+            many rows.
+        </p>
+
+        <h3>Create a nonclustered index</h3>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Orders_CustomerId
+ON dbo.Orders(CustomerId);</code></pre>
+
+        <h3>Execute the query again</h3>
+
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+SELECT
+    OrderId,
+    CustomerId,
+    OrderDate,
+    TotalAmount
+FROM dbo.Orders
+WHERE CustomerId = 500;
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <p>
+            SQL Server can now use the index to locate matching
+            customer records. However, the index does not contain
+            OrderDate or TotalAmount.
+        </p>
+
+        <p>
+            Depending on the selected plan, SQL Server may perform
+            Key Lookup operations to retrieve those columns from
+            the clustered index.
+        </p>
+
+        <h3>Understand Key Lookup</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Index Seek</strong>
+                <p>Find the matching CustomerId entries.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Read row locators</strong>
+                <p>Obtain the clustered key for each matching entry.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Key Lookup</strong>
+                <p>Retrieve additional requested columns from the clustered index.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Return results</strong>
+                <p>Produce the final rows.</p>
+            </div>
+        </div>
+
+        <h3>Create a covering index</h3>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Orders_CustomerId_Covering
+ON dbo.Orders(CustomerId)
+INCLUDE
+(
+    OrderDate,
+    TotalAmount
+);</code></pre>
+
+        <p>
+            The clustered key OrderId is automatically available in
+            a nonclustered index on a clustered table as its row locator.
+            Therefore, the query's requested columns can be satisfied
+            from this index without a separate Key Lookup.
+        </p>
+
+        <div class="info-box">
+            Covering indexes can reduce lookup operations, but they
+            increase storage and write-maintenance costs. Do not add
+            every output column to every index.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>10. Step Six — Optimize Composite Indexes</h2>
+
+        <p>
+            A composite index contains multiple key columns.
+            Column order matters because SQL Server organizes the
+            index by the key sequence.
+        </p>
+
+        <h3>Example query</h3>
+
+        <pre class="sql-code"><code>SELECT
+    OrderId,
+    OrderDate,
+    TotalAmount
+FROM dbo.Orders
+WHERE CustomerId = 500
+  AND OrderStatus = 'Completed';</code></pre>
+
+        <h3>Create a composite index</h3>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Orders_Customer_Status
+ON dbo.Orders
+(
+    CustomerId,
+    OrderStatus
+)
+INCLUDE
+(
+    OrderDate,
+    TotalAmount
+);</code></pre>
+
+        <p>
+            The index first orders entries by CustomerId, then
+            OrderStatus within each CustomerId value.
+        </p>
+
+        <h3>Why column order matters</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Index definition</th>
+                    <th>Example access pattern</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>(CustomerId, OrderStatus)</td>
+                    <td>Useful for CustomerId alone and for CustomerId plus OrderStatus.</td>
+                </tr>
+                <tr>
+                    <td>(OrderStatus, CustomerId)</td>
+                    <td>Useful for OrderStatus alone and for both columns.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            An index may still be useful in other access patterns,
+            depending on predicates and plan choices, but its leading
+            key strongly influences efficient navigation.
+        </p>
+
+        <p>
+            Choose key order based on actual query patterns, selectivity,
+            range predicates, joins, and ordering requirements rather
+            than applying a universal rule.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Step Seven — Make Predicates SARGable</h2>
+
+        <p>
+            SARGable means a predicate can be used effectively as
+            a search argument for an index access method.
+        </p>
+
+        <p>
+            Applying functions or conversions to indexed columns
+            can prevent an efficient seek or make it less likely.
+        </p>
+
+        <h3>Example A — Function on an indexed column</h3>
+
+        <p>Potentially inefficient predicate:</p>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.Orders
+WHERE YEAR(OrderDate) = 2026;</code></pre>
+
+        <p>
+            SQL Server may need to evaluate YEAR() for many rows
+            rather than directly navigating an index range on OrderDate.
+        </p>
+
+        <h3>Rewrite using a date range</h3>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.Orders
+WHERE OrderDate >= '20260101'
+  AND OrderDate <  '20270101';</code></pre>
+
+        <p>
+            The range predicate can use an index on OrderDate more
+            effectively.
+        </p>
+
+        <h3>Example B — Function on a text column</h3>
+
+        <p>Potentially inefficient:</p>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.Orders
+WHERE UPPER(Region) = 'NORTH';</code></pre>
+
+        <p>Possible rewrite:</p>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.Orders
+WHERE Region = 'North';</code></pre>
+
+        <p>
+            This rewrite assumes the database collation and business
+            rules make the comparison equivalent. Case sensitivity,
+            accent sensitivity, and other collation rules matter.
+        </p>
+
+        <h3>Example C — Leading wildcard</h3>
+
+        <p>Often difficult to seek efficiently with a normal B-tree index:</p>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.Orders
+WHERE Region LIKE '%orth';</code></pre>
+
+        <p>
+            A leading wildcard prevents ordinary left-to-right
+            B-tree navigation from identifying a narrow starting
+            range. Consider a different search design if this is
+            a frequent requirement.
+        </p>
+
+        <h3>Example D — Implicit conversion</h3>
+
+        <p>
+            Suppose CustomerId is INT. Avoid passing a string parameter
+            that causes SQL Server to convert the indexed column.
+        </p>
+
+        <p>Preferred:</p>
+
+        <pre class="sql-code"><code>DECLARE @CustomerId INT = 500;
+
+SELECT *
+FROM dbo.Orders
+WHERE CustomerId = @CustomerId;</code></pre>
+
+        <p>
+            Match parameter data types to column data types to avoid
+            unnecessary conversions and plan complications.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Step Eight — Avoid SELECT *</h2>
+
+        <p>
+            SELECT * retrieves every column even when the application
+            needs only a few.
+        </p>
+
+        <h3>Less desirable</h3>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.Orders
+WHERE CustomerId = 500;</code></pre>
+
+        <h3>Better</h3>
+
+        <pre class="sql-code"><code>SELECT
+    OrderId,
+    OrderDate,
+    TotalAmount
+FROM dbo.Orders
+WHERE CustomerId = 500;</code></pre>
+
+        <p>Benefits include:</p>
+
+        <ul>
+            <li>Less data transferred to the application.</li>
+            <li>Potentially fewer page accesses.</li>
+            <li>Smaller covering indexes may be sufficient.</li>
+            <li>Less memory required for some downstream operations.</li>
+            <li>Reduced coupling to table schema changes.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Step Nine — Review JOIN Performance</h2>
+
+        <p>
+            Joins can become expensive when they process large inputs,
+            use unsuitable predicates, or multiply rows unexpectedly.
+        </p>
+
+        <h3>Example</h3>
+
+        <pre class="sql-code"><code>SELECT
+    O.OrderId,
+    O.CustomerId,
+    C.CustomerName,
+    O.TotalAmount
+FROM dbo.Orders AS O
+INNER JOIN dbo.Customers AS C
+    ON O.CustomerId = C.CustomerId
+WHERE O.OrderStatus = 'Completed';</code></pre>
+
+        <p>
+            A good optimization investigation includes:
+        </p>
+
+        <ul>
+            <li>Are the join columns compatible in data type?</li>
+            <li>Does the join use an appropriate predicate?</li>
+            <li>Are indexes available on frequently searched join keys?</li>
+            <li>Are statistics representative of current data?</li>
+            <li>Are estimated and actual row counts significantly different?</li>
+            <li>Does the join produce more rows than the business requirement expects?</li>
+        </ul>
+
+        <h3>Example index for filtering and joining</h3>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Orders_Status_Customer
+ON dbo.Orders
+(
+    OrderStatus,
+    CustomerId
+)
+INCLUDE
+(
+    OrderId,
+    TotalAmount
+);</code></pre>
+
+        <p>
+            This is an example candidate, not a universal recommendation.
+            Evaluate it against the actual workload and existing indexes.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Step Ten — Investigate Expensive Operators</h2>
+
+        <p>
+            An execution plan describes how SQL Server intends to
+            execute a query. An actual execution plan also contains
+            runtime information for the execution.
+        </p>
+
+        <h3>Operators worth investigating</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Operator</th>
+                    <th>What it does</th>
+                    <th>What to investigate</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Table Scan</td>
+                    <td>Reads heap data.</td>
+                    <td>Whether a useful index could reduce reads.</td>
+                </tr>
+                <tr>
+                    <td>Clustered Index Scan</td>
+                    <td>Reads clustered index rows.</td>
+                    <td>Whether the query needs that many rows.</td>
+                </tr>
+                <tr>
+                    <td>Key Lookup</td>
+                    <td>Fetches additional columns from clustered index.</td>
+                    <td>Whether a covering index is justified.</td>
+                </tr>
+                <tr>
+                    <td>Sort</td>
+                    <td>Orders rows.</td>
+                    <td>Whether an index can provide the required order.</td>
+                </tr>
+                <tr>
+                    <td>Hash Match</td>
+                    <td>Performs hash join or aggregation operations.</td>
+                    <td>Memory grants, spills, and input row counts.</td>
+                </tr>
+                <tr>
+                    <td>Nested Loops</td>
+                    <td>Repeatedly searches an inner input.</td>
+                    <td>Whether repeated lookups are expensive.</td>
+                </tr>
+                <tr>
+                    <td>Parallelism</td>
+                    <td>Distributes work across worker threads.</td>
+                    <td>Whether parallel execution is appropriate.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            The percentage displayed on a graphical execution plan
+            operator is an estimated relative cost within that plan.
+            It is not a direct measurement of elapsed time or proof
+            that the operator is the root cause.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>15. Step Eleven — Check Statistics</h2>
+
+        <p>
+            SQL Server uses statistics to estimate how many rows
+            will qualify for predicates and joins.
+        </p>
+
+        <p>
+            Poor or outdated statistics can lead to inaccurate
+            cardinality estimates and an unsuitable execution plan.
+        </p>
+
+        <h3>Inspect statistics</h3>
+
+        <pre class="sql-code"><code>SELECT
+    name,
+    stats_id,
+    auto_created,
+    user_created,
+    no_recompute
+FROM sys.stats
+WHERE object_id = OBJECT_ID('dbo.Orders');</code></pre>
+
+        <h3>Inspect statistics details</h3>
+
+        <pre class="sql-code"><code>DBCC SHOW_STATISTICS
+(
+    'dbo.Orders',
+    'IX_Orders_CustomerId'
+);</code></pre>
+
+        <p>
+            DBCC SHOW_STATISTICS displays the statistics header,
+            density information, and histogram.
+        </p>
+
+        <h3>Update statistics when appropriate</h3>
+
+        <pre class="sql-code"><code>UPDATE STATISTICS dbo.Orders
+WITH FULLSCAN;</code></pre>
+
+        <p>
+            FULLSCAN reads all rows when creating the statistics
+            information. It can be expensive on large tables, so
+            use it deliberately.
+        </p>
+
+        <p>
+            SQL Server also supports automatic statistics updates.
+            Do not blindly update every statistic after every slow
+            query. First investigate whether statistics are actually
+            contributing to the problem.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Step Twelve — Understand Parameter Sniffing</h2>
+
+        <p>
+            SQL Server can compile a parameterized query using
+            parameter values available during compilation. The
+            resulting execution plan may be reused for later
+            parameter values.
+        </p>
+
+        <p>
+            This behavior is commonly called parameter sniffing.
+            It is often beneficial, but a single cached plan may
+            perform poorly when parameter values have very different
+            data distributions.
+        </p>
+
+        <h3>Example stored procedure</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.GetOrdersByCustomer
+    @CustomerId INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        OrderId,
+        OrderDate,
+        TotalAmount
+    FROM dbo.Orders
+    WHERE CustomerId = @CustomerId;
+END;</code></pre>
+
+        <p>
+            Imagine one customer has 5 orders and another has
+            20,000 orders.
+        </p>
+
+        <p>
+            A plan suitable for a customer with very few orders
+            may not be suitable for a customer with many orders.
+        </p>
+
+        <h3>Investigate the issue</h3>
+
+        <pre class="sql-code"><code>EXEC dbo.GetOrdersByCustomer
+    @CustomerId = 500;
+
+EXEC dbo.GetOrdersByCustomer
+    @CustomerId = 1000;</code></pre>
+
+        <p>
+            Compare actual row counts, execution plans, and runtime
+            resource usage for representative parameter values.
+        </p>
+
+        <h3>Possible techniques</h3>
+
+        <p>Recompile for a statement:</p>
+
+        <pre class="sql-code"><code>SELECT
+    OrderId,
+    OrderDate,
+    TotalAmount
+FROM dbo.Orders
+WHERE CustomerId = @CustomerId
+OPTION (RECOMPILE);</code></pre>
+
+        <p>
+            OPTION (RECOMPILE) can compile using current parameter
+            values, but adds compilation overhead.
+        </p>
+
+        <p>Use a parameterized query with a query-specific hint:</p>
+
+        <pre class="sql-code"><code>SELECT
+    OrderId,
+    OrderDate,
+    TotalAmount
+FROM dbo.Orders
+WHERE CustomerId = @CustomerId
+OPTION (OPTIMIZE FOR (@CustomerId = 500));</code></pre>
+
+        <p>
+            OPTIMIZE FOR uses a specified representative value
+            for optimization. The chosen value must be appropriate
+            for the workload.
+        </p>
+
+        <p>
+            Other approaches include Query Store plan forcing,
+            carefully designed dynamic SQL, and SQL Server's
+            Parameter Sensitive Plan optimization where supported
+            and applicable.
+        </p>
+
+        <div class="info-box">
+            Do not automatically add OPTION (RECOMPILE) to every
+            slow query. It can solve a parameter-sensitive plan
+            problem but may increase CPU usage through repeated
+            compilation.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>17. Step Thirteen — Use Query Store</h2>
+
+        <p>
+            Query Store captures query, plan, and runtime-statistics
+            history. It helps identify queries whose performance
+            has changed over time.
+        </p>
+
+        <h3>Enable Query Store</h3>
+
+        <pre class="sql-code"><code>ALTER DATABASE YourDatabase
+SET QUERY_STORE = ON;</code></pre>
+
+        <p>
+            Replace YourDatabase with the actual database name.
+            Check database compatibility and Query Store configuration
+            for your SQL Server version.
+        </p>
+
+        <h3>Inspect Query Store configuration</h3>
+
+        <pre class="sql-code"><code>SELECT
+    actual_state_desc,
+    desired_state_desc,
+    current_storage_size_mb,
+    max_storage_size_mb,
+    query_capture_mode_desc
+FROM sys.database_query_store_options;</code></pre>
+
+        <h3>Find queries with high average duration</h3>
+
+        <pre class="sql-code"><code>SELECT TOP (20)
+    Q.query_id,
+    P.plan_id,
+    RS.count_executions,
+    RS.avg_duration / 1000.0 AS AvgDurationMs,
+    RS.max_duration / 1000.0 AS MaxDurationMs,
+    RS.avg_cpu_time / 1000.0 AS AvgCpuMs,
+    RS.avg_logical_io_reads AS AvgLogicalReads,
+    QT.query_sql_text
+FROM sys.query_store_query AS Q
+INNER JOIN sys.query_store_query_text AS QT
+    ON Q.query_text_id = QT.query_text_id
+INNER JOIN sys.query_store_plan AS P
+    ON Q.query_id = P.query_id
+INNER JOIN sys.query_store_runtime_stats AS RS
+    ON P.plan_id = RS.plan_id
+ORDER BY RS.avg_duration DESC;</code></pre>
+
+        <p>
+            Query Store runtime statistics are stored across
+            intervals. The query above is a useful starting point,
+            but a detailed investigation should account for
+            runtime-statistics intervals and execution counts.
+        </p>
+
+        <h3>Why Query Store is useful</h3>
+
+        <ul>
+            <li>Identify frequently executed expensive queries.</li>
+            <li>Compare plans over time.</li>
+            <li>Investigate performance regressions.</li>
+            <li>Identify changes in CPU, duration, and logical reads.</li>
+            <li>Use plan forcing as a controlled mitigation when justified.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>18. Step Fourteen — Review Missing Index Suggestions Carefully</h2>
+
+        <p>
+            SQL Server may display missing-index recommendations
+            in execution plans or expose them through DMVs.
+        </p>
+
+        <h3>Find missing-index recommendations</h3>
+
+        <pre class="sql-code"><code>SELECT TOP (20)
+    DB_NAME(D.database_id) AS DatabaseName,
+    OBJECT_NAME(D.object_id, D.database_id) AS TableName,
+    GS.user_seeks,
+    GS.user_scans,
+    GS.avg_total_user_cost,
+    GS.avg_user_impact,
+    D.equality_columns,
+    D.inequality_columns,
+    D.included_columns
+FROM sys.dm_db_missing_index_group_stats AS GS
+INNER JOIN sys.dm_db_missing_index_groups AS G
+    ON GS.group_handle = G.index_group_handle
+INNER JOIN sys.dm_db_missing_index_details AS D
+    ON G.index_handle = D.index_handle
+WHERE D.database_id = DB_ID()
+ORDER BY
+    GS.avg_user_impact DESC,
+    GS.user_seeks DESC;</code></pre>
+
+        <p>
+            Missing-index information is a recommendation, not
+            an instruction to create every suggested index.
+        </p>
+
+        <p>Before creating an index:</p>
+
+        <ul>
+            <li>Check whether a similar index already exists.</li>
+            <li>Review key-column order.</li>
+            <li>Consider included columns.</li>
+            <li>Evaluate write overhead.</li>
+            <li>Consider index storage requirements.</li>
+            <li>Test against the complete workload.</li>
+        </ul>
+
+        <div class="info-box">
+            Missing-index DMV information is transient and has
+            limitations. It does not fully model the impact of
+            competing indexes, write costs, or all workload patterns.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>19. Step Fifteen — Avoid Excessive Indexing</h2>
+
+        <p>
+            Indexes improve some read operations but introduce
+            additional work when rows are inserted, updated, or deleted.
+        </p>
+
+        <h3>Index maintenance costs</h3>
+
+        <ul>
+            <li>Additional storage consumption.</li>
+            <li>More transaction log activity for modifications.</li>
+            <li>Extra work during INSERT operations.</li>
+            <li>Extra work when indexed columns are updated.</li>
+            <li>Index fragmentation and maintenance overhead.</li>
+            <li>More complex choices for the query optimizer.</li>
+        </ul>
+
+        <h3>Inspect index usage</h3>
+
+        <pre class="sql-code"><code>SELECT
+    OBJECT_SCHEMA_NAME(I.object_id) AS SchemaName,
+    OBJECT_NAME(I.object_id) AS TableName,
+    I.name AS IndexName,
+    I.type_desc,
+    COALESCE(U.user_seeks, 0) AS UserSeeks,
+    COALESCE(U.user_scans, 0) AS UserScans,
+    COALESCE(U.user_lookups, 0) AS UserLookups,
+    COALESCE(U.user_updates, 0) AS UserUpdates
+FROM sys.indexes AS I
+LEFT JOIN sys.dm_db_index_usage_stats AS U
+    ON I.object_id = U.object_id
+   AND I.index_id = U.index_id
+   AND U.database_id = DB_ID()
+WHERE I.object_id = OBJECT_ID('dbo.Orders')
+ORDER BY I.index_id;</code></pre>
+
+        <p>
+            Usage statistics reset after certain SQL Server events,
+            including service restarts. Low usage alone does not
+            prove that an index is unnecessary. It may support
+            an important infrequent report or constraint.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>20. Step Sixteen — Compare Before and After</h2>
+
+        <p>
+            A successful optimization should be demonstrated through
+            measurements rather than assumptions.
+        </p>
+
+        <h3>Example comparison</h3>
+
+        <p>
+            The following figures are illustrative only. Actual
+            results depend on data distribution, hardware, indexes,
+            cache state, SQL Server version, and execution plans.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Before</th>
+                    <th>After</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Logical reads</td><td>850</td><td>12</td></tr>
+                <tr><td>CPU time</td><td>120 ms</td><td>8 ms</td></tr>
+                <tr><td>Elapsed time</td><td>180 ms</td><td>15 ms</td></tr>
+                <tr><td>Access method</td><td>Clustered Index Scan</td><td>Index Seek</td></tr>
+                <tr><td>Key Lookup</td><td>Not applicable</td><td>None in covering plan</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Calculate improvement percentage</h3>
+
+        <p>
+            For a metric where lower is better:
+        </p>
+
+        <pre class="sql-code"><code>Improvement Percentage =
+(
+    (BeforeValue - AfterValue)
+    / BeforeValue
+) * 100</code></pre>
+
+        <p>For example, logical reads reduced from 850 to 12:</p>
+
+        <pre class="sql-code"><code>((850 - 12) / 850) * 100
+= 98.59%</code></pre>
+
+        <p>
+            Always compare equivalent executions that return the
+            same result set and satisfy the same business requirement.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>21. Common Query Optimization Mistakes</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Mistake</th>
+                    <th>Why it is a problem</th>
+                    <th>Better approach</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Adding indexes without investigation</td>
+                    <td>Creates unnecessary storage and write overhead.</td>
+                    <td>Inspect actual plans and workload.</td>
+                </tr>
+                <tr>
+                    <td>Using SELECT *</td>
+                    <td>Retrieves unnecessary columns.</td>
+                    <td>Select only required columns.</td>
+                </tr>
+                <tr>
+                    <td>Ignoring logical reads</td>
+                    <td>Elapsed time alone can be misleading.</td>
+                    <td>Measure I/O and CPU.</td>
+                </tr>
+                <tr>
+                    <td>Using functions on indexed columns</td>
+                    <td>Can prevent efficient index navigation.</td>
+                    <td>Use SARGable predicates.</td>
+                </tr>
+                <tr>
+                    <td>Ignoring parameter sensitivity</td>
+                    <td>A cached plan may be unsuitable for some values.</td>
+                    <td>Test representative parameter values.</td>
+                </tr>
+                <tr>
+                    <td>Trusting estimated cost percentages blindly</td>
+                    <td>Estimated relative costs are not actual elapsed time.</td>
+                    <td>Inspect actual runtime metrics.</td>
+                </tr>
+                <tr>
+                    <td>Using NOLOCK everywhere</td>
+                    <td>Can return dirty, missing, or duplicated data.</td>
+                    <td>Choose isolation based on consistency requirements.</td>
+                </tr>
+                <tr>
+                    <td>Changing several things at once</td>
+                    <td>Makes it difficult to identify the actual improvement.</td>
+                    <td>Change and measure incrementally.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>22. Production Optimization Checklist</h2>
+
+        <ul class="learning-list">
+            <li>Identify the exact slow query and affected workload.</li>
+            <li>Record the original execution plan.</li>
+            <li>Measure CPU time, elapsed time, and logical reads.</li>
+            <li>Check whether the query is blocked.</li>
+            <li>Identify the dominant wait types.</li>
+            <li>Compare estimated and actual row counts.</li>
+            <li>Review scans, seeks, lookups, sorts, and hash operations.</li>
+            <li>Check index definitions and existing index usage.</li>
+            <li>Check statistics and data distribution.</li>
+            <li>Investigate parameter-sensitive plans.</li>
+            <li>Test with representative parameters and data volumes.</li>
+            <li>Validate correctness and result consistency.</li>
+            <li>Measure improvements under realistic concurrency.</li>
+            <li>Monitor for regressions after deployment.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>23. Real-World Scenario — Slow Customer Order Search</h2>
+
+        <h3>Business requirement</h3>
+
+        <p>
+            An e-commerce application allows users to search for
+            orders by CustomerId and OrderStatus. The search page
+            takes several seconds to load.
+        </p>
+
+        <h3>Initial query</h3>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.Orders
+WHERE CustomerId = 500
+  AND OrderStatus = 'Completed'
+ORDER BY OrderDate DESC;</code></pre>
+
+        <h3>Investigation</h3>
+
+        <ol>
+            <li>Capture the actual execution plan.</li>
+            <li>Enable STATISTICS IO and STATISTICS TIME.</li>
+            <li>Check whether SQL Server scans the table.</li>
+            <li>Check whether a Sort operator is required.</li>
+            <li>Check whether the query retrieves unnecessary columns.</li>
+        </ol>
+
+        <h3>Potential optimized query</h3>
+
+        <pre class="sql-code"><code>SELECT
+    OrderId,
+    OrderDate,
+    TotalAmount
+FROM dbo.Orders
+WHERE CustomerId = 500
+  AND OrderStatus = 'Completed'
+ORDER BY OrderDate DESC;</code></pre>
+
+        <h3>Potential index</h3>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Orders_Customer_Status_Date
+ON dbo.Orders
+(
+    CustomerId,
+    OrderStatus,
+    OrderDate DESC
+)
+INCLUDE
+(
+    TotalAmount
+);</code></pre>
+
+        <p>
+            This index may support the equality predicates and the
+            requested ordering. OrderId is available through the
+            clustered key because the sample table has a clustered
+            primary key.
+        </p>
+
+        <p>
+            The actual plan must still be checked. If a customer has
+            many matching orders, SQL Server may reasonably choose
+            a different access strategy.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>24. Exercises</h2>
+
+        <h3>Exercise 1 — Find the slow access pattern</h3>
+
+        <p>
+            Execute the following query with and without a useful
+            CustomerId index. Compare logical reads.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    OrderId,
+    CustomerId,
+    TotalAmount
+FROM dbo.Orders
+WHERE CustomerId = 250;</code></pre>
+
+        <h3>Exercise 2 — Rewrite a non-SARGable predicate</h3>
+
+        <p>Rewrite this query using a date range:</p>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.Orders
+WHERE YEAR(OrderDate) = 2025;</code></pre>
+
+        <h3>Exercise 3 — Design a composite index</h3>
+
+        <p>
+            Design an index for a query that filters by Region and
+            OrderStatus and sorts by OrderDate.
+        </p>
+
+        <h3>Exercise 4 — Diagnose a Key Lookup</h3>
+
+        <p>
+            Create a nonclustered index on CustomerId only. Execute
+            a query that also selects OrderDate and TotalAmount.
+            Inspect the actual plan and determine whether a Key
+            Lookup occurs.
+        </p>
+
+        <h3>Exercise 5 — Investigate parameter sensitivity</h3>
+
+        <p>
+            Compare execution plans and runtime statistics for
+            customers with very different numbers of orders.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>25. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>Which metric indicates the number of buffer pages accessed?</p>
+        <ul>
+            <li>A. CPU time</li>
+            <li>B. Logical reads</li>
+            <li>C. Elapsed time</li>
+            <li>D. Row count</li>
+        </ul>
+        <p><strong>Answer:</strong> B — Logical reads.</p>
+
+        <h3>Question 2</h3>
+        <p>What does a Key Lookup generally retrieve?</p>
+        <ul>
+            <li>A. Missing columns from the clustered index.</li>
+            <li>B. Database backups.</li>
+            <li>C. Query text.</li>
+            <li>D. Statistics histograms.</li>
+        </ul>
+        <p><strong>Answer:</strong> A — Additional columns from the clustered index.</p>
+
+        <h3>Question 3</h3>
+        <p>Which predicate is generally more SARGable?</p>
+        <ul>
+            <li>A. YEAR(OrderDate) = 2026</li>
+            <li>B. OrderDate &gt;= '20260101' AND OrderDate &lt; '20270101'</li>
+        </ul>
+        <p><strong>Answer:</strong> B — A date range can support index navigation.</p>
+
+        <h3>Question 4</h3>
+        <p>What is parameter sniffing?</p>
+        <ul>
+            <li>A. SQL Server encrypting parameters.</li>
+            <li>B. SQL Server using parameter values during plan compilation.</li>
+            <li>C. SQL Server deleting unused parameters.</li>
+            <li>D. SQL Server disabling indexes.</li>
+        </ul>
+        <p><strong>Answer:</strong> B.</p>
+
+        <h3>Question 5</h3>
+        <p>Does an Index Seek always mean a query is efficient?</p>
+        <ul>
+            <li>A. Yes</li>
+            <li>B. No</li>
+        </ul>
+        <p>
+            <strong>Answer:</strong> B — A seek can still read many rows,
+            perform expensive lookups, or feed costly downstream operators.
+        </p>
+
+        <h3>Question 6</h3>
+        <p>Which SQL Server feature stores query and plan performance history?</p>
+        <ul>
+            <li>A. Query Store</li>
+            <li>B. SQL Agent</li>
+            <li>C. Database Mail</li>
+            <li>D. Backup History</li>
+        </ul>
+        <p><strong>Answer:</strong> A — Query Store.</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>26. Key Takeaways</h2>
+
+        <ul class="learning-list">
+            <li>Always identify the actual bottleneck before changing a query.</li>
+            <li>Establish a baseline using CPU time, elapsed time, and logical reads.</li>
+            <li>Use actual execution plans to understand runtime behavior.</li>
+            <li>Use indexes to reduce unnecessary data access, not indiscriminately.</li>
+            <li>Write SARGable predicates wherever possible.</li>
+            <li>Design composite and covering indexes around real workload patterns.</li>
+            <li>Investigate blocking, memory pressure, statistics, and parameter sensitivity.</li>
+            <li>Use Query Store to identify performance regressions over time.</li>
+            <li>Validate improvements with equivalent results and realistic workload conditions.</li>
+        </ul>
+
+        <p>
+            The most important optimization principle is:
+            measure first, identify the root cause, make a focused
+            change, and measure again.
+        </p>
+    </section>
+
+</main>

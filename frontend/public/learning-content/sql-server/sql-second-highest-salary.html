@@ -1,0 +1,1105 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Find the Second-Highest Salary in SQL Server</h1>
+        <p>
+            Learn different ways to find the second-highest salary
+            using MAX(), subqueries, DISTINCT, TOP, and window
+            functions. Understand duplicate salaries, NULL handling,
+            department-wise ranking, and production considerations.
+        </p>
+    </header>
+
+    <!-- 1. Introduction -->
+    <section class="content-section">
+        <h2>1. Understand the Problem</h2>
+
+        <p>
+            Consider an Employee table containing employee names,
+            departments, and salaries.
+        </p>
+
+        <p>
+            The business requirement is to find the second-highest
+            salary paid by the company.
+        </p>
+
+        <h3>Sample employee data</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>EmployeeName</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>101</td><td>Alice</td><td>IT</td><td>90000</td></tr>
+                <tr><td>102</td><td>Bob</td><td>HR</td><td>80000</td></tr>
+                <tr><td>103</td><td>Carol</td><td>IT</td><td>80000</td></tr>
+                <tr><td>104</td><td>David</td><td>Finance</td><td>70000</td></tr>
+                <tr><td>105</td><td>Emma</td><td>HR</td><td>60000</td></tr>
+                <tr><td>106</td><td>Frank</td><td>IT</td><td>50000</td></tr>
+                <tr><td>107</td><td>Grace</td><td>Finance</td><td>50000</td></tr>
+                <tr><td>108</td><td>Henry</td><td>HR</td><td>40000</td></tr>
+            </tbody>
+        </table>
+
+        <h3>What is the expected answer?</h3>
+
+        <p>
+            First, arrange the distinct salary values in descending order.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1st highest</td><td>90000</td></tr>
+                <tr><td>2nd highest</td><td>80000</td></tr>
+                <tr><td>3rd highest</td><td>70000</td></tr>
+                <tr><td>4th highest</td><td>60000</td></tr>
+                <tr><td>5th highest</td><td>50000</td></tr>
+                <tr><td>6th highest</td><td>40000</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Expected answer: 80000</strong>
+
+            Notice that 80000 occurs twice. It is still the
+            second-highest distinct salary, not the third-highest.
+        </div>
+    </section>
+
+    <!-- 2. Create database -->
+    <section class="content-section">
+        <h2>2. Create the Employee Table</h2>
+
+        <pre class="sql-code"><code>
+CREATE TABLE Employees
+(
+    EmployeeId INT PRIMARY KEY,
+    EmployeeName VARCHAR(100),
+    Department VARCHAR(50),
+    Salary DECIMAL(12, 2)
+);
+
+INSERT INTO Employees
+    (EmployeeId, EmployeeName, Department, Salary)
+VALUES
+    (101, 'Alice', 'IT', 90000),
+    (102, 'Bob', 'HR', 80000),
+    (103, 'Carol', 'IT', 80000),
+    (104, 'David', 'Finance', 70000),
+    (105, 'Emma', 'HR', 60000),
+    (106, 'Frank', 'IT', 50000),
+    (107, 'Grace', 'Finance', 50000),
+    (108, 'Henry', 'HR', 40000);
+        </code></pre>
+
+        <p>
+            We will use this table for all the examples in this tutorial.
+        </p>
+    </section>
+
+    <!-- 3. Approach 1 -->
+    <section class="content-section">
+        <h2>3. Approach 1 — Using MAX() with a Subquery</h2>
+
+        <p>
+            This is one of the simplest ways to find the second-highest
+            distinct salary.
+        </p>
+
+        <h3>Step 1: Find the highest salary</h3>
+
+        <pre class="sql-code"><code>
+SELECT MAX(Salary) AS HighestSalary
+FROM Employees;
+        </code></pre>
+
+        <h3>Output</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>HighestSalary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>90000.00</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            MAX() returns the largest non-NULL salary.
+        </p>
+
+        <h3>Step 2: Find the maximum salary below the highest salary</h3>
+
+        <pre class="sql-code"><code>
+SELECT MAX(Salary) AS SecondHighestSalary
+FROM Employees
+WHERE Salary < (
+    SELECT MAX(Salary)
+    FROM Employees
+);
+        </code></pre>
+
+        <h3>How does this query work?</h3>
+
+        <ol class="learning-list">
+            <li>
+                The inner query finds the highest salary, which is 90000.
+            </li>
+            <li>
+                The outer WHERE condition excludes salaries greater
+                than or equal to 90000.
+            </li>
+            <li>
+                The remaining salaries are 80000, 80000, 70000,
+                60000, 50000, 50000 and 40000.
+            </li>
+            <li>
+                MAX() selects the largest remaining salary, which is 80000.
+            </li>
+        </ol>
+
+        <h3>Output</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>SecondHighestSalary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>80000.00</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            This approach automatically handles duplicate highest
+            salaries because the condition excludes every row equal
+            to the maximum salary.
+        </div>
+    </section>
+
+    <!-- 4. Approach 2 -->
+    <section class="content-section">
+        <h2>4. Approach 2 — Using DISTINCT and TOP</h2>
+
+        <p>
+            SQL Server supports TOP to return a specified number
+            of rows.
+        </p>
+
+        <p>
+            We can combine TOP with DISTINCT and ORDER BY to
+            retrieve the second-highest distinct salary.
+        </p>
+
+        <pre class="sql-code"><code>
+SELECT TOP (1)
+    Salary AS SecondHighestSalary
+FROM
+(
+    SELECT DISTINCT Salary
+    FROM Employees
+    WHERE Salary IS NOT NULL
+) AS SalaryList
+ORDER BY Salary DESC
+OFFSET 1 ROWS;
+        </code></pre>
+
+        <h3>Understand each part</h3>
+
+        <ul class="learning-list">
+            <li>
+                SELECT DISTINCT removes repeated salary values.
+            </li>
+            <li>
+                WHERE Salary IS NOT NULL excludes missing salaries.
+            </li>
+            <li>
+                ORDER BY Salary DESC sorts salaries from highest
+                to lowest.
+            </li>
+            <li>
+                OFFSET 1 ROWS skips the first salary.
+            </li>
+            <li>
+                TOP (1) returns the next available row.
+            </li>
+        </ul>
+
+        <h3>Intermediate result</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Distinct Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>90000</td></tr>
+                <tr><td>2</td><td>80000</td></tr>
+                <tr><td>3</td><td>70000</td></tr>
+                <tr><td>4</td><td>60000</td></tr>
+                <tr><td>5</td><td>50000</td></tr>
+                <tr><td>6</td><td>40000</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            The first row is skipped, and the next row is returned.
+        </p>
+
+        <div class="info-box">
+            OFFSET requires ORDER BY in SQL Server. The DISTINCT
+            operation is important here because we want the second
+            distinct salary, not simply the second employee row.
+        </div>
+    </section>
+
+    <!-- 5. Approach 3 -->
+    <section class="content-section">
+        <h2>5. Approach 3 — Using DENSE_RANK()</h2>
+
+        <p>
+            DENSE_RANK() is a window function that assigns ranking
+            numbers to rows based on an ordering expression.
+        </p>
+
+        <p>
+            Rows with the same salary receive the same rank.
+            The next distinct salary receives the next consecutive rank.
+        </p>
+
+        <h3>Query</h3>
+
+        <pre class="sql-code"><code>
+WITH SalaryRanking AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Salary,
+        DENSE_RANK() OVER
+        (
+            ORDER BY Salary DESC
+        ) AS SalaryRank
+    FROM Employees
+    WHERE Salary IS NOT NULL
+)
+SELECT
+    EmployeeId,
+    EmployeeName,
+    Salary,
+    SalaryRank
+FROM SalaryRanking
+WHERE SalaryRank = 2;
+        </code></pre>
+
+        <h3>How DENSE_RANK() works</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeName</th>
+                    <th>Salary</th>
+                    <th>SalaryRank</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>90000</td><td>1</td></tr>
+                <tr><td>Bob</td><td>80000</td><td>2</td></tr>
+                <tr><td>Carol</td><td>80000</td><td>2</td></tr>
+                <tr><td>David</td><td>70000</td><td>3</td></tr>
+                <tr><td>Emma</td><td>60000</td><td>4</td></tr>
+                <tr><td>Frank</td><td>50000</td><td>5</td></tr>
+                <tr><td>Grace</td><td>50000</td><td>5</td></tr>
+                <tr><td>Henry</td><td>40000</td><td>6</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Final output</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>EmployeeName</th>
+                    <th>Salary</th>
+                    <th>SalaryRank</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>102</td><td>Bob</td><td>80000</td><td>2</td></tr>
+                <tr><td>103</td><td>Carol</td><td>80000</td><td>2</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            DENSE_RANK() returns both employees because both
+            employees have the second-highest distinct salary.
+        </div>
+    </section>
+
+    <!-- 6. Approach 4 -->
+    <section class="content-section">
+        <h2>6. Approach 4 — Using a Correlated Subquery</h2>
+
+        <p>
+            Another way is to count how many distinct salary values
+            are greater than each employee's salary.
+        </p>
+
+        <p>
+            The second-highest distinct salary has exactly one
+            distinct salary value greater than it.
+        </p>
+
+        <h3>Query</h3>
+
+        <pre class="sql-code"><code>
+SELECT DISTINCT
+    e1.Salary AS SecondHighestSalary
+FROM Employees AS e1
+WHERE e1.Salary IS NOT NULL
+  AND
+  (
+      SELECT COUNT(DISTINCT e2.Salary)
+      FROM Employees AS e2
+      WHERE e2.Salary > e1.Salary
+  ) = 1;
+        </code></pre>
+
+        <h3>How does it work?</h3>
+
+        <p>
+            SQL Server evaluates the subquery for each candidate
+            salary in the outer query.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Candidate Salary</th>
+                    <th>Distinct Salaries Greater Than It</th>
+                    <th>Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>90000</td><td>None</td><td>0</td></tr>
+                <tr><td>80000</td><td>90000</td><td>1</td></tr>
+                <tr><td>70000</td><td>90000, 80000</td><td>2</td></tr>
+                <tr><td>60000</td><td>90000, 80000, 70000</td><td>3</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            The salary whose count equals one is the second-highest
+            distinct salary.
+        </p>
+
+        <div class="info-box">
+            This is useful for understanding correlated subqueries,
+            but it may require more work on large tables than
+            a suitable ranking or aggregation approach.
+            Always compare actual execution plans and performance.
+        </div>
+    </section>
+
+    <!-- 7. Important distinction -->
+    <section class="content-section">
+        <h2>7. Second-Highest Distinct Salary vs Second Employee Salary</h2>
+
+        <p>
+            This distinction is extremely important.
+        </p>
+
+        <p>
+            Consider this data:
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeName</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>90000</td></tr>
+                <tr><td>Bob</td><td>80000</td></tr>
+                <tr><td>Carol</td><td>80000</td></tr>
+                <tr><td>David</td><td>70000</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Requirement A: Second-highest distinct salary</h3>
+
+        <p>
+            Distinct salary values are 90000, 80000 and 70000.
+        </p>
+
+        <p>
+            The answer is 80000.
+        </p>
+
+        <h3>Requirement B: Second employee when sorted by salary</h3>
+
+        <p>
+            Sort all employee rows by salary descending.
+        </p>
+
+        <p>
+            Alice is first. Bob and Carol tie for the next position.
+            Without an additional tie-breaker, their relative order
+            is not guaranteed.
+        </p>
+
+        <pre class="sql-code"><code>
+SELECT TOP (2)
+    EmployeeId,
+    EmployeeName,
+    Salary
+FROM Employees
+ORDER BY Salary DESC, EmployeeId ASC;
+        </code></pre>
+
+        <p>
+            This returns two employee rows, not the second-highest
+            distinct salary.
+        </p>
+
+        <div class="info-box">
+            Always clarify whether the requirement means the
+            second distinct salary or the second employee row.
+            These are different business requirements.
+        </div>
+    </section>
+
+    <!-- 8. No second highest -->
+    <section class="content-section">
+        <h2>8. What If There Is No Second-Highest Salary?</h2>
+
+        <p>
+            Consider a company with only one distinct salary value.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeName</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>90000</td></tr>
+                <tr><td>Bob</td><td>90000</td></tr>
+                <tr><td>Carol</td><td>90000</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            There is no second distinct salary.
+        </p>
+
+        <pre class="sql-code"><code>
+SELECT MAX(Salary) AS SecondHighestSalary
+FROM Employees
+WHERE Salary < (
+    SELECT MAX(Salary)
+    FROM Employees
+);
+        </code></pre>
+
+        <p>
+            MAX() returns NULL because the outer query has no
+            qualifying salary rows.
+        </p>
+
+        <h3>Return a message when the value does not exist</h3>
+
+        <pre class="sql-code"><code>
+DECLARE @SecondHighestSalary DECIMAL(12, 2);
+
+SELECT @SecondHighestSalary = MAX(Salary)
+FROM Employees
+WHERE Salary < (
+    SELECT MAX(Salary)
+    FROM Employees
+);
+
+SELECT
+    CASE
+        WHEN @SecondHighestSalary IS NULL
+            THEN 'Second highest salary does not exist'
+        ELSE CAST(@SecondHighestSalary AS VARCHAR(30))
+    END AS Result;
+        </code></pre>
+
+        <p>
+            The result is returned as a message if no second
+            distinct salary exists.
+        </p>
+    </section>
+
+    <!-- 9. NULL -->
+    <section class="content-section">
+        <h2>9. How NULL Salaries Affect the Result</h2>
+
+        <p>
+            NULL means that a salary value is missing or unknown.
+            SQL Server aggregate functions such as MAX() ignore NULL.
+        </p>
+
+        <p>
+            For example:
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeName</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>90000</td></tr>
+                <tr><td>Bob</td><td>80000</td></tr>
+                <tr><td>Carol</td><td>NULL</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            The second-highest distinct salary remains 80000.
+        </p>
+
+        <p>
+            In the DENSE_RANK() approach, we explicitly used
+            WHERE Salary IS NOT NULL to make the intended behavior clear.
+        </p>
+
+        <div class="info-box">
+            Do not replace NULL salaries with zero unless the
+            business requirement explicitly defines missing salary
+            as zero. Missing and zero are different values.
+        </div>
+    </section>
+
+    <!-- 10. Department-wise -->
+    <section class="content-section">
+        <h2>10. Find the Second-Highest Salary Per Department</h2>
+
+        <p>
+            Now consider a different business requirement:
+            find the second-highest distinct salary in every department.
+        </p>
+
+        <p>
+            We can use DENSE_RANK() with PARTITION BY.
+        </p>
+
+        <h3>Query</h3>
+
+        <pre class="sql-code"><code>
+WITH DepartmentSalaryRanking AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Department,
+        Salary,
+        DENSE_RANK() OVER
+        (
+            PARTITION BY Department
+            ORDER BY Salary DESC
+        ) AS SalaryRank
+    FROM Employees
+    WHERE Salary IS NOT NULL
+)
+SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary
+FROM DepartmentSalaryRanking
+WHERE SalaryRank = 2
+ORDER BY Department;
+        </code></pre>
+
+        <h3>How PARTITION BY works</h3>
+
+        <p>
+            PARTITION BY divides the rows into separate department
+            groups. DENSE_RANK() starts ranking independently
+            inside each department.
+        </p>
+
+        <h3>Example ranking</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Employee</th>
+                    <th>Salary</th>
+                    <th>Rank</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Finance</td><td>David</td><td>70000</td><td>1</td></tr>
+                <tr><td>Finance</td><td>Grace</td><td>50000</td><td>2</td></tr>
+                <tr><td>HR</td><td>Bob</td><td>80000</td><td>1</td></tr>
+                <tr><td>HR</td><td>Emma</td><td>60000</td><td>2</td></tr>
+                <tr><td>HR</td><td>Henry</td><td>40000</td><td>3</td></tr>
+                <tr><td>IT</td><td>Alice</td><td>90000</td><td>1</td></tr>
+                <tr><td>IT</td><td>Carol</td><td>80000</td><td>2</td></tr>
+                <tr><td>IT</td><td>Frank</td><td>50000</td><td>3</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Final output</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeName</th>
+                    <th>Department</th>
+                    <th>SecondHighestSalary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Grace</td><td>Finance</td><td>50000</td></tr>
+                <tr><td>Emma</td><td>HR</td><td>60000</td></tr>
+                <tr><td>Carol</td><td>IT</td><td>80000</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            This query returns the employee or employees earning
+            the second-highest distinct salary within each department.
+        </p>
+    </section>
+
+    <!-- 11. DENSE_RANK vs RANK -->
+    <section class="content-section">
+        <h2>11. Why DENSE_RANK() Instead of RANK()?</h2>
+
+        <p>
+            Both functions assign the same rank to tied values,
+            but they differ in how the next rank is calculated.
+        </p>
+
+        <p>
+            Consider the following salaries:
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>90000</td></tr>
+                <tr><td>Bob</td><td>80000</td></tr>
+                <tr><td>Carol</td><td>80000</td></tr>
+                <tr><td>David</td><td>70000</td></tr>
+            </tbody>
+        </table>
+
+        <pre class="sql-code"><code>
+SELECT
+    EmployeeName,
+    Salary,
+
+    ROW_NUMBER() OVER
+    (
+        ORDER BY Salary DESC
+    ) AS RowNumber,
+
+    RANK() OVER
+    (
+        ORDER BY Salary DESC
+    ) AS SalaryRank,
+
+    DENSE_RANK() OVER
+    (
+        ORDER BY Salary DESC
+    ) AS DenseSalaryRank
+
+FROM Employees;
+        </code></pre>
+
+        <h3>Result</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Salary</th>
+                    <th>ROW_NUMBER</th>
+                    <th>RANK</th>
+                    <th>DENSE_RANK</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>90000</td><td>1</td><td>1</td><td>1</td></tr>
+                <tr><td>Bob</td><td>80000</td><td>2</td><td>2</td><td>2</td></tr>
+                <tr><td>Carol</td><td>80000</td><td>3</td><td>2</td><td>2</td></tr>
+                <tr><td>David</td><td>70000</td><td>4</td><td>4</td><td>3</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            ROW_NUMBER assigns a unique sequential number to each row.
+            RANK leaves gaps after tied ranks. DENSE_RANK does not
+            leave gaps.
+        </p>
+
+        <div class="info-box">
+            For the second-highest distinct salary, DENSE_RANK()
+            is usually the most natural window function.
+        </div>
+    </section>
+
+    <!-- 12. Execution internals -->
+    <section class="content-section">
+        <h2>12. How SQL Server Executes These Queries</h2>
+
+        <p>
+            Different SQL statements can produce the same result,
+            but SQL Server may choose different execution plans.
+        </p>
+
+        <h3>MAX() approach</h3>
+
+        <p>
+            SQL Server may use an aggregate operator to calculate
+            the maximum salary. The inner query and outer query
+            may be optimized together.
+        </p>
+
+        <h3>DENSE_RANK() approach</h3>
+
+        <p>
+            A window ranking query may use operators such as:
+        </p>
+
+        <ul class="learning-list">
+            <li>Scan or Seek to read employee rows.</li>
+            <li>Sort to arrange salaries in descending order, if needed.</li>
+            <li>Segment and Sequence Project or other window-related
+                operators to calculate ranking.</li>
+            <li>Filter to return only rank 2.</li>
+        </ul>
+
+        <h3>Execution flow — conceptual</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Employee table</strong>
+                <p>Read salary data</p>
+            </div>
+            <div class="flow-step">
+                <strong>Sort</strong>
+                <p>Order salaries descending</p>
+            </div>
+            <div class="flow-step">
+                <strong>Ranking</strong>
+                <p>Calculate DENSE_RANK</p>
+            </div>
+            <div class="flow-step">
+                <strong>Filter</strong>
+                <p>Keep rank 2</p>
+            </div>
+        </div>
+
+        <div class="info-box">
+            This is a conceptual flow, not a guaranteed physical
+            execution plan. The actual operators depend on SQL Server's
+            optimizer, indexes, statistics and data distribution.
+        </div>
+
+        <h3>Inspect the actual execution plan</h3>
+
+        <pre class="sql-code"><code>
+SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+WITH SalaryRanking AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Salary,
+        DENSE_RANK() OVER
+        (
+            ORDER BY Salary DESC
+        ) AS SalaryRank
+    FROM Employees
+    WHERE Salary IS NOT NULL
+)
+SELECT *
+FROM SalaryRanking
+WHERE SalaryRank = 2;
+
+SET STATISTICS TIME OFF;
+SET STATISTICS IO OFF;
+        </code></pre>
+
+        <p>
+            In SQL Server Management Studio, enable Include Actual
+            Execution Plan before running the query.
+        </p>
+
+        <p>
+            Examine the actual number of rows, sort operations,
+            memory usage, logical reads and execution time.
+        </p>
+    </section>
+
+    <!-- 13. Performance -->
+    <section class="content-section">
+        <h2>13. Performance Considerations</h2>
+
+        <p>
+            On a small employee table, the difference between
+            these approaches may be negligible.
+        </p>
+
+        <p>
+            On a large employee table, examine the following:
+        </p>
+
+        <ul class="learning-list">
+            <li>Number of rows in the employee table.</li>
+            <li>Whether the query needs all employee columns or only salary.</li>
+            <li>Whether a useful salary index exists.</li>
+            <li>Whether the query requires sorting.</li>
+            <li>Actual versus estimated row counts.</li>
+            <li>Logical reads and memory grants.</li>
+        </ul>
+
+        <h3>Example index</h3>
+
+        <pre class="sql-code"><code>
+CREATE NONCLUSTERED INDEX IX_Employees_Salary
+ON Employees(Salary);
+        </code></pre>
+
+        <p>
+            This index can help queries that access salary values.
+            Whether it improves a particular query depends on
+            the execution plan and workload.
+        </p>
+
+        <div class="info-box">
+            Do not create an index for every query automatically.
+            Indexes consume storage and add maintenance overhead
+            during INSERT, UPDATE and DELETE operations.
+        </div>
+    </section>
+
+    <!-- 14. Common mistakes -->
+    <section class="content-section">
+        <h2>14. Common Mistakes</h2>
+
+        <ul class="learning-list">
+            <li>
+                Using TOP (2) without DISTINCT when the requirement
+                is the second-highest distinct salary.
+            </li>
+            <li>
+                Using ROW_NUMBER() when tied salaries should share
+                the same rank.
+            </li>
+            <li>
+                Forgetting that multiple employees can earn the
+                second-highest salary.
+            </li>
+            <li>
+                Assuming a second-highest salary always exists.
+            </li>
+            <li>
+                Forgetting to consider NULL salaries.
+            </li>
+            <li>
+                Confusing the second-highest salary across the
+                company with the second-highest salary per department.
+            </li>
+            <li>
+                Assuming one query-writing approach is always
+                faster than the others.
+            </li>
+        </ul>
+    </section>
+
+    <!-- 15. Production scenarios -->
+    <section class="content-section">
+        <h2>15. Real-World Production Scenarios</h2>
+
+        <h3>Scenario 1: Payroll reporting</h3>
+
+        <p>
+            The finance team wants to know the second-highest
+            distinct salary in the organization for salary
+            benchmarking.
+        </p>
+
+        <p>
+            Use MAX() with a subquery or DENSE_RANK(), depending
+            on whether the report needs only the salary or the
+            employee details as well.
+        </p>
+
+        <h3>Scenario 2: Department compensation analysis</h3>
+
+        <p>
+            HR wants to compare the second-highest salary in
+            each department.
+        </p>
+
+        <p>
+            Use DENSE_RANK() with PARTITION BY Department.
+        </p>
+
+        <h3>Scenario 3: Salary approval workflow</h3>
+
+        <p>
+            A manager wants to review employees whose salaries
+            are the second-highest in the company.
+        </p>
+
+        <p>
+            Return all employees with DENSE_RANK() equal to 2
+            rather than returning only one employee.
+        </p>
+
+        <h3>Scenario 4: Salary analytics API</h3>
+
+        <p>
+            A backend API needs to return the second-highest
+            salary for a dashboard.
+        </p>
+
+        <p>
+            The application should define what happens if there
+            is no second-highest salary and should return a
+            predictable result to the frontend.
+        </p>
+    </section>
+
+    <!-- 16. Exercises -->
+    <section class="content-section">
+        <h2>16. Hands-On Exercises</h2>
+
+        <p>
+            Use the Employees table created at the beginning.
+        </p>
+
+        <ol class="learning-list">
+            <li>
+                Find the highest salary using MAX().
+            </li>
+            <li>
+                Find the second-highest distinct salary using
+                a subquery.
+            </li>
+            <li>
+                Find the second-highest distinct salary using
+                DENSE_RANK().
+            </li>
+            <li>
+                Return all employees earning the second-highest salary.
+            </li>
+            <li>
+                Find the third-highest distinct salary.
+            </li>
+            <li>
+                Find the second-highest salary in each department.
+            </li>
+            <li>
+                Modify the sample data so that all employees
+                have the same salary. Check the result.
+            </li>
+            <li>
+                Add NULL salaries and test how the different
+                queries behave.
+            </li>
+            <li>
+                Compare RANK(), DENSE_RANK() and ROW_NUMBER()
+                using the sample data.
+            </li>
+        </ol>
+    </section>
+
+    <!-- 17. Knowledge check -->
+    <section class="content-section">
+        <h2>17. Knowledge Check</h2>
+
+        <ol class="learning-list">
+            <li>
+                Why do we use DISTINCT when finding the
+                second-highest distinct salary?
+            </li>
+            <li>
+                What is the difference between MAX() and TOP?
+            </li>
+            <li>
+                Why does DENSE_RANK() assign the same rank
+                to employees with equal salaries?
+            </li>
+            <li>
+                What happens when there is only one distinct salary?
+            </li>
+            <li>
+                Why can the second-highest salary return
+                multiple employees?
+            </li>
+            <li>
+                What is the purpose of PARTITION BY in a
+                department-wise salary ranking query?
+            </li>
+            <li>
+                Which approach would you choose if you need
+                only the salary value, and which would you
+                choose if you need all matching employees?
+            </li>
+        </ol>
+    </section>
+
+    <!-- 18. Summary -->
+    <section class="outcome-section">
+        <h2>What You Should Now Understand</h2>
+
+        <ul class="learning-list">
+            <li>How to find the second-highest distinct salary.</li>
+            <li>How to use MAX() with a subquery.</li>
+            <li>How DISTINCT, TOP and OFFSET work together.</li>
+            <li>How to use DENSE_RANK() to return tied employees.</li>
+            <li>How to solve the problem using a correlated subquery.</li>
+            <li>The difference between the second salary and the
+                second employee row.</li>
+            <li>How NULL values and missing salary levels affect results.</li>
+            <li>How to find the second-highest salary per department.</li>
+            <li>How SQL Server may execute and optimize these queries.</li>
+            <li>How to choose an appropriate approach for production.</li>
+        </ul>
+    </section>
+
+</main>

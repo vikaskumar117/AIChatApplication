@@ -1,0 +1,669 @@
+.learning-page {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  justify-self: stretch;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.learning-page aside,
+.learning-page main {
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+}
+
+.learning-page aside ul {
+  padding-left: 20px;
+}
+
+.learning-page aside .back-to-modules {
+  display: block;
+  margin-bottom: 12px;
+  color: #2563eb;
+}
+
+.learning-page aside button {
+  padding: 4px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.learning-page aside button.selected {
+  font-weight: 700;
+}
+
+.topic-link {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #2563EB;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.topic-link:hover {
+  color: #1D4ED8;
+}
+
+.module-link.selected {
+  font-weight: 700;
+}
+
+
+/* =====================================================
+   1. GLOBAL LEARNING PAGE
+===================================================== */
+
+.learning-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 30px 20px 60px;
+    color: #263445;
+    font-size: 15px;
+    line-height: 1.75;
+}
+
+.learning-page * {
+    box-sizing: border-box;
+}
+
+.learning-page p {
+    color: #475569;
+    line-height: 1.85;
+    margin-bottom: 16px;
+}
+
+.learning-page ul,
+.learning-page ol {
+    padding-left: 25px;
+    color: #334155;
+    line-height: 2;
+}
+
+.learning-page li {
+    margin-bottom: 5px;
+}
+
+
+/* =====================================================
+   2. PAGE HEADER
+===================================================== */
+
+.page-header {
+    padding: 10px 0 35px;
+    margin-bottom: 2px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.topic-label {
+    display: inline-block;
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+}
+
+.page-header h1 {
+    color: #172554;
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0 0 10px;
+}
+
+.subtitle {
+    color: #2563eb !important;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.description {
+    color: #64748b !important;
+    font-size: 16px;
+    line-height: 1.9;
+    max-width: 850px;
+}
+
+
+/* =====================================================
+   3. TOPIC TAGS
+===================================================== */
+
+.topic-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.topic-tags span {
+    display: inline-block;
+    background: #eff6ff;
+    color: #1d4ed8;
+    padding: 5px 13px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+/* =====================================================
+   4. CONTENT SECTIONS
+===================================================== */
+
+.content-section {
+    padding: 10px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.content-section h2 {
+    color: #172554;
+    font-size: 25px;
+    font-weight: 700;
+    margin: 0 0 20px;
+    line-height: 1.4;
+}
+
+.content-section h3 {
+    color: #1e40af;
+    font-size: 19px;
+    font-weight: 650;
+    margin: 28px 0 12px;
+    line-height: 1.5;
+}
+
+.content-section h4 {
+    color: #334155;
+    font-size: 16px;
+    font-weight: 650;
+    margin: 22px 0 10px;
+}
+
+.content-section strong {
+    color: #1e293b;
+}
+
+
+/* =====================================================
+   5. LEARNING LIST
+===================================================== */
+
+.learning-list {
+    padding-left: 25px;
+    margin: 15px 0;
+}
+
+.learning-list li {
+    padding-left: 5px;
+}
+
+.learning-list li::marker {
+    color: #2563eb;
+}
+
+
+/* =====================================================
+   6. PROCESSING FLOW / DIAGRAMS
+===================================================== */
+
+.processing-flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 22px 0;
+    padding: 18px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+}
+
+.flow-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    border-radius: 6px;
+    padding: 10px 15px;
+    font-size: 13px;
+    font-weight: 650;
+    text-align: center;
+    min-height: 42px;
+}
+
+
+/* =====================================================
+   7. INFORMATION BOX
+===================================================== */
+
+.info-box {
+    background: #fffbeb;
+    border-left: 4px solid #f59e0b;
+    border-radius: 5px;
+    padding: 16px 20px;
+    margin: 20px 0;
+    color: #92400e;
+    line-height: 1.8;
+}
+
+.info-box strong {
+    color: #92400e;
+}
+
+
+/* =====================================================
+   8. SQL CODE BLOCKS
+===================================================== */
+
+.sql-code {
+    display: block;
+    background: #172033;
+    color: #e2e8f0;
+    padding: 20px;
+    margin: 18px 0;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    white-space: pre;
+    tab-size: 4;
+}
+
+.sql-code code {
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+
+/* =====================================================
+   9. TABLES
+===================================================== */
+
+.learning-page table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 14px;
+    background: #ffffff;
+}
+
+.learning-page table th {
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-weight: 700;
+    text-align: left;
+    padding: 12px 14px;
+    border: 1px solid #dbeafe;
+}
+
+.learning-page table td {
+    color: #334155;
+    padding: 11px 14px;
+    border: 1px solid #e2e8f0;
+    vertical-align: top;
+}
+
+.learning-page table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.learning-page table tbody tr:hover {
+    background: #f1f5f9;
+}
+
+
+/* =====================================================
+   10. TABLE RESPONSIVENESS
+===================================================== */
+
+.learning-page table {
+    display: block;
+    overflow-x: auto;
+    white-space: normal;
+}
+
+.learning-page table th,
+.learning-page table td {
+    min-width: 100px;
+}
+
+
+/* =====================================================
+   11. MODULE CARDS (REUSABLE)
+===================================================== */
+
+.module-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.module-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: border-color 0.2s ease,
+                background 0.2s ease,
+                transform 0.2s ease;
+}
+
+.module-card:hover {
+    border-color: #93c5fd;
+    background: #f8fbff;
+    transform: translateY(-2px);
+}
+
+.module-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    height: 42px;
+    background: #eff6ff;
+    color: #2563eb;
+    font-weight: 700;
+    border-radius: 8px;
+}
+
+.module-card h3 {
+    font-size: 17px;
+    color: #1e293b;
+    margin: 0 0 8px;
+}
+
+.module-card p {
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+
+/* =====================================================
+   12. DIFFICULTY LEVELS
+===================================================== */
+
+.level {
+    display: inline-block;
+    padding: 4px 11px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.beginner {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.intermediate {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.advanced {
+    background: #fce7f3;
+    color: #9d174d;
+}
+
+.architect {
+    background: #ede9fe;
+    color: #5b21b6;
+}
+
+
+/* =====================================================
+   13. OUTCOME SECTION
+===================================================== */
+
+.outcome-section {
+    margin-top: 30px;
+    padding: 25px;
+    background: #eff6ff;
+    border-radius: 8px;
+    border-left: 4px solid #2563eb;
+}
+
+.outcome-section h2 {
+    color: #172554;
+    font-size: 23px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.outcome-section p {
+    color: #475569;
+    line-height: 1.85;
+}
+
+
+/* =====================================================
+   14. LINKS
+===================================================== */
+
+.learning-page a {
+    color: #2563eb;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.learning-page a:hover {
+    color: #1d4ed8;
+}
+
+
+/* =====================================================
+   15. RESPONSIVE DESIGN
+===================================================== */
+
+@media (max-width: 767px) {
+
+    .learning-page {
+        padding: 20px 15px 40px;
+    }
+
+    .page-header {
+        padding: 20px 0 25px;
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+    }
+
+    .subtitle {
+        font-size: 17px;
+    }
+
+    .description {
+        font-size: 14px;
+    }
+
+    .content-section {
+        padding: 24px 0;
+    }
+
+    .content-section h2 {
+        font-size: 21px;
+    }
+
+    .content-section h3 {
+        font-size: 17px;
+    }
+
+    .processing-flow {
+        gap: 8px;
+        padding: 12px;
+    }
+
+    .flow-step {
+        font-size: 12px;
+        padding: 9px 11px;
+    }
+
+    .sql-code {
+        padding: 15px;
+        font-size: 12px;
+    }
+
+    .learning-page table {
+        font-size: 12px;
+    }
+
+    .learning-page table th,
+    .learning-page table td {
+        padding: 9px 10px;
+    }
+
+    .module-card {
+        padding: 15px;
+        gap: 12px;
+    }
+
+    .module-card h3 {
+        font-size: 15px;
+    }
+
+    .outcome-section {
+        padding: 18px;
+    }
+}
+
+
+/* Keep every tutorial in a sequential, single-column layout */
+/* Force SQL tutorial pages into a single vertical column */
+.sql-learning-page.sequential {
+    display: flex !important;
+    flex-direction: column !important;
+    flex-wrap: nowrap !important;
+    width: 100%;
+}
+
+/* Make every direct section occupy the full row */
+.sql-learning-page.sequential > .page-header,
+.sql-learning-page.sequential > .content-section,
+.sql-learning-page.sequential > .outcome-section {
+    display: block;
+    width: 100% !important;
+    max-width: 100% !important;
+    float: none !important;
+    grid-column: 1 / -1 !important;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+
+/* =====================================================
+   16. SMALL MOBILE DEVICES
+===================================================== */
+
+@media (max-width: 480px) {
+
+    .page-header h1 {
+        font-size: 25px;
+    }
+
+    .topic-tags {
+        gap: 6px;
+    }
+
+    .topic-tags span {
+        font-size: 11px;
+        padding: 5px 9px;
+    }
+
+    .module-number {
+        min-width: 34px;
+        height: 34px;
+        font-size: 12px;
+    }
+
+    .flow-step {
+        width: 100%;
+    }
+
+    .info-box {
+        padding: 13px 15px;
+        font-size: 13px;
+    }
+}
+
+
+@media (max-width: 700px) {
+  .learning-page {
+    grid-template-columns: minmax(120px, 35%) minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+
+.learning-page.topics-hidden {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.learning-page.topics-hidden > aside {
+  display: none;
+}
+
+.learning-page .sidebar-actions,
+.learning-page .lesson-toolbar {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.learning-page .lesson-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+}
+
+.learning-page {
+  transition: grid-template-columns 180ms ease;
+}
+
+.learning-page .sidebar-action {
+  display: flex;
+  width: 140px;
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #334155;
+  font: caption;
+  cursor: pointer;
+}
+
+.learning-page .sidebar-action:hover {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.learning-page .sidebar-action svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}

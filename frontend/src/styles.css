@@ -55,6 +55,7 @@ h2,
 h3,
 p {
   margin-top: 0;
+  font-weight: 600
 }
 
 button,
@@ -70,6 +71,278 @@ a:focus-visible {
 
 button:disabled {
   cursor: not-allowed;
+}
+
+a {
+    color: #2563EB;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+a:hover {
+    color: #1D4ED8;
+}
+
+.sql-learning-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 10px 16px 60px;
+  color: #263445;
+}
+
+.sql-learning-page .container {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.sql-learning-page .row {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  align-items: center;
+  gap: 24px;
+}
+
+.sql-learning-page .text-center {
+  text-align: center;
+}
+
+.sql-learning-page .img-fluid {
+  max-width: 100%;
+  height: auto;
+}
+
+.sql-learning-page .page-header {
+  padding: 10px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sql-learning-page .topic-label {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+
+.sql-learning-page .page-header h1 {
+  margin-bottom: 8px;
+  color: #172554;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.sql-learning-page .subtitle {
+  color: #2563eb;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.sql-learning-page .description {
+  margin-top: 15px;
+  color: #64748b;
+  line-height: 1.8;
+}
+
+.sql-learning-page .hero-image {
+  max-height: 260px;
+}
+
+.sql-learning-page .topic-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.sql-learning-page .topic-tags span {
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sql-learning-page .content-section {
+  padding: 30px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sql-learning-page .content-section h2,
+.sql-learning-page .outcome-section h2 {
+  margin-bottom: 15px;
+  color: #172554;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.sql-learning-page .content-section p {
+  color: #64748b;
+  line-height: 1.8;
+}
+
+.sql-learning-page .learning-list {
+  padding-left: 22px;
+  color: #334155;
+  line-height: 2.2;
+}
+
+.sql-learning-page .learning-list li::marker {
+  color: #2563eb;
+}
+
+.sql-learning-page .processing-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 25px 0;
+}
+
+.sql-learning-page .flow-step {
+  padding: 12px 18px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sql-learning-page .info-box {
+  padding: 15px;
+  border-left: 4px solid #f59e0b;
+  border-radius: 4px;
+  background: #fffbeb;
+  color: #92400e;
+  line-height: 1.7;
+}
+
+.sql-learning-page .module-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.sql-learning-page .module-card {
+  display: flex;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.sql-learning-page .module-card:hover {
+  transform: translateY(-2px);
+  border-color: #93c5fd;
+  background: #f8fbff;
+}
+
+.sql-learning-page .module-number {
+  display: flex;
+  min-width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.sql-learning-page .module-card h3 {
+  margin-bottom: 8px;
+  color: #1e293b;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.sql-learning-page .module-card p {
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.sql-learning-page .level {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sql-learning-page .beginner {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.sql-learning-page .intermediate {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.sql-learning-page .advanced {
+  background: #fce7f3;
+  color: #9d174d;
+}
+
+.sql-learning-page .architect {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.sql-learning-page .sql-code {
+  overflow-x: auto;
+  padding: 22px;
+  border-radius: 8px;
+  background: #172033;
+  color: #e2e8f0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.sql-learning-page .outcome-section {
+  margin-top: 30px;
+  padding: 25px;
+  border-left: 4px solid #2563eb;
+  border-radius: 8px;
+  background: #eff6ff;
+}
+
+.sql-learning-page .outcome-section p {
+  color: #475569;
+  line-height: 1.8;
+}
+
+@media (max-width: 767px) {
+  .sql-learning-page .row {
+    grid-template-columns: 1fr;
+  }
+
+  .sql-learning-page .page-header h1 {
+    font-size: 28px;
+  }
+
+  .sql-learning-page .hero-image {
+    max-height: 200px;
+    margin-top: 25px;
+  }
+
+  .sql-learning-page .module-card {
+    gap: 12px;
+    padding: 15px;
+  }
+
+  .sql-learning-page .module-card h3 {
+    font-size: 15px;
+  }
+
+  .sql-learning-page .content-section h2 {
+    font-size: 21px;
+  }
 }
 
 ::selection {

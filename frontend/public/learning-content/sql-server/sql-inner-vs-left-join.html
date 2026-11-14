@@ -1,0 +1,708 @@
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>INNER JOIN vs LEFT JOIN in SQL Server</h1>
+    </header>
+
+    <!-- 1. Introduction -->
+    <section class="content-section">
+        <h2>1. Why Do We Need JOINs?</h2>
+
+        <p>
+            In a relational database, information is usually divided into
+            multiple tables to avoid unnecessary duplication.
+        </p>
+
+        <p>
+            For example, an employee table stores employee information,
+            while a department table stores department information.
+            Instead of storing the department name repeatedly for every
+            employee, we store a DepartmentId in the Employees table.
+        </p>
+
+        <p>
+            A JOIN allows us to retrieve related information from both
+            tables in a single query.
+        </p>
+
+        <h3>Example business requirement</h3>
+        <div class="info-box">
+            <strong>Business scenario:</strong>
+            The HR team wants to display employee names along with
+            their department names.
+        </div>
+
+        <p>
+            We need to connect Employees.DepartmentId with
+            Departments.DepartmentId.
+        </p>
+    </section>
+
+    <!-- 2. Database structure -->
+    <section class="content-section">
+        <h2>2. Understand the Sample Database</h2>
+
+        <h3>Employees table</h3>
+        <p>Stores employee details and their department references.</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>EmployeeName</th>
+                    <th>DepartmentId</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>101</td>
+                    <td>Alice</td>
+                    <td>1</td>
+                </tr>
+                <tr>
+                    <td>102</td>
+                    <td>Bob</td>
+                    <td>1</td>
+                </tr>
+                <tr>
+                    <td>103</td>
+                    <td>Carol</td>
+                    <td>2</td>
+                </tr>
+                <tr>
+                    <td>104</td>
+                    <td>David</td>
+                    <td>NULL</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Departments table</h3>
+        <p>Stores the list of company departments.</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>DepartmentId</th>
+                    <th>DepartmentName</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Engineering</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>HR</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Finance</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Create the tables and insert sample data</h3>
+
+        <pre class="sql-code"><code>
+CREATE TABLE Employees
+(
+    EmployeeId INT PRIMARY KEY,
+    EmployeeName VARCHAR(50) NOT NULL,
+    DepartmentId INT NULL,
+    FOREIGN KEY (DepartmentId)
+        REFERENCES Departments(DepartmentId)
+);
+
+CREATE TABLE Departments
+(
+    DepartmentId INT PRIMARY KEY,
+    DepartmentName VARCHAR(50) NOT NULL
+);
+
+INSERT INTO Employees
+    (EmployeeId, EmployeeName, DepartmentId)
+VALUES
+    (101, 'Alice', 1),
+    (102, 'Bob', 1),
+    (103, 'Carol', 2),
+    (104, 'David', NULL);
+
+INSERT INTO Departments
+    (DepartmentId, DepartmentName)
+VALUES
+    (1, 'Engineering'),
+    (2, 'HR'),
+    (3, 'Finance');
+    </code></pre>
+
+        <div class="info-box">
+            Notice that Finance has no employees. David also has no
+            department assigned. These two situations will help us
+            understand the difference between INNER JOIN and LEFT JOIN.
+        </div>
+    </section>
+
+    <!-- 3. INNER JOIN -->
+    <section class="content-section">
+        <h2>3. What Is INNER JOIN?</h2>
+
+        <p>
+            INNER JOIN returns only the rows where the join condition
+            matches in both tables.
+        </p>
+
+        <h3>Query</h3>
+        <pre class="sql-code"><code>
+SELECT
+    e.EmployeeId,
+    e.EmployeeName,
+    d.DepartmentName
+FROM Employees AS e
+INNER JOIN Departments AS d
+    ON e.DepartmentId = d.DepartmentId;
+    </code></pre>
+
+        <h3>How does it work?</h3>
+
+        <p>
+            SQL Server compares Employees.DepartmentId with
+            Departments.DepartmentId.
+        </p>
+
+        <ul class="learning-list">
+            <li>Alice has DepartmentId 1. A matching Engineering row exists.</li>
+            <li>Bob has DepartmentId 1. A matching Engineering row exists.</li>
+            <li>Carol has DepartmentId 2. A matching HR row exists.</li>
+            <li>David has NULL. The equality condition does not match.</li>
+        </ul>
+
+        <h3>Result</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>EmployeeName</th>
+                    <th>DepartmentName</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>101</td>
+                    <td>Alice</td>
+                    <td>Engineering</td>
+                </tr>
+                <tr>
+                    <td>102</td>
+                    <td>Bob</td>
+                    <td>Engineering</td>
+                </tr>
+                <tr>
+                    <td>103</td>
+                    <td>Carol</td>
+                    <td>HR</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Important:</strong>
+            David is excluded because his DepartmentId does not match
+            a department. Finance is also absent because INNER JOIN
+            does not return departments without matching employees.
+        </div>
+
+        <h3>Visual understanding</h3>
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Employees</strong>
+                <p>4 rows</p>
+            </div>
+            <div class="flow-step">
+                <strong>Match</strong>
+                <p>Compare DepartmentId</p>
+            </div>
+            <div class="flow-step">
+                <strong>Departments</strong>
+                <p>3 rows</p>
+            </div>
+            <div class="flow-step">
+                <strong>INNER JOIN</strong>
+                <p>3 matching rows</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. LEFT JOIN -->
+    <section class="content-section">
+        <h2>4. What Is LEFT JOIN?</h2>
+
+        <p>
+            LEFT JOIN returns every row from the left table and matching
+            rows from the right table.
+        </p>
+
+        <p>
+            If no matching row exists in the right table, SQL Server
+            returns NULL for the right table's columns.
+        </p>
+
+        <h3>Query</h3>
+        <pre class="sql-code"><code>
+SELECT
+    e.EmployeeId,
+    e.EmployeeName,
+    d.DepartmentName
+FROM Employees AS e
+LEFT JOIN Departments AS d
+    ON e.DepartmentId = d.DepartmentId;
+    </code></pre>
+
+        <h3>Result</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>EmployeeName</th>
+                    <th>DepartmentName</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>101</td>
+                    <td>Alice</td>
+                    <td>Engineering</td>
+                </tr>
+                <tr>
+                    <td>102</td>
+                    <td>Bob</td>
+                    <td>Engineering</td>
+                </tr>
+                <tr>
+                    <td>103</td>
+                    <td>Carol</td>
+                    <td>HR</td>
+                </tr>
+                <tr>
+                    <td>104</td>
+                    <td>David</td>
+                    <td>NULL</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            David is included because Employees is the left table.
+            Since no matching department exists, DepartmentName is NULL.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Employees</strong>
+                <p>Preserve all 4 rows</p>
+            </div>
+            <div class="flow-step">
+                <strong>Match</strong>
+                <p>Compare DepartmentId</p>
+            </div>
+            <div class="flow-step">
+                <strong>Departments</strong>
+                <p>Find matching rows</p>
+            </div>
+            <div class="flow-step">
+                <strong>LEFT JOIN</strong>
+                <p>4 output rows</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Reverse direction -->
+    <section class="content-section">
+        <h2>5. What If We Reverse the Tables?</h2>
+
+        <p>
+            The position of the tables matters in a LEFT JOIN.
+            The table written immediately after FROM is the left table.
+        </p>
+
+        <h3>Business requirement</h3>
+        <p>
+            The HR team wants to see every department, including
+            departments that currently have no employees.
+        </p>
+
+        <pre class="sql-code"><code>
+SELECT
+    d.DepartmentId,
+    d.DepartmentName,
+    e.EmployeeName
+FROM Departments AS d
+LEFT JOIN Employees AS e
+    ON d.DepartmentId = e.DepartmentId;
+    </code></pre>
+
+        <h3>Result</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>DepartmentId</th>
+                    <th>DepartmentName</th>
+                    <th>EmployeeName</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Engineering</td>
+                    <td>Alice</td>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>Engineering</td>
+                    <td>Bob</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>HR</td>
+                    <td>Carol</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Finance</td>
+                    <td>NULL</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            Finance is now included because Departments is the left
+            table. This is the key to understanding LEFT JOIN.
+        </div>
+    </section>
+
+    <!-- 6. Comparison -->
+    <section class="content-section">
+        <h2>6. INNER JOIN vs LEFT JOIN</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>INNER JOIN</th>
+                    <th>LEFT JOIN</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Matching rows</td>
+                    <td>Included</td>
+                    <td>Included</td>
+                </tr>
+                <tr>
+                    <td>Unmatched left rows</td>
+                    <td>Excluded</td>
+                    <td>Included</td>
+                </tr>
+                <tr>
+                    <td>Unmatched right rows</td>
+                    <td>Excluded</td>
+                    <td>Excluded</td>
+                </tr>
+                <tr>
+                    <td>Missing right-side values</td>
+                    <td>Not returned</td>
+                    <td>Returned as NULL</td>
+                </tr>
+                <tr>
+                    <td>Common use</td>
+                    <td>Only related records</td>
+                    <td>All left-side records</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- 7. Real world -->
+    <section class="content-section">
+        <h2>7. Real-World Business Scenarios</h2>
+
+        <h3>Scenario 1: Employees with valid departments</h3>
+        <p>
+            Requirement: Display only employees assigned to a department.
+        </p>
+        <pre class="sql-code"><code>
+SELECT
+    e.EmployeeName,
+    d.DepartmentName
+FROM Employees e
+INNER JOIN Departments d
+    ON e.DepartmentId = d.DepartmentId;
+    </code></pre>
+
+        <h3>Scenario 2: All employees, even without a department</h3>
+        <p>
+            Requirement: HR wants to identify every employee and see
+            whether a department has been assigned.
+        </p>
+        <pre class="sql-code"><code>
+SELECT
+    e.EmployeeName,
+    d.DepartmentName
+FROM Employees e
+LEFT JOIN Departments d
+    ON e.DepartmentId = d.DepartmentId;
+    </code></pre>
+
+        <h3>Scenario 3: Find departments with no employees</h3>
+        <p>
+            Requirement: Identify departments that have no employees.
+        </p>
+        <pre class="sql-code"><code>
+SELECT
+    d.DepartmentId,
+    d.DepartmentName
+FROM Departments d
+LEFT JOIN Employees e
+    ON d.DepartmentId = e.DepartmentId
+WHERE e.EmployeeId IS NULL;
+    </code></pre>
+
+        <h3>Result</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>DepartmentId</th>
+                    <th>DepartmentName</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>3</td>
+                    <td>Finance</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            This pattern is called an anti-join: it finds rows in one
+            table that have no matching row in another table.
+        </p>
+    </section>
+
+    <!-- 8. ON versus WHERE -->
+    <section class="content-section">
+        <h2>8. Important: ON vs WHERE with LEFT JOIN</h2>
+
+        <p>
+            One of the most common SQL mistakes is placing a condition
+            in WHERE when it was intended to be part of the JOIN.
+        </p>
+
+        <h3>Example A: Filter in ON</h3>
+        <pre class="sql-code"><code>
+SELECT
+    e.EmployeeName,
+    d.DepartmentName
+FROM Employees e
+LEFT JOIN Departments d
+    ON e.DepartmentId = d.DepartmentId
+    AND d.DepartmentName = 'Engineering';
+    </code></pre>
+
+        <p>
+            All employees are preserved. Only Engineering is allowed
+            to match on the department side. Employees in other
+            departments appear with a NULL department name.
+        </p>
+
+        <h3>Example B: Filter in WHERE</h3>
+        <pre class="sql-code"><code>
+SELECT
+    e.EmployeeName,
+    d.DepartmentName
+FROM Employees e
+LEFT JOIN Departments d
+    ON e.DepartmentId = d.DepartmentId
+WHERE d.DepartmentName = 'Engineering';
+    </code></pre>
+
+        <p>
+            The WHERE condition removes rows where DepartmentName is
+            NULL or is not Engineering. The result contains only
+            employees matched to Engineering.
+        </p>
+
+        <div class="info-box">
+            <strong>Remember:</strong>
+            A WHERE condition on the nullable side of a LEFT JOIN can
+            eliminate unmatched rows. This can make the result behave
+            like an INNER JOIN for that condition.
+        </div>
+    </section>
+
+    <!-- 9. SQL Server internals -->
+    <section class="content-section">
+        <h2>9. How SQL Server Executes a JOIN Internally</h2>
+
+        <p>
+            SQL Server does not necessarily execute a JOIN using the
+            exact row-by-row process imagined from the SQL syntax.
+            The optimizer chooses a physical execution strategy.
+        </p>
+
+        <h3>Nested Loops Join</h3>
+        <p>
+            SQL Server reads rows from one input and searches the other
+            input for matching rows. This can be effective when one
+            input is small and the other has a useful index.
+        </p>
+
+        <h3>Hash Join</h3>
+        <p>
+            SQL Server builds a hash structure from one input and probes
+            it using rows from the other input. This is commonly useful
+            for larger equality joins when a suitable ordered access
+            path is not available.
+        </p>
+
+        <h3>Merge Join</h3>
+        <p>
+            SQL Server reads inputs ordered by the join keys and
+            combines matching values. It can be efficient when both
+            inputs are already suitably ordered.
+        </p>
+
+        <div class="info-box">
+            INNER JOIN and LEFT JOIN are logical join types.
+            Nested Loops, Hash Match and Merge Join are physical
+            execution operators. Do not confuse these two concepts.
+        </div>
+
+        <h3>Inspect the execution plan</h3>
+        <pre class="sql-code"><code>
+SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+SELECT
+    e.EmployeeName,
+    d.DepartmentName
+FROM Employees e
+LEFT JOIN Departments d
+    ON e.DepartmentId = d.DepartmentId;
+
+SET STATISTICS TIME OFF;
+SET STATISTICS IO OFF;
+    </code></pre>
+
+        <p>
+            In SQL Server Management Studio, enable the Actual Execution
+            Plan and execute the query. Inspect the selected join
+            operator, estimated rows, actual rows, and access methods.
+        </p>
+    </section>
+
+    <!-- 10. Common mistakes -->
+    <section class="content-section">
+        <h2>10. Common Mistakes</h2>
+
+        <ul class="learning-list">
+            <li>
+                Assuming LEFT JOIN always returns all rows from both tables.
+                It preserves only the left table's rows.
+            </li>
+            <li>
+                Forgetting that table order matters in a LEFT JOIN.
+            </li>
+            <li>
+                Using WHERE on right-side columns without considering
+                how it affects unmatched rows.
+            </li>
+            <li>
+                Assuming NULL equals NULL. In SQL Server, an equality
+                comparison with NULL evaluates to UNKNOWN.
+            </li>
+            <li>
+                Assuming INNER JOIN always performs faster than LEFT JOIN.
+                Performance depends on the query, data, indexes and plan.
+            </li>
+            <li>
+                Forgetting that one left row can match multiple right rows,
+                producing multiple output rows.
+            </li>
+        </ul>
+    </section>
+
+    <!-- 11. Practice -->
+    <section class="content-section">
+        <h2>11. Hands-On Practice</h2>
+
+        <p>Use the sample Employees and Departments tables.</p>
+
+        <ol class="learning-list">
+            <li>
+                Display employee names and department names using INNER JOIN.
+            </li>
+            <li>
+                Display all employees, including employees without a department.
+            </li>
+            <li>
+                Display all departments, including departments without employees.
+            </li>
+            <li>
+                Find departments that do not have any employees.
+            </li>
+            <li>
+                Display all employees, but match only the HR department.
+            </li>
+            <li>
+                Explain why moving a department filter from ON to WHERE
+                changes the result of a LEFT JOIN.
+            </li>
+        </ol>
+    </section>
+
+    <!-- 12. Knowledge check -->
+    <section class="content-section">
+        <h2>12. Knowledge Check</h2>
+
+        <ol class="learning-list">
+            <li>
+                Which JOIN returns only rows that match in both tables?
+            </li>
+            <li>
+                Which table's rows are preserved by LEFT JOIN?
+            </li>
+            <li>
+                What values appear for right-side columns when no
+                matching row exists?
+            </li>
+            <li>
+                How can you find departments without employees?
+            </li>
+            <li>
+                Why can a WHERE condition on the right table remove
+                unmatched rows from a LEFT JOIN result?
+            </li>
+        </ol>
+    </section>
+
+    <!-- 13. Summary -->
+    <section class="outcome-section">
+        <h2>What You Should Now Understand</h2>
+
+        <ul class="learning-list">
+            <li>How relational tables are connected using JOIN conditions.</li>
+            <li>How INNER JOIN returns matching rows only.</li>
+            <li>How LEFT JOIN preserves every row from the left table.</li>
+            <li>How to identify unmatched records using IS NULL.</li>
+            <li>How ON and WHERE conditions affect LEFT JOIN results.</li>
+            <li>The difference between logical JOIN types and physical
+                SQL Server join operators.</li>
+            <li>How to inspect JOIN behavior using an execution plan.</li>
+        </ul>
+    </section>
+
+</main>

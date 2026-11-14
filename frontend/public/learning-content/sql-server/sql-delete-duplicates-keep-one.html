@@ -1,0 +1,917 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Delete Duplicate Rows While Keeping One in SQL Server</h1>
+        <p>
+            Learn how to identify duplicate records, decide which record to
+            retain, safely delete the remaining duplicates, validate the
+            results, and prevent duplicates from returning.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Understanding the Problem</h2>
+
+        <p>
+            Duplicate records occur when multiple rows represent the same
+            business entity or event. For example, a customer may have been
+            imported twice because of a failed integration or missing
+            validation.
+        </p>
+
+        <p>Consider these customer records:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>CustomerId</th>
+                    <th>CustomerCode</th>
+                    <th>CustomerName</th>
+                    <th>Email</th>
+                    <th>CreatedDate</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>C001</td><td>Alice</td><td>alice@example.com</td><td>2025-01-01</td></tr>
+                <tr><td>2</td><td>C002</td><td>Bob</td><td>bob@example.com</td><td>2025-01-02</td></tr>
+                <tr><td>3</td><td>C001</td><td>Alice</td><td>alice@example.com</td><td>2025-01-05</td></tr>
+                <tr><td>4</td><td>C003</td><td>Carol</td><td>carol@example.com</td><td>2025-01-06</td></tr>
+                <tr><td>5</td><td>C002</td><td>Bob</td><td>bob@example.com</td><td>2025-01-08</td></tr>
+                <tr><td>6</td><td>C001</td><td>Alice</td><td>alice@example.com</td><td>2025-01-10</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            CustomerCode is the business key in this example. C001 appears
+            three times and C002 appears twice.
+        </p>
+
+        <div class="info-box">
+            <strong>Important:</strong>
+            A duplicate is defined by the business rule, not necessarily
+            by identical values in every column. Two records can have
+            different CustomerIds and CreatedDates but still represent
+            the same customer.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>2. Create the Sample Table</h2>
+
+        <pre class="sql-code"><code>CREATE TABLE Customers
+(
+    CustomerId INT IDENTITY(1,1) PRIMARY KEY,
+    CustomerCode VARCHAR(20),
+    CustomerName VARCHAR(100),
+    Email VARCHAR(150),
+    CreatedDate DATE
+);
+
+INSERT INTO Customers
+    (CustomerCode, CustomerName, Email, CreatedDate)
+VALUES
+    ('C001', 'Alice', 'alice@example.com', '2025-01-01'),
+    ('C002', 'Bob', 'bob@example.com', '2025-01-02'),
+    ('C001', 'Alice', 'alice@example.com', '2025-01-05'),
+    ('C003', 'Carol', 'carol@example.com', '2025-01-06'),
+    ('C002', 'Bob', 'bob@example.com', '2025-01-08'),
+    ('C001', 'Alice', 'alice@example.com', '2025-01-10');</code></pre>
+
+        <p>View the records:</p>
+
+        <pre class="sql-code"><code>SELECT *
+FROM Customers
+ORDER BY CustomerId;</code></pre>
+
+        <p>
+            We will keep the oldest record for each CustomerCode and
+            delete the newer records.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>3. Step 1 — Identify Duplicate Business Keys</h2>
+
+        <p>
+            Before deleting anything, identify which business keys occur
+            more than once.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    CustomerCode,
+    COUNT(*) AS DuplicateCount
+FROM Customers
+GROUP BY CustomerCode
+HAVING COUNT(*) > 1;</code></pre>
+
+        <h3>Output</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>CustomerCode</th>
+                    <th>DuplicateCount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>C001</td><td>3</td></tr>
+                <tr><td>C002</td><td>2</td></tr>
+            </tbody>
+        </table>
+
+        <p>There are two duplicate business keys.</p>
+
+        <h3>Retrieve all rows belonging to duplicate keys</h3>
+
+        <pre class="sql-code"><code>SELECT C.*
+FROM Customers C
+INNER JOIN
+(
+    SELECT CustomerCode
+    FROM Customers
+    GROUP BY CustomerCode
+    HAVING COUNT(*) > 1
+) D
+    ON C.CustomerCode = D.CustomerCode
+ORDER BY C.CustomerCode, C.CustomerId;</code></pre>
+
+        <p>
+            This query returns all rows belonging to duplicated
+            CustomerCodes. It does not delete anything.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>4. Step 2 — Assign a Row Number to Each Duplicate Group</h2>
+
+        <p>
+            The most common SQL Server solution is
+            <code>ROW_NUMBER()</code>.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    CustomerId,
+    CustomerCode,
+    CustomerName,
+    Email,
+    CreatedDate,
+    ROW_NUMBER() OVER
+    (
+        PARTITION BY CustomerCode
+        ORDER BY CreatedDate ASC, CustomerId ASC
+    ) AS RowNum
+FROM Customers;</code></pre>
+
+        <h3>Understand the window function</h3>
+
+        <ul class="learning-list">
+            <li><code>PARTITION BY CustomerCode</code> creates a separate group for each customer code.</li>
+            <li><code>ORDER BY CreatedDate ASC</code> places the oldest record first.</li>
+            <li><code>CustomerId ASC</code> breaks ties when CreatedDate is identical.</li>
+            <li><code>ROW_NUMBER()</code> assigns a sequential number within each group.</li>
+        </ul>
+
+        <h3>Output</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>CustomerId</th>
+                    <th>CustomerCode</th>
+                    <th>CreatedDate</th>
+                    <th>RowNum</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>C001</td><td>2025-01-01</td><td>1</td><td>Keep</td></tr>
+                <tr><td>3</td><td>C001</td><td>2025-01-05</td><td>2</td><td>Delete</td></tr>
+                <tr><td>6</td><td>C001</td><td>2025-01-10</td><td>3</td><td>Delete</td></tr>
+                <tr><td>2</td><td>C002</td><td>2025-01-02</td><td>1</td><td>Keep</td></tr>
+                <tr><td>5</td><td>C002</td><td>2025-01-08</td><td>2</td><td>Delete</td></tr>
+                <tr><td>4</td><td>C003</td><td>2025-01-06</td><td>1</td><td>Keep</td></tr>
+            </tbody>
+        </table>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Partition</strong>
+                <p>Separate rows by CustomerCode.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Sort</strong>
+                <p>Place the oldest record first within each group.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Number</strong>
+                <p>Assign row numbers starting at 1.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Classify</strong>
+                <p>Keep row 1 and mark rows greater than 1 for deletion.</p>
+            </div>
+        </div>
+
+        <p>
+            The key rule is: retain RowNum = 1 and remove RowNum greater
+            than 1.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>5. Step 3 — Delete Duplicates Using a CTE</h2>
+
+        <p>
+            SQL Server supports deleting rows directly from an updatable
+            CTE. This makes the duplicate deletion query concise.
+        </p>
+
+        <pre class="sql-code"><code>WITH DuplicateRecords AS
+(
+    SELECT
+        CustomerId,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY CustomerCode
+            ORDER BY CreatedDate ASC, CustomerId ASC
+        ) AS RowNum
+    FROM Customers
+)
+DELETE FROM DuplicateRecords
+WHERE RowNum > 1;</code></pre>
+
+        <h3>What happens?</h3>
+
+        <ol class="learning-list">
+            <li>The CTE reads the Customers records.</li>
+            <li>ROW_NUMBER() numbers rows within each CustomerCode group.</li>
+            <li>Rows with RowNum = 1 are retained.</li>
+            <li>Rows with RowNum greater than 1 are deleted from the underlying Customers table.</li>
+        </ol>
+
+        <h3>Expected remaining data</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>CustomerId</th>
+                    <th>CustomerCode</th>
+                    <th>CustomerName</th>
+                    <th>CreatedDate</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>C001</td><td>Alice</td><td>2025-01-01</td></tr>
+                <tr><td>2</td><td>C002</td><td>Bob</td><td>2025-01-02</td></tr>
+                <tr><td>4</td><td>C003</td><td>Carol</td><td>2025-01-06</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Why is this safe only after validation?</strong>
+            The query permanently deletes rows when committed. First
+            verify the business key, the retention rule, and the rows
+            marked for deletion.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Step 4 — Preview Rows Before Deleting</h2>
+
+        <p>
+            In production, never begin with the DELETE statement. First
+            run a SELECT using the same ranking logic.
+        </p>
+
+        <pre class="sql-code"><code>WITH DuplicateRecords AS
+(
+    SELECT
+        CustomerId,
+        CustomerCode,
+        CustomerName,
+        CreatedDate,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY CustomerCode
+            ORDER BY CreatedDate ASC, CustomerId ASC
+        ) AS RowNum
+    FROM Customers
+)
+SELECT *
+FROM DuplicateRecords
+WHERE RowNum > 1
+ORDER BY CustomerCode, RowNum;</code></pre>
+
+        <p>
+            Review the output carefully. It should contain only the
+            records that the business has approved for removal.
+        </p>
+
+        <h3>Preview the records to keep</h3>
+
+        <pre class="sql-code"><code>WITH RankedCustomers AS
+(
+    SELECT
+        *,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY CustomerCode
+            ORDER BY CreatedDate ASC, CustomerId ASC
+        ) AS RowNum
+    FROM Customers
+)
+SELECT *
+FROM RankedCustomers
+WHERE RowNum = 1;</code></pre>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Step 5 — Delete Duplicates Inside a Transaction</h2>
+
+        <p>
+            A transaction allows you to inspect the deletion before
+            deciding whether to commit or roll back.
+        </p>
+
+        <pre class="sql-code"><code>SET XACT_ABORT ON;
+
+BEGIN TRY
+    BEGIN TRANSACTION;
+
+    WITH DuplicateRecords AS
+    (
+        SELECT
+            CustomerId,
+            ROW_NUMBER() OVER
+            (
+                PARTITION BY CustomerCode
+                ORDER BY CreatedDate ASC, CustomerId ASC
+            ) AS RowNum
+        FROM Customers
+    )
+    DELETE FROM DuplicateRecords
+    WHERE RowNum > 1;
+
+    -- Inspect the remaining records before committing.
+    SELECT *
+    FROM Customers
+    ORDER BY CustomerCode, CustomerId;
+
+    -- Choose ONE of the following:
+    -- COMMIT TRANSACTION;
+    -- ROLLBACK TRANSACTION;
+
+END TRY
+BEGIN CATCH
+
+    IF XACT_STATE() <> 0
+        ROLLBACK TRANSACTION;
+
+    THROW;
+
+END CATCH;</code></pre>
+
+        <h3>How to use this example</h3>
+
+        <ol class="learning-list">
+            <li>Execute the script with the COMMIT and ROLLBACK lines still commented.</li>
+            <li>Inspect the result while the transaction remains open in the same session.</li>
+            <li>Uncomment COMMIT to permanently save the deletion, or ROLLBACK to restore the deleted rows.</li>
+            <li>Do not execute both statements.</li>
+        </ol>
+
+        <div class="info-box">
+            <strong>Production warning:</strong>
+            A long-running transaction can hold locks and consume transaction
+            log space. Use a controlled maintenance window, monitor blocking,
+            and consider batching for large tables.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>8. Alternative — Delete Using a Temporary Table</h2>
+
+        <p>
+            If you want to inspect and store the exact IDs to delete before
+            performing the deletion, use a temporary table.
+        </p>
+
+        <pre class="sql-code"><code>SELECT CustomerId
+INTO #DuplicateCustomerIds
+FROM
+(
+    SELECT
+        CustomerId,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY CustomerCode
+            ORDER BY CreatedDate ASC, CustomerId ASC
+        ) AS RowNum
+    FROM Customers
+) R
+WHERE RowNum > 1;
+
+-- Preview IDs selected for deletion.
+SELECT *
+FROM #DuplicateCustomerIds;
+
+-- Delete the selected records.
+DELETE C
+FROM Customers C
+INNER JOIN #DuplicateCustomerIds D
+    ON C.CustomerId = D.CustomerId;
+
+DROP TABLE #DuplicateCustomerIds;</code></pre>
+
+        <p>
+            This separates identification from deletion. However, the
+            temporary list can become stale if another session modifies
+            the table between the two operations. For production use,
+            coordinate concurrent writes or perform selection and deletion
+            under an appropriate transaction and isolation strategy.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>9. What If We Want to Keep the Latest Record?</h2>
+
+        <p>
+            Sometimes the newest record is the correct one to retain.
+            In that case, reverse the date ordering.
+        </p>
+
+        <pre class="sql-code"><code>WITH DuplicateRecords AS
+(
+    SELECT
+        CustomerId,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY CustomerCode
+            ORDER BY CreatedDate DESC, CustomerId DESC
+        ) AS RowNum
+    FROM Customers
+)
+DELETE FROM DuplicateRecords
+WHERE RowNum > 1;</code></pre>
+
+        <p>
+            The newest CreatedDate receives RowNum = 1. CustomerId DESC
+            provides a deterministic tie-breaker when dates are equal.
+        </p>
+
+        <div class="info-box">
+            The correct record to retain is a business decision. It could
+            be the oldest, newest, most recently verified, or the record
+            with the most complete information.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>10. What If the Business Key Contains Multiple Columns?</h2>
+
+        <p>
+            A duplicate may be identified by a combination of columns,
+            rather than one column alone.
+        </p>
+
+        <p>For example, attendance records may be unique by EmployeeId and AttendanceDate.</p>
+
+        <pre class="sql-code"><code>WITH DuplicateAttendance AS
+(
+    SELECT
+        AttendanceId,
+        EmployeeId,
+        AttendanceDate,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY EmployeeId, AttendanceDate
+            ORDER BY CreatedDate ASC, AttendanceId ASC
+        ) AS RowNum
+    FROM EmployeeAttendance
+)
+DELETE FROM DuplicateAttendance
+WHERE RowNum > 1;</code></pre>
+
+        <p>
+            Here, two rows are considered duplicates only when both
+            EmployeeId and AttendanceDate match.
+        </p>
+
+        <p>
+            The same pattern works for composite business keys such as:
+        </p>
+
+        <ul class="learning-list">
+            <li>OrderId + ProductId</li>
+            <li>AccountId + TransactionReference</li>
+            <li>EmployeeId + AttendanceDate</li>
+            <li>ProductCode + WarehouseId</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Handling NULL Values in Business Keys</h2>
+
+        <p>
+            SQL Server groups NULL values together in GROUP BY and
+            PARTITION BY operations.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    CustomerCode,
+    COUNT(*) AS TotalRows
+FROM Customers
+GROUP BY CustomerCode;</code></pre>
+
+        <p>
+            If CustomerCode is NULL for multiple records, they form one
+            group. A ROW_NUMBER() partitioned by CustomerCode will also
+            number those rows together.
+        </p>
+
+        <div class="info-box">
+            Decide whether NULL means an unknown business key, an invalid
+            record, or a shared category. Do not automatically delete all
+            but one NULL-key record unless that matches the business rule.
+        </div>
+
+        <p>
+            If records with NULL business keys should not participate in
+            duplicate removal, filter them out:
+        </p>
+
+        <pre class="sql-code"><code>WITH DuplicateRecords AS
+(
+    SELECT
+        CustomerId,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY CustomerCode
+            ORDER BY CreatedDate ASC, CustomerId ASC
+        ) AS RowNum
+    FROM Customers
+    WHERE CustomerCode IS NOT NULL
+)
+DELETE FROM DuplicateRecords
+WHERE RowNum > 1;</code></pre>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Exact Duplicates vs Business-Key Duplicates</h2>
+
+        <p>
+            These two situations are different and require different
+            definitions of a duplicate.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Definition</th>
+                    <th>Example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Exact duplicate</td>
+                    <td>All relevant data columns have identical values.</td>
+                    <td>Same name, email, city and date.</td>
+                </tr>
+                <tr>
+                    <td>Business-key duplicate</td>
+                    <td>The business identifier matches, even if other values differ.</td>
+                    <td>Same CustomerCode but different CreatedDate.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            For exact duplicate detection, partition by the relevant data
+            columns rather than only CustomerCode.
+        </p>
+
+        <pre class="sql-code"><code>WITH ExactDuplicates AS
+(
+    SELECT
+        CustomerId,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY
+                CustomerCode,
+                CustomerName,
+                Email,
+                CreatedDate
+            ORDER BY CustomerId
+        ) AS RowNum
+    FROM Customers
+)
+SELECT *
+FROM ExactDuplicates
+WHERE RowNum > 1;</code></pre>
+
+        <p>
+            This example identifies duplicate combinations of those
+            four columns. It does not mean that every column in the
+            table is identical.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Prevent Duplicates from Returning</h2>
+
+        <p>
+            Removing existing duplicates is only part of the solution.
+            The application or database should prevent new duplicates
+            from being inserted.
+        </p>
+
+        <h3>Step 1: Validate that the data is clean</h3>
+
+        <pre class="sql-code"><code>SELECT
+    CustomerCode,
+    COUNT(*) AS TotalRows
+FROM Customers
+GROUP BY CustomerCode
+HAVING COUNT(*) > 1;</code></pre>
+
+        <p>
+            Resolve all duplicate keys before creating a unique index.
+        </p>
+
+        <h3>Step 2: Create a unique index</h3>
+
+        <pre class="sql-code"><code>CREATE UNIQUE INDEX UX_Customers_CustomerCode
+ON Customers(CustomerCode);</code></pre>
+
+        <p>
+            SQL Server will reject an insert or update that creates
+            another row with an existing non-NULL CustomerCode.
+        </p>
+
+        <div class="info-box">
+            A SQL Server unique index allows only one NULL key value
+            for a single-column unique index. If the business key is
+            optional and multiple NULL values are valid, consider a
+            filtered unique index:
+        </div>
+
+        <pre class="sql-code"><code>CREATE UNIQUE INDEX UX_Customers_CustomerCode_NotNull
+ON Customers(CustomerCode)
+WHERE CustomerCode IS NOT NULL;</code></pre>
+
+        <p>
+            For a composite key, create the unique index over all columns
+            that together define uniqueness.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>14. SQL Server Internals and Performance</h2>
+
+        <h3>How SQL Server processes ROW_NUMBER()</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>1. Access the table</strong>
+                <p>SQL Server reads rows from a heap, clustered index or nonclustered index.</p>
+            </div>
+            <div class="flow-step">
+                <strong>2. Partition and order rows</strong>
+                <p>Rows are organized by business key and the chosen retention order.</p>
+            </div>
+            <div class="flow-step">
+                <strong>3. Calculate row numbers</strong>
+                <p>Windowing operators assign row numbers within each partition.</p>
+            </div>
+            <div class="flow-step">
+                <strong>4. Filter duplicate rows</strong>
+                <p>Rows with RowNum greater than 1 are selected for deletion.</p>
+            </div>
+            <div class="flow-step">
+                <strong>5. Delete from the base table</strong>
+                <p>SQL Server removes the selected rows and maintains affected indexes.</p>
+            </div>
+        </div>
+
+        <h3>Possible execution plan operators</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Operator</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Index Scan</td><td>Reads rows from an index.</td></tr>
+                <tr><td>Table Scan</td><td>Reads rows from a heap.</td></tr>
+                <tr><td>Sort</td><td>Orders rows by partition and ordering columns when needed.</td></tr>
+                <tr><td>Segment</td><td>Identifies boundaries between partitions in applicable plans.</td></tr>
+                <tr><td>Sequence Project</td><td>Can calculate row-number values in applicable plans.</td></tr>
+                <tr><td>Filter</td><td>Retains rows satisfying RowNum greater than 1.</td></tr>
+                <tr><td>Delete</td><td>Deletes selected records from the base table.</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            The actual plan can vary with SQL Server version, indexes,
+            cardinality estimates and data distribution.
+        </p>
+
+        <h3>Index to support duplicate detection</h3>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Customers_DuplicateCheck
+ON Customers
+(
+    CustomerCode,
+    CreatedDate,
+    CustomerId
+);</code></pre>
+
+        <p>
+            This index may help SQL Server read rows in an order useful
+            for partitioning and ranking. Whether it eliminates a sort
+            or improves the overall delete depends on the chosen plan.
+        </p>
+
+        <h3>Measure performance</h3>
+
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+-- Run the duplicate identification SELECT first.
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <p>
+            Check logical reads, CPU time, elapsed time, sort costs,
+            memory grants and possible spills. For DELETE operations,
+            also account for transaction log activity and index maintenance.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>15. Production Considerations</h2>
+
+        <h3>1. Foreign key dependencies</h3>
+        <p>
+            Other tables may reference the duplicate CustomerId. Deleting
+            a customer can fail because of foreign key constraints or
+            cause dependent records to be removed if cascading deletes
+            are configured.
+        </p>
+        <p>
+            Before deletion, identify child records and decide whether
+            they should be reassigned to the retained CustomerId.
+        </p>
+
+        <h3>2. Concurrent inserts</h3>
+        <p>
+            Another application session could insert a duplicate while
+            cleanup is running. A transaction alone does not automatically
+            prevent every possible concurrent duplicate insertion.
+        </p>
+        <p>
+            Coordinate the cleanup with application writes, use suitable
+            isolation and locking where required, and enforce uniqueness
+            with a unique index after cleanup.
+        </p>
+
+        <h3>3. Large tables</h3>
+        <p>
+            Deleting millions of rows in one transaction can generate
+            substantial transaction log activity, cause blocking, and
+            increase recovery time. Consider batching, monitoring log
+            growth and testing the operation on representative data.
+        </p>
+
+        <h3>4. Audit and recovery</h3>
+        <p>
+            For important business tables, retain an audit record of
+            deleted IDs and relevant column values. Confirm that a
+            tested backup and recovery strategy exists before cleanup.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Common Mistakes</h2>
+
+        <ol class="learning-list">
+            <li>
+                <strong>Deleting before identifying the business key.</strong>
+                Two rows that look similar may represent different business entities.
+            </li>
+            <li>
+                <strong>Using ROW_NUMBER() without a deterministic order.</strong>
+                The retained row may not be predictable when the ordering columns tie.
+            </li>
+            <li>
+                <strong>Deleting every row in a duplicate group.</strong>
+                The correct filter is usually RowNum greater than 1, not RowNum greater than 0.
+            </li>
+            <li>
+                <strong>Ignoring foreign keys.</strong>
+                Related records may prevent deletion or become orphaned if constraints are absent.
+            </li>
+            <li>
+                <strong>Ignoring NULL business keys.</strong>
+                NULL rows can be grouped together by PARTITION BY.
+            </li>
+            <li>
+                <strong>Assuming a transaction is a backup.</strong>
+                A transaction helps control the current operation; it does not replace a recovery strategy.
+            </li>
+            <li>
+                <strong>Failing to prevent new duplicates.</strong>
+                Clean data can become duplicated again unless uniqueness is enforced appropriately.
+            </li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>17. Practice Exercises</h2>
+
+        <ol class="learning-list">
+            <li>Find duplicate customers using CustomerCode.</li>
+            <li>Delete duplicates while keeping the oldest record.</li>
+            <li>Change the logic to keep the newest record.</li>
+            <li>Find exact duplicates using CustomerCode, CustomerName and Email.</li>
+            <li>Find duplicate attendance records using EmployeeId and AttendanceDate.</li>
+            <li>Preview the rows that would be deleted without executing DELETE.</li>
+            <li>Write a transaction that allows you to inspect the result and roll back.</li>
+            <li>Create a unique index after cleaning the duplicate records.</li>
+            <li>Explain what happens when several rows have a NULL business key.</li>
+            <li>Explain how you would handle a duplicate customer referenced by orders.</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>18. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>Which function is commonly used to number duplicate rows?</p>
+        <ul class="learning-list">
+            <li>A. MAX()</li>
+            <li>B. ROW_NUMBER()</li>
+            <li>C. COUNT()</li>
+            <li>D. SUM()</li>
+        </ul>
+        <p><strong>Answer:</strong> B. ROW_NUMBER()</p>
+
+        <h3>Question 2</h3>
+        <p>Which condition removes all but the first row in each group?</p>
+        <ul class="learning-list">
+            <li>A. RowNum = 1</li>
+            <li>B. RowNum = 0</li>
+            <li>C. RowNum greater than 1</li>
+            <li>D. RowNum greater than 0</li>
+        </ul>
+        <p><strong>Answer:</strong> C. RowNum greater than 1.</p>
+
+        <h3>Question 3</h3>
+        <p>Why should a unique tie-breaker be included in the ORDER BY clause?</p>
+        <ul class="learning-list">
+            <li>A. To increase the number of duplicates</li>
+            <li>B. To make the retained row deterministic</li>
+            <li>C. To remove the primary key</li>
+            <li>D. To avoid using a CTE</li>
+        </ul>
+        <p><strong>Answer:</strong> B. To make the retained row deterministic.</p>
+
+        <h3>Question 4</h3>
+        <p>What is the best way to prevent the same business key from being inserted again?</p>
+        <ul class="learning-list">
+            <li>A. Run DELETE every day</li>
+            <li>B. Use DISTINCT in every SELECT</li>
+            <li>C. Enforce uniqueness with an appropriate unique index or constraint</li>
+            <li>D. Hide duplicate rows in the application</li>
+        </ul>
+        <p><strong>Answer:</strong> C. Enforce uniqueness with an appropriate unique index or constraint.</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>19. What You Should Be Able to Do</h2>
+
+        <ul class="learning-list">
+            <li>Identify duplicates using GROUP BY and HAVING.</li>
+            <li>Distinguish business-key duplicates from exact duplicates.</li>
+            <li>Use ROW_NUMBER() to select which record to retain.</li>
+            <li>Delete duplicates using a CTE.</li>
+            <li>Preview deletion candidates before removing records.</li>
+            <li>Use transactions to control and validate cleanup operations.</li>
+            <li>Handle composite keys and NULL business keys.</li>
+            <li>Understand foreign key, concurrency and transaction log considerations.</li>
+            <li>Use unique indexes to prevent future duplicates.</li>
+        </ul>
+
+        <p>
+            The most important production principle is to define the
+            business key and retention rule first, preview the deletion
+            candidates, and only then execute the cleanup.
+        </p>
+    </section>
+
+</main>

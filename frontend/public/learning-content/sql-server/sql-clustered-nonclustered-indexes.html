@@ -1,0 +1,933 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Clustered and Nonclustered Indexes in SQL Server</h1>
+        <p>
+            Understand how SQL Server stores indexes, locates rows, retrieves
+            data, and improves query performance. Learn the internal structure
+            of B-tree indexes and how to design indexes for production workloads.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. What Is an Index?</h2>
+        <p>
+            An index is a database structure that helps SQL Server locate
+            rows without scanning every row in a table. Indexes are designed
+            to improve data retrieval, although they introduce additional
+            storage and maintenance costs.
+        </p>
+
+        <p>
+            Consider a table containing 10 million employees. If an application
+            searches for one employee using EmployeeId, SQL Server may need to
+            inspect a large number of rows if no useful index exists.
+            An appropriate index can make the row easier to locate.
+        </p>
+
+        <div class="info-box">
+            An index does not automatically make every query faster.
+            The optimizer chooses whether to use an index based on estimated
+            cost, selectivity, available statistics, and the query.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>2. Types of SQL Server Indexes</h2>
+        <p>Two fundamental index types are:</p>
+
+        <ul class="learning-list">
+            <li><strong>Clustered index:</strong> Defines the logical order of rows at the leaf level of the index. The table's data rows are stored in the clustered index.</li>
+            <li><strong>Nonclustered index:</strong> A separate index structure containing index keys and row locators that identify the corresponding data rows.</li>
+        </ul>
+
+        <table class="table">
+            <thead>
+                <tr><th>Feature</th><th>Clustered Index</th><th>Nonclustered Index</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Leaf level</td><td>Contains the table data rows</td><td>Contains index keys, row locators, and included columns</td></tr>
+                <tr><td>Number per table</td><td>One</td><td>Multiple</td></tr>
+                <tr><td>Separate from table data</td><td>No; the clustered index is the table's row storage structure</td><td>Yes</td></tr>
+                <tr><td>Primary purpose</td><td>Organizes the table's row storage</td><td>Provides additional access paths</td></tr>
+                <tr><td>Can be unique?</td><td>Yes</td><td>Yes</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            A table without a clustered index is called a heap. A heap stores
+            rows without a clustered index defining their logical order.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>3. Create Sample Employee Table</h2>
+        <pre class="sql-code"><code>CREATE TABLE Employees
+(
+    EmployeeId INT NOT NULL,
+    EmployeeName VARCHAR(100),
+    Department VARCHAR(50),
+    Salary DECIMAL(10,2),
+    City VARCHAR(50)
+);
+
+INSERT INTO Employees
+    (EmployeeId, EmployeeName, Department, Salary, City)
+VALUES
+    (1, 'Alice', 'IT', 90000, 'Pune'),
+    (2, 'Bob', 'HR', 60000, 'Mumbai'),
+    (3, 'Carol', 'IT', 85000, 'Pune'),
+    (4, 'David', 'Finance', 70000, 'Delhi'),
+    (5, 'Emma', 'HR', 65000, 'Pune'),
+    (6, 'Frank', 'IT', 75000, 'Mumbai'),
+    (7, 'Grace', 'Finance', 80000, 'Delhi'),
+    (8, 'Henry', 'IT', 55000, 'Pune');</code></pre>
+
+        <h3>Sample data</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>EmployeeName</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                    <th>City</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Alice</td><td>IT</td><td>90,000</td><td>Pune</td></tr>
+                <tr><td>2</td><td>Bob</td><td>HR</td><td>60,000</td><td>Mumbai</td></tr>
+                <tr><td>3</td><td>Carol</td><td>IT</td><td>85,000</td><td>Pune</td></tr>
+                <tr><td>4</td><td>David</td><td>Finance</td><td>70,000</td><td>Delhi</td></tr>
+                <tr><td>5</td><td>Emma</td><td>HR</td><td>65,000</td><td>Pune</td></tr>
+                <tr><td>6</td><td>Frank</td><td>IT</td><td>75,000</td><td>Mumbai</td></tr>
+                <tr><td>7</td><td>Grace</td><td>Finance</td><td>80,000</td><td>Delhi</td></tr>
+                <tr><td>8</td><td>Henry</td><td>IT</td><td>55,000</td><td>Pune</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>4. Clustered Index</h2>
+
+        <h3>What is a clustered index?</h3>
+        <p>
+            A clustered index is a B-tree structure whose leaf level contains
+            the actual data rows of the table. The clustered index key determines
+            the logical ordering of rows at the leaf level.
+        </p>
+
+        <h3>Create a clustered index</h3>
+        <pre class="sql-code"><code>CREATE CLUSTERED INDEX
+    IX_Employees_EmployeeId
+ON Employees(EmployeeId);</code></pre>
+
+        <p>
+            SQL Server creates a clustered index using EmployeeId as its
+            index key. The table is no longer a heap.
+        </p>
+
+        <h3>Conceptual B-tree structure</h3>
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Root page</strong>
+                <p>Contains key values and pointers to intermediate pages or leaf pages.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Intermediate pages</strong>
+                <p>Guide SQL Server toward the appropriate leaf page.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Leaf pages</strong>
+                <p>Contain the actual table data rows in clustered key order.</p>
+            </div>
+        </div>
+
+        <p>
+            SQL Server follows the B-tree from the root through intermediate
+            levels to the leaf level to locate a key. The number of levels
+            depends on the size and structure of the index.
+        </p>
+
+        <h3>Query using the clustered key</h3>
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary
+FROM Employees
+WHERE EmployeeId = 3;</code></pre>
+
+        <p>
+            SQL Server can use the clustered index to locate the employee.
+            Because the leaf level contains the full table row, no additional
+            lookup to a separate base table is required.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>5. Nonclustered Index</h2>
+
+        <h3>What is a nonclustered index?</h3>
+        <p>
+            A nonclustered index is a separate B-tree structure. Its leaf
+            pages contain the index key values, any included columns, and
+            a row locator that identifies the underlying table row.
+        </p>
+
+        <h3>Create a nonclustered index</h3>
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX
+    IX_Employees_Department
+ON Employees(Department);</code></pre>
+
+        <h3>Query using the nonclustered index</h3>
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Department
+FROM Employees
+WHERE Department = 'IT';</code></pre>
+
+        <p>
+            SQL Server can locate matching index entries through the
+            nonclustered index. If the index does not contain all required
+            columns, SQL Server may need to retrieve the remaining columns
+            from the underlying table.
+        </p>
+
+        <h3>Nonclustered index structure</h3>
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Root page</strong>
+                <p>Contains index navigation keys and page pointers.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Intermediate pages</strong>
+                <p>Guide the search to the correct leaf page.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Leaf pages</strong>
+                <p>Contain nonclustered index keys, row locators, and included columns.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Underlying row access when needed</strong>
+                <p>SQL Server uses the row locator to retrieve additional columns.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>6. How Does SQL Server Locate a Row?</h2>
+
+        <h3>Clustered index lookup</h3>
+        <pre class="sql-code"><code>SELECT *
+FROM Employees
+WHERE EmployeeId = 5;</code></pre>
+
+        <div class="processing-flow">
+            <div class="flow-step">Read clustered index root page</div>
+            <div class="flow-step">Follow intermediate page pointers</div>
+            <div class="flow-step">Locate EmployeeId = 5 at the leaf level</div>
+            <div class="flow-step">Return the complete data row</div>
+        </div>
+
+        <h3>Nonclustered index lookup</h3>
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary
+FROM Employees
+WHERE Department = 'IT';</code></pre>
+
+        <div class="processing-flow">
+            <div class="flow-step">Search the nonclustered index on Department</div>
+            <div class="flow-step">Find matching leaf entries</div>
+            <div class="flow-step">Read row locators</div>
+            <div class="flow-step">Retrieve missing columns from the clustered index when necessary</div>
+            <div class="flow-step">Return the result</div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Key Lookup</h2>
+        <p>
+            A Key Lookup occurs when SQL Server uses a nonclustered index
+            to find matching rows but must access the clustered index to
+            retrieve additional columns.
+        </p>
+
+        <h3>Create a narrow index</h3>
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX
+    IX_Employees_Department
+ON Employees(Department);</code></pre>
+
+        <h3>Run a query requiring additional columns</h3>
+        <pre class="sql-code"><code>SELECT
+    EmployeeName,
+    Salary
+FROM Employees
+WHERE Department = 'IT';</code></pre>
+
+        <p>
+            The nonclustered index contains Department and the clustered
+            index row locator. EmployeeName and Salary are not in the
+            nonclustered index, so SQL Server may use a Key Lookup to
+            retrieve them.
+        </p>
+
+        <div class="info-box">
+            A Key Lookup is not automatically a problem. It may be efficient
+            when only a few rows qualify. When many rows qualify, repeated
+            lookups can become expensive.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>8. Covering Index</h2>
+        <p>
+            A covering index contains all columns needed by a particular
+            query. SQL Server can return the required values from the
+            nonclustered index without accessing the clustered index
+            for additional columns.
+        </p>
+
+        <h3>Create a covering index</h3>
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX
+    IX_Employees_Department_Covering
+ON Employees(Department)
+INCLUDE
+(
+    EmployeeName,
+    Salary
+);</code></pre>
+
+        <h3>Run the same query</h3>
+        <pre class="sql-code"><code>SELECT
+    EmployeeName,
+    Salary
+FROM Employees
+WHERE Department = 'IT';</code></pre>
+
+        <p>
+            The index contains the Department search key and the EmployeeName
+            and Salary included columns. This query can potentially be
+            satisfied entirely from the nonclustered index.
+        </p>
+
+        <div class="info-box">
+            INCLUDE columns are stored at the nonclustered index leaf level.
+            They are not part of the index's search key or ordering key.
+            Avoid including large or unnecessary columns because they
+            increase index size and write costs.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>9. Clustered Index vs Nonclustered Index — Detailed Comparison</h2>
+
+        <table class="table">
+            <thead>
+                <tr><th>Feature</th><th>Clustered</th><th>Nonclustered</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Leaf level contains</td><td>Full data rows</td><td>Index keys, row locators, included columns</td></tr>
+                <tr><td>Maximum per table</td><td>One</td><td>Multiple</td></tr>
+                <tr><td>Separate structure</td><td>It is the table's data structure</td><td>Separate from the base row storage</td></tr>
+                <tr><td>Row locator</td><td>Not applicable at its own leaf level</td><td>Clustered key or RID, depending on the table organization</td></tr>
+                <tr><td>Can cover a query</td><td>Often, because it contains the full row</td><td>Yes, when required columns are available</td></tr>
+                <tr><td>Write overhead</td><td>Can affect row placement and page structure</td><td>Each affected index requires maintenance</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>10. Clustered Index and Heap Storage</h2>
+        <p>
+            A table without a clustered index is a heap. SQL Server stores
+            heap rows without a clustered B-tree ordering structure.
+        </p>
+
+        <h3>Create a heap</h3>
+        <pre class="sql-code"><code>CREATE TABLE HeapEmployees
+(
+    EmployeeId INT,
+    EmployeeName VARCHAR(100),
+    Department VARCHAR(50)
+);</code></pre>
+
+        <h3>Insert rows</h3>
+        <pre class="sql-code"><code>INSERT INTO HeapEmployees
+VALUES
+    (1, 'Alice', 'IT'),
+    (2, 'Bob', 'HR'),
+    (3, 'Carol', 'Finance');</code></pre>
+
+        <h3>Inspect table type</h3>
+        <pre class="sql-code"><code>SELECT
+    t.name AS TableName,
+    i.name AS IndexName,
+    i.type_desc
+FROM sys.tables t
+LEFT JOIN sys.indexes i
+    ON t.object_id = i.object_id
+    AND i.index_id IN (0, 1)
+WHERE t.name = 'HeapEmployees';</code></pre>
+
+        <p>
+            A heap can still have nonclustered indexes. In a heap, the
+            nonclustered index row locator is a RID (row identifier),
+            which identifies the row's physical location.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>11. What Happens When a Clustered Index Is Created?</h2>
+        <p>
+            If a heap already contains rows and a clustered index is created,
+            SQL Server organizes the rows into the clustered index structure.
+            The clustered key becomes the table's row organization key.
+        </p>
+
+        <pre class="sql-code"><code>CREATE CLUSTERED INDEX
+    IX_HeapEmployees_EmployeeId
+ON HeapEmployees(EmployeeId);</code></pre>
+
+        <p>
+            Existing nonclustered indexes on a heap use RIDs as row locators.
+            When a clustered index is created, SQL Server must maintain
+            nonclustered row locators using the clustered key instead.
+        </p>
+
+        <div class="info-box">
+            This is one reason clustered index design matters: the clustered
+            key is carried as the row locator in nonclustered indexes.
+            A wide clustered key can make every nonclustered index larger.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Clustered Index Key Selection</h2>
+        <p>
+            A good clustered index key often has these properties:
+        </p>
+
+        <ul class="learning-list">
+            <li>Unique or nearly unique, preferably enforced as unique.</li>
+            <li>Narrow, to reduce storage overhead in nonclustered indexes.</li>
+            <li>Stable, so key updates are uncommon.</li>
+            <li>Suitable for the table's common access patterns.</li>
+            <li>Often increasing for insert-heavy workloads, when that fits the application.</li>
+        </ul>
+
+        <h3>Example: Identity key</h3>
+        <pre class="sql-code"><code>CREATE TABLE Orders
+(
+    OrderId BIGINT IDENTITY(1,1) NOT NULL,
+    CustomerId INT NOT NULL,
+    OrderDate DATETIME2 NOT NULL,
+    TotalAmount DECIMAL(12,2) NOT NULL,
+
+    CONSTRAINT PK_Orders
+        PRIMARY KEY CLUSTERED (OrderId)
+);</code></pre>
+
+        <p>
+            An increasing identity key can provide a simple clustered
+            access path. However, it is not automatically the best key
+            for every table. Query patterns, insert concurrency, and
+            range access requirements should guide the design.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Composite Indexes</h2>
+        <p>
+            A composite index uses more than one key column. The order
+            of the key columns matters because the B-tree is organized
+            by the complete key sequence.
+        </p>
+
+        <h3>Create a composite index</h3>
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX
+    IX_Employees_Department_Salary
+ON Employees
+(
+    Department,
+    Salary DESC
+);</code></pre>
+
+        <h3>Query using the leading column</h3>
+        <pre class="sql-code"><code>SELECT *
+FROM Employees
+WHERE Department = 'IT';</code></pre>
+
+        <h3>Query using both columns</h3>
+        <pre class="sql-code"><code>SELECT *
+FROM Employees
+WHERE Department = 'IT'
+  AND Salary > 75000;</code></pre>
+
+        <p>
+            The index is ordered first by Department and then by Salary
+            within each department. It is particularly suitable for
+            queries that filter or seek using the leading Department key.
+        </p>
+
+        <h3>Query using only the second column</h3>
+        <pre class="sql-code"><code>SELECT *
+FROM Employees
+WHERE Salary > 75000;</code></pre>
+
+        <p>
+            This query cannot generally seek efficiently using Salary as
+            the leading key because Department comes first. SQL Server
+            may choose an index scan or another access path instead.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Index Seek vs Index Scan</h2>
+
+        <h3>Index Seek</h3>
+        <p>
+            An Index Seek navigates an index to locate a qualifying key
+            range or value. It is often efficient for selective predicates.
+        </p>
+
+        <pre class="sql-code"><code>SELECT *
+FROM Employees
+WHERE EmployeeId = 3;</code></pre>
+
+        <h3>Index Scan</h3>
+        <p>
+            An Index Scan reads index pages across a larger portion or
+            all of the index. A scan can be appropriate when a large
+            proportion of rows is needed.
+        </p>
+
+        <pre class="sql-code"><code>SELECT *
+FROM Employees;</code></pre>
+
+        <div class="info-box">
+            An Index Scan is not automatically bad, and an Index Seek
+            is not automatically good. The important question is whether
+            the chosen access path is efficient for the number of rows
+            needed and the total query cost.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>15. Clustered Index Scan vs Clustered Index Seek</h2>
+
+        <table class="table">
+            <thead>
+                <tr><th>Operator</th><th>Typical behavior</th><th>Example</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Clustered Index Seek</td><td>Navigates to matching key values or ranges</td><td>WHERE EmployeeId = 3</td></tr>
+                <tr><td>Clustered Index Scan</td><td>Reads a larger part or all of the clustered index</td><td>SELECT * FROM Employees</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            SQL Server can choose a scan even when a seek is possible.
+            If many rows qualify, reading the clustered index sequentially
+            can be cheaper than performing many individual lookups.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Index Lookup and RID Lookup</h2>
+
+        <h3>Key Lookup</h3>
+        <p>
+            A Key Lookup retrieves missing columns from the clustered
+            index after a nonclustered index has identified matching rows.
+        </p>
+
+        <h3>RID Lookup</h3>
+        <p>
+            A RID Lookup retrieves missing columns from a heap using
+            the row identifier stored in a nonclustered index.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr><th>Lookup type</th><th>Underlying table</th><th>Row locator</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Key Lookup</td><td>Clustered table</td><td>Clustered index key</td></tr>
+                <tr><td>RID Lookup</td><td>Heap</td><td>RID</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>17. Unique Index</h2>
+        <p>
+            A unique index enforces uniqueness of its key values. It also
+            provides an access path for queries using those key columns.
+        </p>
+
+        <pre class="sql-code"><code>CREATE UNIQUE NONCLUSTERED INDEX
+    UX_Employees_EmployeeId
+ON Employees(EmployeeId);</code></pre>
+
+        <p>
+            This example is illustrative: because EmployeeId is not
+            declared unique in the original table definition, creating
+            this index will succeed only if the existing values are unique.
+        </p>
+
+        <div class="info-box">
+            SQL Server unique indexes enforce uniqueness. For a single
+            nullable key column, a unique index permits only one NULL.
+            A filtered unique index can be used when multiple NULL values
+            should be allowed while non-NULL values remain unique.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>18. Filtered Index</h2>
+        <p>
+            A filtered index stores only rows matching a filter predicate.
+            It can reduce index size and maintenance when queries repeatedly
+            access a specific subset of a table.
+        </p>
+
+        <h3>Example: Index only IT employees</h3>
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX
+    IX_Employees_IT_Salary
+ON Employees(Salary DESC)
+INCLUDE(EmployeeName)
+WHERE Department = 'IT';</code></pre>
+
+        <h3>Query matching the filter</h3>
+        <pre class="sql-code"><code>SELECT
+    EmployeeName,
+    Salary
+FROM Employees
+WHERE Department = 'IT'
+  AND Salary > 70000;</code></pre>
+
+        <p>
+            The optimizer may use the filtered index because the query
+            predicate is compatible with the index filter.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>19. Index Maintenance and Page Splits</h2>
+
+        <h3>What is a page split?</h3>
+        <p>
+            SQL Server stores index pages in fixed-size pages, typically
+            8 KB. When a page cannot accommodate an insertion or a key
+            update that changes its position, SQL Server may split the
+            page and move some rows to another page.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">A new row needs to be inserted into an index page</div>
+            <div class="flow-step">The target page does not have enough free space</div>
+            <div class="flow-step">SQL Server allocates another page</div>
+            <div class="flow-step">Rows are redistributed between the pages</div>
+            <div class="flow-step">Parent index structures are updated as needed</div>
+        </div>
+
+        <p>
+            Page splits can increase write activity and may contribute
+            to fragmentation. Their impact depends on workload, page
+            fill, key patterns, and index design.
+        </p>
+
+        <h3>Inspect index fragmentation</h3>
+        <pre class="sql-code"><code>SELECT
+    OBJECT_NAME(ips.object_id) AS TableName,
+    i.name AS IndexName,
+    ips.avg_fragmentation_in_percent,
+    ips.page_count
+FROM sys.dm_db_index_physical_stats
+(
+    DB_ID(),
+    OBJECT_ID('dbo.Employees'),
+    NULL,
+    NULL,
+    'LIMITED'
+) AS ips
+INNER JOIN sys.indexes i
+    ON ips.object_id = i.object_id
+    AND ips.index_id = i.index_id
+ORDER BY ips.avg_fragmentation_in_percent DESC;</code></pre>
+
+        <p>
+            Evaluate fragmentation together with page count, workload,
+            and query performance. A high fragmentation percentage on
+            a tiny index may not justify maintenance.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>20. Rebuild and Reorganize Indexes</h2>
+
+        <h3>Reorganize</h3>
+        <pre class="sql-code"><code>ALTER INDEX IX_Employees_Department
+ON Employees
+REORGANIZE;</code></pre>
+
+        <p>
+            REORGANIZE is an online, incremental leaf-level operation
+            that compacts and orders leaf pages. It does not update
+            index statistics in the same way as a rebuild.
+        </p>
+
+        <h3>Rebuild</h3>
+        <pre class="sql-code"><code>ALTER INDEX IX_Employees_Department
+ON Employees
+REBUILD;</code></pre>
+
+        <p>
+            REBUILD recreates the index and can update its statistics.
+            Availability and locking behavior depend on edition, version,
+            options, and index type.
+        </p>
+
+        <div class="info-box">
+            Do not apply universal fragmentation thresholds without
+            considering index size and workload. Index maintenance
+            should be based on measured benefit, resource usage, and
+            an appropriate maintenance window.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>21. Check Existing Indexes</h2>
+        <pre class="sql-code"><code>SELECT
+    t.name AS TableName,
+    i.name AS IndexName,
+    i.type_desc,
+    i.is_unique,
+    i.is_primary_key
+FROM sys.tables t
+INNER JOIN sys.indexes i
+    ON t.object_id = i.object_id
+WHERE t.name = 'Employees'
+ORDER BY i.index_id;</code></pre>
+
+        <h3>Inspect index columns</h3>
+        <pre class="sql-code"><code>SELECT
+    i.name AS IndexName,
+    c.name AS ColumnName,
+    ic.key_ordinal,
+    ic.is_included_column,
+    ic.is_descending_key
+FROM sys.indexes i
+INNER JOIN sys.index_columns ic
+    ON i.object_id = ic.object_id
+    AND i.index_id = ic.index_id
+INNER JOIN sys.columns c
+    ON ic.object_id = c.object_id
+    AND ic.column_id = c.column_id
+WHERE i.object_id = OBJECT_ID('dbo.Employees')
+ORDER BY i.index_id, ic.key_ordinal, ic.index_column_id;</code></pre>
+    </section>
+
+    <section class="content-section">
+        <h2>22. Execution Plan Analysis</h2>
+        <p>
+            Enable the actual execution plan in SQL Server Management
+            Studio and compare these queries.
+        </p>
+
+        <h3>Query A — Search by clustered key</h3>
+        <pre class="sql-code"><code>SELECT *
+FROM Employees
+WHERE EmployeeId = 3;</code></pre>
+
+        <h3>Query B — Search by department</h3>
+        <pre class="sql-code"><code>SELECT *
+FROM Employees
+WHERE Department = 'IT';</code></pre>
+
+        <h3>Query C — Covering index test</h3>
+        <pre class="sql-code"><code>SELECT
+    EmployeeName,
+    Salary
+FROM Employees
+WHERE Department = 'IT';</code></pre>
+
+        <h3>Operators to understand</h3>
+        <ul class="learning-list">
+            <li><strong>Clustered Index Seek:</strong> Locates rows through the clustered index.</li>
+            <li><strong>Clustered Index Scan:</strong> Reads the clustered index across a larger range or all rows.</li>
+            <li><strong>Index Seek:</strong> Locates matching entries in a nonclustered index.</li>
+            <li><strong>Index Scan:</strong> Reads index pages across a larger portion of the index.</li>
+            <li><strong>Key Lookup:</strong> Retrieves missing columns from the clustered index.</li>
+            <li><strong>RID Lookup:</strong> Retrieves missing columns from a heap.</li>
+            <li><strong>Sort:</strong> Orders rows when the required ordering is not already available.</li>
+        </ul>
+
+        <p>
+            Review actual rows, estimated rows, logical reads, execution
+            time, and operator costs. Estimated operator cost is a model,
+            not a direct measurement of elapsed time.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>23. Index Performance Testing</h2>
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+SELECT
+    EmployeeName,
+    Salary
+FROM Employees
+WHERE Department = 'IT';
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <p>
+            Compare measurements before and after index changes using
+            representative data and workload conditions.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr><th>Measurement</th><th>What it tells you</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Logical reads</td><td>Pages accessed from the buffer pool</td></tr>
+                <tr><td>Physical reads</td><td>Pages read from storage into memory</td></tr>
+                <tr><td>CPU time</td><td>Processor time consumed by the query</td></tr>
+                <tr><td>Elapsed time</td><td>Total wall-clock duration</td></tr>
+                <tr><td>Actual rows</td><td>Rows actually processed by plan operators</td></tr>
+                <tr><td>Memory grant</td><td>Memory requested for eligible query operations</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>24. Common Indexing Mistakes</h2>
+        <ul class="learning-list">
+            <li><strong>Too many indexes:</strong> Every additional index increases storage and write maintenance.</li>
+            <li><strong>Wide clustered key:</strong> The clustered key is carried in nonclustered row locators, increasing index size.</li>
+            <li><strong>Wrong composite key order:</strong> A query that filters only on a non-leading key may not benefit from an efficient seek.</li>
+            <li><strong>Ignoring covering indexes:</strong> Repeated lookups may be avoidable when a carefully designed index includes required columns.</li>
+            <li><strong>Assuming every scan is bad:</strong> Scans can be efficient when a query needs many rows.</li>
+            <li><strong>Ignoring write workload:</strong> Indexes speed some reads but can slow inserts, updates, and deletes.</li>
+            <li><strong>Using wide INCLUDE columns unnecessarily:</strong> This increases leaf-level storage and maintenance.</li>
+            <li><strong>Rebuilding every index on a schedule:</strong> Maintenance should be based on measured need.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>25. Real-World Index Design Scenarios</h2>
+
+        <h3>Scenario 1: Search orders by customer</h3>
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX
+    IX_Orders_CustomerId_OrderDate
+ON Orders(CustomerId, OrderDate DESC)
+INCLUDE(TotalAmount);</code></pre>
+        <p>
+            This can support queries that filter by CustomerId and retrieve
+            orders in date order, while covering TotalAmount.
+        </p>
+
+        <h3>Scenario 2: Find active users</h3>
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX
+    IX_Users_Active
+ON Users(LastLoginDate DESC)
+INCLUDE(UserName)
+WHERE IsActive = 1;</code></pre>
+        <p>
+            A filtered index can be useful when active users are a subset
+            of the table and queries repeatedly target that subset.
+        </p>
+
+        <h3>Scenario 3: Product inventory</h3>
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX
+    IX_Inventory_Product_Warehouse
+ON Inventory(ProductId, WarehouseId)
+INCLUDE(Quantity);</code></pre>
+        <p>
+            This index can support inventory lookups by product and
+            warehouse while making Quantity available at the leaf level.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>26. Practice Exercises</h2>
+        <ol class="learning-list">
+            <li>Create a clustered index on EmployeeId.</li>
+            <li>Create a nonclustered index on Department.</li>
+            <li>Create a covering index for a query returning EmployeeName and Salary filtered by Department.</li>
+            <li>Create a composite index on Department and Salary.</li>
+            <li>Write a query that can use the leading column of the composite index.</li>
+            <li>Compare the execution plans of a seek and a scan.</li>
+            <li>Create a filtered index for IT employees.</li>
+            <li>Inspect index metadata using system catalog views.</li>
+            <li>Compare logical reads before and after adding a useful index.</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>27. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>How many clustered indexes can a table have?</p>
+        <p>A. One &nbsp; B. Two &nbsp; C. Unlimited &nbsp; D. None</p>
+        <p><strong>Answer:</strong> A. One</p>
+
+        <h3>Question 2</h3>
+        <p>What does the leaf level of a clustered index contain?</p>
+        <p>A. Only pointers &nbsp; B. Actual table data rows &nbsp; C. Only statistics &nbsp; D. Only index names</p>
+        <p><strong>Answer:</strong> B. Actual table data rows</p>
+
+        <h3>Question 3</h3>
+        <p>What is a Key Lookup?</p>
+        <p>A. Retrieving missing columns from a clustered index using a nonclustered index row locator</p>
+        <p>B. Rebuilding an index</p>
+        <p>C. Creating a primary key</p>
+        <p>D. Searching a heap using a RID</p>
+        <p><strong>Answer:</strong> A</p>
+
+        <h3>Question 4</h3>
+        <p>What is a covering index?</p>
+        <p>A. An index that contains every table column</p>
+        <p>B. An index that contains all columns required by a particular query</p>
+        <p>C. An index without key columns</p>
+        <p>D. An index that prevents all scans</p>
+        <p><strong>Answer:</strong> B</p>
+
+        <h3>Question 5</h3>
+        <p>What is the row locator in a nonclustered index on a heap?</p>
+        <p>A. Clustered key &nbsp; B. RID &nbsp; C. Foreign key &nbsp; D. Identity seed</p>
+        <p><strong>Answer:</strong> B. RID</p>
+
+        <h3>Question 6</h3>
+        <p>Does an Index Scan always indicate poor performance?</p>
+        <p>A. Yes &nbsp; B. No</p>
+        <p><strong>Answer:</strong> B. No. A scan can be appropriate when many rows are required.</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>Learning Outcomes</h2>
+        <p>After completing this tutorial, learners should be able to:</p>
+        <ul class="learning-list">
+            <li>Explain clustered and nonclustered index structures.</li>
+            <li>Understand SQL Server B-tree navigation.</li>
+            <li>Distinguish heaps from clustered tables.</li>
+            <li>Understand key lookups and RID lookups.</li>
+            <li>Design covering, composite, unique, and filtered indexes.</li>
+            <li>Understand page splits and index maintenance.</li>
+            <li>Interpret common index operators in execution plans.</li>
+            <li>Measure index performance using logical reads and runtime statistics.</li>
+            <li>Design indexes that balance read performance and write overhead.</li>
+        </ul>
+    </section>
+
+</main>

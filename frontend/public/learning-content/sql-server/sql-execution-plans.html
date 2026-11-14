@@ -1,0 +1,1324 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Read SQL Server Execution Plans</h1>
+        <p>
+            Understand how SQL Server executes queries internally,
+            interpret graphical and XML execution plans, identify
+            expensive operators, investigate cardinality estimation,
+            and use execution plans to optimize real-world queries.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Learning Objectives</h2>
+        <ul class="learning-list">
+            <li>Understand what an execution plan is.</li>
+            <li>Understand how SQL Server compiles and executes queries.</li>
+            <li>Compare estimated, actual, and live execution plans.</li>
+            <li>Read graphical execution plans from right to left.</li>
+            <li>Understand common physical operators.</li>
+            <li>Interpret estimated and actual row counts.</li>
+            <li>Identify scans, seeks, lookups, sorts, and spills.</li>
+            <li>Understand join algorithms and parallel execution.</li>
+            <li>Investigate missing indexes and implicit conversions.</li>
+            <li>Use execution plans to diagnose real production problems.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>2. What Is a SQL Server Execution Plan?</h2>
+
+        <p>
+            An execution plan describes the operations SQL Server
+            chooses to execute a SQL statement.
+        </p>
+
+        <p>
+            For example, when you execute:
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName
+FROM dbo.Employee
+WHERE EmployeeId = 100;</code></pre>
+
+        <p>
+            SQL Server must determine how to locate EmployeeId 100,
+            retrieve the required columns, and return the result.
+        </p>
+
+        <p>
+            It may use an index seek, an index scan, a table scan,
+            or another access method depending on the table structure,
+            available indexes, statistics, and estimated costs.
+        </p>
+
+        <h3>Execution plan responsibilities</h3>
+
+        <ul>
+            <li>Determine how tables and indexes are accessed.</li>
+            <li>Determine how multiple tables are joined.</li>
+            <li>Determine where filtering and sorting occur.</li>
+            <li>Determine how aggregation is performed.</li>
+            <li>Determine whether parallel execution is beneficial.</li>
+            <li>Estimate CPU, I/O, and other resource costs.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>3. SQL Server Query Compilation Process</h2>
+
+        <p>
+            SQL Server does not simply execute the SQL text exactly
+            as written. It processes the statement and generates
+            an execution plan.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>1. Query submission</strong>
+                <p>The application or user sends a SQL statement.</p>
+            </div>
+            <div class="flow-step">
+                <strong>2. Parsing</strong>
+                <p>SQL Server checks syntax and builds an internal representation.</p>
+            </div>
+            <div class="flow-step">
+                <strong>3. Binding and algebrization</strong>
+                <p>Names, objects, columns, and data types are resolved.</p>
+            </div>
+            <div class="flow-step">
+                <strong>4. Query optimization</strong>
+                <p>The optimizer evaluates possible execution strategies.</p>
+            </div>
+            <div class="flow-step">
+                <strong>5. Plan generation</strong>
+                <p>SQL Server selects an execution plan based on estimated costs.</p>
+            </div>
+            <div class="flow-step">
+                <strong>6. Execution</strong>
+                <p>The execution engine runs the selected operators.</p>
+            </div>
+            <div class="flow-step">
+                <strong>7. Result delivery</strong>
+                <p>Rows or statement results are returned to the client.</p>
+            </div>
+        </div>
+
+        <div class="info-box">
+            SQL Server may reuse a cached execution plan for later
+            executions of a statement. Recompilation can occur when
+            required by metadata, settings, statistics, or other
+            compilation conditions.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>4. Types of Execution Plans</h2>
+
+        <h3>4.1 Estimated Execution Plan</h3>
+
+        <p>
+            An estimated execution plan shows the plan SQL Server
+            expects to use without executing the query.
+        </p>
+
+        <p>In SQL Server Management Studio:</p>
+
+        <ul>
+            <li>Open a query window.</li>
+            <li>Write the SQL statement.</li>
+            <li>Select Display Estimated Execution Plan.</li>
+            <li>Alternatively, press Ctrl + L.</li>
+        </ul>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName
+FROM dbo.Employee
+WHERE DepartmentId = 10;</code></pre>
+
+        <p>
+            The estimated plan can be useful for reviewing a query
+            without running it. However, it does not contain the
+            actual runtime row counts and execution measurements.
+        </p>
+
+        <h3>4.2 Actual Execution Plan</h3>
+
+        <p>
+            An actual execution plan is captured when the query
+            executes. It includes runtime information such as
+            actual rows and execution counts.
+        </p>
+
+        <p>In SQL Server Management Studio:</p>
+
+        <ul>
+            <li>Select Include Actual Execution Plan.</li>
+            <li>Alternatively, press Ctrl + M.</li>
+            <li>Execute the query.</li>
+            <li>Open the Execution Plan tab.</li>
+        </ul>
+
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+SELECT
+    EmployeeId,
+    EmployeeName
+FROM dbo.Employee
+WHERE DepartmentId = 10;
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <h3>4.3 Live Query Statistics</h3>
+
+        <p>
+            Live Query Statistics provides a view of query execution
+            while the query is running.
+        </p>
+
+        <p>
+            It can help investigate long-running statements by showing
+            operator progress and runtime row-flow information.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Plan type</th>
+                    <th>Execution required?</th>
+                    <th>Runtime information</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Estimated</td>
+                    <td>No</td>
+                    <td>Estimated rows and costs.</td>
+                </tr>
+                <tr>
+                    <td>Actual</td>
+                    <td>Yes</td>
+                    <td>Estimated and actual runtime information.</td>
+                </tr>
+                <tr>
+                    <td>Live Query Statistics</td>
+                    <td>Yes</td>
+                    <td>Execution progress while running.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>5. Create Sample Tables</h2>
+
+        <p>
+            We will use Employee and Department tables to understand
+            execution plan operators.
+        </p>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.Employee;
+DROP TABLE IF EXISTS dbo.Department;
+
+CREATE TABLE dbo.Department
+(
+    DepartmentId INT PRIMARY KEY,
+    DepartmentName VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE dbo.Employee
+(
+    EmployeeId INT IDENTITY(1,1) PRIMARY KEY,
+    EmployeeName VARCHAR(100) NOT NULL,
+    DepartmentId INT NOT NULL,
+    Salary DECIMAL(12,2) NOT NULL,
+    HireDate DATE NOT NULL
+);
+
+INSERT INTO dbo.Department
+(
+    DepartmentId,
+    DepartmentName
+)
+VALUES
+    (1, 'IT'),
+    (2, 'HR'),
+    (3, 'Finance'),
+    (4, 'Marketing');
+
+;WITH Numbers AS
+(
+    SELECT TOP (100000)
+        ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS N
+    FROM sys.all_objects AS A
+    CROSS JOIN sys.all_objects AS B
+)
+INSERT INTO dbo.Employee
+(
+    EmployeeName,
+    DepartmentId,
+    Salary,
+    HireDate
+)
+SELECT
+    CONCAT('Employee ', N),
+    CONVERT(INT, (N % 4) + 1),
+    CONVERT(DECIMAL(12,2), 30000 + (N % 70000)),
+    DATEADD
+    (
+        DAY,
+        -CONVERT(INT, N % 3000),
+        CONVERT(DATE, GETDATE())
+    )
+FROM Numbers;</code></pre>
+
+        <h3>Verify data</h3>
+
+        <pre class="sql-code"><code>SELECT COUNT(*) AS EmployeeCount
+FROM dbo.Employee;
+
+SELECT *
+FROM dbo.Department;</code></pre>
+
+        <p>
+            The Employee table contains 100,000 rows and the
+            Department table contains four rows.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>6. How to Read a Graphical Execution Plan</h2>
+
+        <p>
+            In SQL Server Management Studio, a graphical execution
+            plan contains operator icons connected by arrows.
+        </p>
+
+        <p>
+            A useful starting rule is to read the data flow from
+            right to left. Operators on the right generally produce
+            input rows consumed by operators farther to the left.
+        </p>
+
+        <h3>Example query</h3>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName
+FROM dbo.Employee
+WHERE DepartmentId = 2;</code></pre>
+
+        <h3>Conceptual execution flow</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Employee access</strong>
+                <p>SQL Server reads rows from the table or index.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Filter evaluation</strong>
+                <p>DepartmentId = 2 is evaluated.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Column retrieval</strong>
+                <p>Required EmployeeId and EmployeeName values are made available.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Return result</strong>
+                <p>Matching rows are sent to the client.</p>
+            </div>
+        </div>
+
+        <p>
+            The exact graphical plan depends on indexes, statistics,
+            data distribution, SQL Server version, and optimizer
+            decisions.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Understand the Most Important Operators</h2>
+
+        <h3>7.1 Table Scan</h3>
+
+        <p>
+            A Table Scan reads rows from a heap table. A heap is a
+            table without a clustered index.
+        </p>
+
+        <p>
+            Create a heap for demonstration:
+        </p>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.EmployeeHeap;
+
+CREATE TABLE dbo.EmployeeHeap
+(
+    EmployeeId INT,
+    EmployeeName VARCHAR(100),
+    DepartmentId INT
+);
+
+INSERT INTO dbo.EmployeeHeap
+(
+    EmployeeId,
+    EmployeeName,
+    DepartmentId
+)
+SELECT
+    EmployeeId,
+    EmployeeName,
+    DepartmentId
+FROM dbo.Employee;
+
+SELECT *
+FROM dbo.EmployeeHeap
+WHERE DepartmentId = 2;</code></pre>
+
+        <p>
+            Without a suitable index, SQL Server may scan the heap
+            to find rows matching DepartmentId = 2.
+        </p>
+
+        <h3>7.2 Clustered Index Scan</h3>
+
+        <p>
+            A clustered index scan reads rows from the clustered
+            index. It may be appropriate when a large proportion
+            of the table is required.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName
+FROM dbo.Employee;</code></pre>
+
+        <p>
+            Since the query retrieves most or all employees,
+            scanning the clustered index can be a reasonable plan.
+        </p>
+
+        <h3>7.3 Index Seek</h3>
+
+        <p>
+            An Index Seek navigates an index structure to locate
+            matching key values or a range of key values.
+        </p>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Employee_DepartmentId
+ON dbo.Employee(DepartmentId);
+
+SELECT
+    EmployeeId,
+    EmployeeName
+FROM dbo.Employee
+WHERE DepartmentId = 2;</code></pre>
+
+        <p>
+            SQL Server may use the new index to locate rows
+            belonging to DepartmentId 2.
+        </p>
+
+        <p>
+            However, because EmployeeName is not included in the
+            nonclustered index, a Key Lookup may be required.
+        </p>
+
+        <h3>7.4 Index Scan</h3>
+
+        <p>
+            An Index Scan reads index entries. It is not necessarily
+            inefficient: scanning a narrow index can be cheaper
+            than scanning a wider clustered index.
+        </p>
+
+        <h3>7.5 Key Lookup</h3>
+
+        <p>
+            A Key Lookup retrieves additional columns from the
+            clustered index using the clustered key found in
+            a nonclustered index.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Nonclustered Index Seek</strong>
+                <p>Find qualifying DepartmentId entries.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Read clustered key</strong>
+                <p>Obtain the row locator from the nonclustered index.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Key Lookup</strong>
+                <p>Retrieve EmployeeName from the clustered index.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Return rows</strong>
+                <p>Produce the requested result.</p>
+            </div>
+        </div>
+
+        <h3>7.6 RID Lookup</h3>
+
+        <p>
+            A RID Lookup retrieves additional columns from a heap
+            using a Row Identifier. It is the heap equivalent of
+            a Key Lookup.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>8. Understand Join Operators</h2>
+
+        <p>
+            SQL Server supports multiple physical join algorithms.
+            The execution plan shows which algorithm was selected.
+        </p>
+
+        <h3>8.1 Nested Loops</h3>
+
+        <p>
+            Nested Loops typically reads rows from one input and
+            searches the other input for matches.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    E.EmployeeName,
+    D.DepartmentName
+FROM dbo.Employee AS E
+INNER JOIN dbo.Department AS D
+    ON E.DepartmentId = D.DepartmentId
+WHERE E.EmployeeId <= 10;</code></pre>
+
+        <p>
+            Nested Loops can be efficient when the outer input
+            is small and the inner input has an efficient access path.
+        </p>
+
+        <h3>8.2 Hash Match</h3>
+
+        <p>
+            Hash Match uses a hash table to match rows or perform
+            certain aggregate operations.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    D.DepartmentName,
+    COUNT(*) AS EmployeeCount
+FROM dbo.Employee AS E
+INNER JOIN dbo.Department AS D
+    ON E.DepartmentId = D.DepartmentId
+GROUP BY D.DepartmentName;</code></pre>
+
+        <p>
+            A hash join may be selected when joining larger inputs
+            without useful ordering.
+        </p>
+
+        <p>
+            Inspect memory grants and spill warnings when a Hash
+            Match operator performs poorly.
+        </p>
+
+        <h3>8.3 Merge Join</h3>
+
+        <p>
+            Merge Join processes two inputs ordered by their join
+            keys. It can be efficient when the required ordering
+            is already available.
+        </p>
+
+        <h3>Comparison</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Operator</th>
+                    <th>Typical scenario</th>
+                    <th>Potential issue</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Nested Loops</td>
+                    <td>Small outer input and efficient inner lookup.</td>
+                    <td>Too many repeated inner accesses.</td>
+                </tr>
+                <tr>
+                    <td>Hash Match</td>
+                    <td>Large inputs without useful ordering.</td>
+                    <td>Memory pressure and spills.</td>
+                </tr>
+                <tr>
+                    <td>Merge Join</td>
+                    <td>Inputs ordered by join key.</td>
+                    <td>Sort cost when ordering is unavailable.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>9. Understand Sort and Aggregate Operators</h2>
+
+        <h3>9.1 Sort</h3>
+
+        <p>
+            Sort orders rows according to requested columns.
+            It may be needed for ORDER BY, merge joins, or other
+            operations requiring ordered data.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Salary
+FROM dbo.Employee
+ORDER BY Salary DESC;</code></pre>
+
+        <p>
+            SQL Server may use a Sort operator if no suitable
+            access path already provides the requested ordering.
+        </p>
+
+        <h3>9.2 Stream Aggregate</h3>
+
+        <p>
+            Stream Aggregate groups ordered input rows and calculates
+            aggregates. It benefits from appropriately ordered input.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    DepartmentId,
+    COUNT(*) AS EmployeeCount
+FROM dbo.Employee
+GROUP BY DepartmentId;</code></pre>
+
+        <h3>9.3 Hash Aggregate</h3>
+
+        <p>
+            Hash Aggregate uses a hash structure to group rows.
+            It can process unordered input but requires memory.
+        </p>
+
+        <p>
+            A hash aggregate may be suitable when the input is not
+            already ordered by the grouping columns.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>10. Estimated Rows vs Actual Rows</h2>
+
+        <p>
+            One of the most important execution plan skills is
+            comparing estimated row counts with actual row counts.
+        </p>
+
+        <ul>
+            <li>Estimated rows: the optimizer's prediction.</li>
+            <li>Actual rows: rows produced during execution.</li>
+        </ul>
+
+        <h3>Illustrative example</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Operator</th>
+                    <th>Estimated rows</th>
+                    <th>Actual rows</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Index Seek</td><td>100</td><td>15,000</td></tr>
+                <tr><td>Nested Loops input</td><td>100</td><td>15,000</td></tr>
+                <tr><td>Key Lookup</td><td>100</td><td>15,000</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            A significant difference may indicate that the optimizer
+            underestimated the number of rows.
+        </p>
+
+        <h3>Why cardinality estimates can be wrong</h3>
+
+        <ul>
+            <li>Outdated or insufficient statistics.</li>
+            <li>Correlated columns.</li>
+            <li>Skewed data distribution.</li>
+            <li>Expressions and non-SARGable predicates.</li>
+            <li>Implicit data-type conversions.</li>
+            <li>Parameter-sensitive query behavior.</li>
+            <li>Complex predicates and estimation limitations.</li>
+        </ul>
+
+        <h3>Investigate statistics</h3>
+
+        <pre class="sql-code"><code>SELECT
+    name,
+    stats_id,
+    auto_created,
+    user_created
+FROM sys.stats
+WHERE object_id = OBJECT_ID('dbo.Employee');
+
+DBCC SHOW_STATISTICS
+(
+    'dbo.Employee',
+    'IX_Employee_DepartmentId'
+);</code></pre>
+
+        <p>
+            Compare estimates with actual values at important
+            operators, especially where a large difference changes
+            the amount of work performed downstream.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Understand Execution Plan Cost</h2>
+
+        <p>
+            The graphical execution plan displays estimated operator
+            costs and relative percentages.
+        </p>
+
+        <p>
+            These estimates help the optimizer compare possible plans,
+            but they are not direct measurements of actual execution time.
+        </p>
+
+        <h3>Important cost concepts</h3>
+
+        <ul>
+            <li>Estimated I/O cost.</li>
+            <li>Estimated CPU cost.</li>
+            <li>Estimated subtree cost.</li>
+            <li>Estimated operator cost.</li>
+            <li>Estimated number of rows.</li>
+        </ul>
+
+        <div class="info-box">
+            An operator showing 80% of estimated plan cost does not
+            necessarily consume 80% of actual runtime. Always combine
+            plan inspection with actual execution metrics.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Understand Predicate Properties</h2>
+
+        <p>
+            When inspecting an operator, open its Properties window.
+            Review the predicates and understand how the filter is applied.
+        </p>
+
+        <h3>Seek Predicate</h3>
+
+        <p>
+            A Seek Predicate defines the key range or value used
+            to navigate an index.
+        </p>
+
+        <h3>Predicate</h3>
+
+        <p>
+            A Predicate may be a residual filter evaluated after
+            the access method retrieves candidate rows.
+        </p>
+
+        <h3>Example</h3>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName
+FROM dbo.Employee
+WHERE DepartmentId = 2
+  AND Salary > 80000;</code></pre>
+
+        <p>
+            If the index is on DepartmentId only, SQL Server may
+            seek to DepartmentId 2 and evaluate Salary as a residual
+            predicate.
+        </p>
+
+        <h3>Potential composite index</h3>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Employee_Department_Salary
+ON dbo.Employee
+(
+    DepartmentId,
+    Salary
+)
+INCLUDE
+(
+    EmployeeName
+);</code></pre>
+
+        <p>
+            This index may support both the equality predicate
+            and salary range predicate, while covering the requested
+            EmployeeName.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Understand Implicit Conversions</h2>
+
+        <p>
+            SQL Server may convert one data type to another when
+            comparing values of different types.
+        </p>
+
+        <p>
+            Depending on data types and conversion direction,
+            an implicit conversion can reduce index efficiency
+            or affect cardinality estimates.
+        </p>
+
+        <h3>Example</h3>
+
+        <pre class="sql-code"><code>-- DepartmentId is INT.
+DECLARE @DepartmentId VARCHAR(10) = '2';
+
+SELECT *
+FROM dbo.Employee
+WHERE DepartmentId = @DepartmentId;</code></pre>
+
+        <p>
+            SQL Server must reconcile the different data types.
+            INT has higher precedence than VARCHAR, so SQL Server
+            converts the string parameter to INT in this comparison.
+        </p>
+
+        <h3>Preferred approach</h3>
+
+        <pre class="sql-code"><code>DECLARE @DepartmentId INT = 2;
+
+SELECT *
+FROM dbo.Employee
+WHERE DepartmentId = @DepartmentId;</code></pre>
+
+        <p>
+            Match parameter types to column types and inspect
+            execution plan warnings for implicit conversions.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Understand Parallelism</h2>
+
+        <p>
+            SQL Server can divide query work across multiple worker
+            threads. This is called parallel execution.
+        </p>
+
+        <p>
+            Parallelism can improve performance for large operations,
+            but it also introduces coordination and resource costs.
+        </p>
+
+        <h3>Common parallelism operators</h3>
+
+        <ul>
+            <li>Distribute Streams.</li>
+            <li>Repartition Streams.</li>
+            <li>Gather Streams.</li>
+        </ul>
+
+        <h3>Conceptual parallel execution flow</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Input data</strong>
+                <p>Rows are prepared for parallel processing.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Distribute Streams</strong>
+                <p>Work is distributed among worker threads.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Parallel operations</strong>
+                <p>Workers perform operations concurrently.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Gather Streams</strong>
+                <p>Results are combined for downstream processing.</p>
+            </div>
+        </div>
+
+        <h3>Inspect parallelism settings</h3>
+
+        <pre class="sql-code"><code>SELECT
+    name,
+    value,
+    value_in_use
+FROM sys.configurations
+WHERE name IN
+(
+    'max degree of parallelism',
+    'cost threshold for parallelism'
+);</code></pre>
+
+        <p>
+            A parallel plan is not automatically better than a
+            serial plan. Review CPU usage, elapsed time, worker
+            distribution, and the workload's concurrency requirements.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>15. Understand Memory Grants and Spills</h2>
+
+        <p>
+            Certain operators require memory to process data.
+            Sort and Hash Match operators are common examples.
+        </p>
+
+        <p>
+            SQL Server requests a memory grant based on estimated
+            execution requirements.
+        </p>
+
+        <h3>Potential problems</h3>
+
+        <ul>
+            <li>Insufficient memory grants.</li>
+            <li>Excessively large memory grants.</li>
+            <li>Sort spills to tempdb.</li>
+            <li>Hash spills to tempdb.</li>
+            <li>Memory grant waits.</li>
+        </ul>
+
+        <h3>Inspect memory grant information</h3>
+
+        <pre class="sql-code"><code>SELECT
+    session_id,
+    request_time,
+    grant_time,
+    requested_memory_kb,
+    granted_memory_kb,
+    required_memory_kb,
+    used_memory_kb,
+    max_used_memory_kb,
+    wait_time_ms
+FROM sys.dm_exec_query_memory_grants;</code></pre>
+
+        <p>
+            Actual execution plans can also expose memory grant
+            information and spill warnings, depending on the
+            SQL Server version and operator.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Understand Missing Index Warnings</h2>
+
+        <p>
+            SQL Server may show a missing-index recommendation
+            in an execution plan.
+        </p>
+
+        <p>
+            The recommendation may include:
+        </p>
+
+        <ul>
+            <li>Equality columns.</li>
+            <li>Inequality columns.</li>
+            <li>Included columns.</li>
+        </ul>
+
+        <h3>Example query</h3>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Salary
+FROM dbo.Employee
+WHERE DepartmentId = 2;</code></pre>
+
+        <p>
+            A potential index could be:
+        </p>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Employee_DepartmentId_Covering
+ON dbo.Employee(DepartmentId)
+INCLUDE
+(
+    EmployeeName,
+    Salary
+);</code></pre>
+
+        <p>
+            This is only a candidate. Check existing indexes,
+            write overhead, storage requirements, and whether
+            the plan actually improves.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>17. Read an Execution Plan Using XML</h2>
+
+        <p>
+            SQL Server execution plans can be represented as XML.
+            The XML contains detailed information about operators,
+            estimates, runtime metrics, predicates, and warnings.
+        </p>
+
+        <h3>Generate an estimated plan as XML</h3>
+
+        <pre class="sql-code"><code>SET SHOWPLAN_XML ON;
+GO
+
+SELECT
+    EmployeeId,
+    EmployeeName
+FROM dbo.Employee
+WHERE DepartmentId = 2;
+GO
+
+SET SHOWPLAN_XML OFF;
+GO</code></pre>
+
+        <p>
+            SHOWPLAN_XML returns the estimated plan without
+            executing the query. Statements between SET SHOWPLAN_XML
+            ON and OFF are compiled for plan output rather than executed.
+        </p>
+
+        <h3>Generate an actual plan as XML</h3>
+
+        <p>
+            In SQL Server Management Studio, enable the actual
+            execution plan and execute the query. You can save
+            the plan as a .sqlplan file and inspect its XML.
+        </p>
+
+        <h3>Important XML information</h3>
+
+        <ul>
+            <li>PhysicalOp and LogicalOp.</li>
+            <li>EstimatedRows.</li>
+            <li>ActualRows in runtime information.</li>
+            <li>EstimatedTotalSubtreeCost.</li>
+            <li>SeekPredicates and residual predicates.</li>
+            <li>Warnings and spill information.</li>
+            <li>Memory grant details.</li>
+            <li>Object and index names.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>18. Find Expensive Queries Using Query Store</h2>
+
+        <p>
+            Query Store helps identify query performance changes
+            over time and compare different execution plans.
+        </p>
+
+        <h3>Enable Query Store</h3>
+
+        <pre class="sql-code"><code>ALTER DATABASE YourDatabase
+SET QUERY_STORE = ON;</code></pre>
+
+        <p>
+            Replace YourDatabase with the actual database name.
+        </p>
+
+        <h3>Find queries with high average duration</h3>
+
+        <pre class="sql-code"><code>SELECT TOP (20)
+    Q.query_id,
+    P.plan_id,
+    RS.count_executions,
+    RS.avg_duration / 1000.0 AS AvgDurationMs,
+    RS.avg_cpu_time / 1000.0 AS AvgCpuMs,
+    RS.avg_logical_io_reads AS AvgLogicalReads,
+    QT.query_sql_text
+FROM sys.query_store_query AS Q
+INNER JOIN sys.query_store_query_text AS QT
+    ON Q.query_text_id = QT.query_text_id
+INNER JOIN sys.query_store_plan AS P
+    ON Q.query_id = P.query_id
+INNER JOIN sys.query_store_runtime_stats AS RS
+    ON P.plan_id = RS.plan_id
+ORDER BY RS.avg_duration DESC;</code></pre>
+
+        <p>
+            This is a starting-point diagnostic query. For detailed
+            reporting, account for runtime-statistics intervals,
+            plan changes, and execution counts.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>19. Real-World Scenario — Slow Employee Search</h2>
+
+        <h3>Business requirement</h3>
+
+        <p>
+            A human resources application needs to retrieve employees
+            from a particular department whose salary exceeds a
+            specified amount.
+        </p>
+
+        <h3>Initial query</h3>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    DepartmentId,
+    Salary
+FROM dbo.Employee
+WHERE DepartmentId = 2
+  AND Salary > 80000;</code></pre>
+
+        <h3>Investigation process</h3>
+
+        <ol>
+            <li>Capture the actual execution plan.</li>
+            <li>Check whether SQL Server scans the clustered index.</li>
+            <li>Review estimated versus actual rows.</li>
+            <li>Check whether Salary is a residual predicate.</li>
+            <li>Review logical reads and CPU time.</li>
+        </ol>
+
+        <h3>Potential index</h3>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Employee_Department_Salary
+ON dbo.Employee
+(
+    DepartmentId,
+    Salary
+)
+INCLUDE
+(
+    EmployeeName
+);</code></pre>
+
+        <p>
+            This index may support the equality and range predicates
+            while covering the requested columns. Validate its
+            effectiveness using the actual plan and measured workload.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>20. Common Execution Plan Mistakes</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Misunderstanding</th>
+                    <th>Correct interpretation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Index Seek is always good.</td>
+                    <td>A seek can still read many rows or perform expensive lookups.</td>
+                </tr>
+                <tr>
+                    <td>Table Scan is always bad.</td>
+                    <td>A scan may be efficient when most rows are required.</td>
+                </tr>
+                <tr>
+                    <td>Highest cost operator is always the bottleneck.</td>
+                    <td>Estimated cost is not actual elapsed time.</td>
+                </tr>
+                <tr>
+                    <td>Missing index warning means create the index.</td>
+                    <td>Review workload, existing indexes, and write overhead first.</td>
+                </tr>
+                <tr>
+                    <td>Actual rows must equal estimated rows.</td>
+                    <td>Differences can occur; investigate material estimation errors.</td>
+                </tr>
+                <tr>
+                    <td>Parallel plans are always faster.</td>
+                    <td>Parallelism has coordination and resource costs.</td>
+                </tr>
+                <tr>
+                    <td>Key Lookup is always bad.</td>
+                    <td>A small number of lookups may be perfectly reasonable.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>21. Execution Plan Troubleshooting Checklist</h2>
+
+        <ul class="learning-list">
+            <li>Capture the actual execution plan.</li>
+            <li>Identify the main access operators.</li>
+            <li>Compare estimated and actual row counts.</li>
+            <li>Inspect predicates and implicit conversions.</li>
+            <li>Review Key Lookup operations.</li>
+            <li>Review join algorithms and their input sizes.</li>
+            <li>Investigate Sort and Hash Match operators.</li>
+            <li>Check memory grants and spill warnings.</li>
+            <li>Review parallelism and worker distribution.</li>
+            <li>Check statistics and index definitions.</li>
+            <li>Compare logical reads and CPU time.</li>
+            <li>Validate the effect of any changes.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>22. Practical Exercises</h2>
+
+        <h3>Exercise 1 — Identify a table scan</h3>
+
+        <p>
+            Execute the following query before creating an index.
+            Capture the actual execution plan.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName
+FROM dbo.Employee
+WHERE DepartmentId = 3;</code></pre>
+
+        <p>
+            Create an index on DepartmentId and compare the new plan.
+        </p>
+
+        <h3>Exercise 2 — Investigate a Key Lookup</h3>
+
+        <p>
+            Create an index on DepartmentId without including
+            EmployeeName. Run the query and inspect whether SQL Server
+            performs a Key Lookup.
+        </p>
+
+        <h3>Exercise 3 — Compare estimated and actual rows</h3>
+
+        <p>
+            Find an operator where the estimated and actual row counts
+            differ significantly. Investigate statistics and data
+            distribution.
+        </p>
+
+        <h3>Exercise 4 — Find a Sort operator</h3>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Salary
+FROM dbo.Employee
+ORDER BY Salary DESC;</code></pre>
+
+        <p>
+            Capture the plan. Consider whether an index on Salary
+            could provide the required order.
+        </p>
+
+        <h3>Exercise 5 — Compare join algorithms</h3>
+
+        <p>
+            Join Employee and Department. Inspect the physical join
+            algorithm selected by SQL Server. Explain why it may
+            have selected that algorithm.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>23. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>Which plan includes actual runtime row information?</p>
+        <ul>
+            <li>A. Estimated plan</li>
+            <li>B. Actual plan</li>
+            <li>C. Query text</li>
+            <li>D. Database diagram</li>
+        </ul>
+        <p><strong>Answer:</strong> B — Actual plan.</p>
+
+        <h3>Question 2</h3>
+        <p>Which operator retrieves additional data from a clustered index?</p>
+        <ul>
+            <li>A. Sort</li>
+            <li>B. Key Lookup</li>
+            <li>C. Hash Match</li>
+            <li>D. Stream Aggregate</li>
+        </ul>
+        <p><strong>Answer:</strong> B — Key Lookup.</p>
+
+        <h3>Question 3</h3>
+        <p>Which join algorithm uses a hash structure?</p>
+        <ul>
+            <li>A. Nested Loops</li>
+            <li>B. Merge Join</li>
+            <li>C. Hash Match</li>
+            <li>D. RID Lookup</li>
+        </ul>
+        <p><strong>Answer:</strong> C — Hash Match.</p>
+
+        <h3>Question 4</h3>
+        <p>What does a large estimated-versus-actual row difference suggest?</p>
+        <ul>
+            <li>A. Potential cardinality estimation problem.</li>
+            <li>B. Database backup completed.</li>
+            <li>C. Indexes are automatically correct.</li>
+            <li>D. The query returned no data.</li>
+        </ul>
+        <p><strong>Answer:</strong> A.</p>
+
+        <h3>Question 5</h3>
+        <p>Is a Clustered Index Scan always inefficient?</p>
+        <ul>
+            <li>A. Yes</li>
+            <li>B. No</li>
+        </ul>
+        <p><strong>Answer:</strong> B — It can be appropriate when many rows are needed.</p>
+
+        <h3>Question 6</h3>
+        <p>Which operator can indicate sorting work?</p>
+        <ul>
+            <li>A. Sort</li>
+            <li>B. Key Lookup</li>
+            <li>C. Index Seek</li>
+            <li>D. Constant Scan</li>
+        </ul>
+        <p><strong>Answer:</strong> A — Sort.</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>24. Key Takeaways</h2>
+
+        <ul class="learning-list">
+            <li>An execution plan shows how SQL Server intends to execute a query.</li>
+            <li>Use actual execution plans to investigate runtime behavior.</li>
+            <li>Read graphical plans in the direction of data flow, generally right to left.</li>
+            <li>Understand the difference between scans, seeks, and lookups.</li>
+            <li>Compare estimated and actual row counts.</li>
+            <li>Investigate join algorithms, sorts, aggregates, and parallelism.</li>
+            <li>Review memory grants and spill warnings.</li>
+            <li>Use Query Store to investigate plan changes over time.</li>
+            <li>Never optimize based only on graphical cost percentages.</li>
+        </ul>
+
+        <p>
+            The key skill is not simply identifying an expensive-looking
+            operator. It is understanding why SQL Server selected that
+            operator, how much work it performed, and whether a better
+            plan can satisfy the same business requirement with fewer
+            resources.
+        </p>
+    </section>
+
+</main>

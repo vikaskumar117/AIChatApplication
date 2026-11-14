@@ -1,0 +1,802 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>ROW_NUMBER() vs RANK() vs DENSE_RANK() in SQL Server</h1>
+        <p>
+            Learn how SQL Server assigns rankings to rows, handles duplicate values,
+            partitions data, and uses window functions to solve practical business
+            problems such as Top-N reports, employee rankings, and salary analysis.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. What Are Ranking Functions?</h2>
+        <p>
+            Ranking functions are SQL Server window functions that assign a
+            numerical position to rows based on an ORDER BY expression.
+            They can rank rows across an entire result set or independently
+            within groups using PARTITION BY.
+        </p>
+
+        <p>SQL Server provides four ranking functions:</p>
+        <ul class="learning-list">
+            <li><strong>ROW_NUMBER():</strong> Assigns a unique sequential number to every row.</li>
+            <li><strong>RANK():</strong> Assigns the same rank to tied rows and leaves gaps after ties.</li>
+            <li><strong>DENSE_RANK():</strong> Assigns the same rank to tied rows without leaving gaps.</li>
+            <li><strong>NTILE():</strong> Divides rows into approximately equal groups.</li>
+        </ul>
+
+        <div class="info-box">
+            <strong>Important:</strong> Ranking functions do not physically sort
+            or permanently change the underlying table. They calculate ranking
+            values in the query result according to the window's ORDER BY clause.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>2. Create Sample Employee Data</h2>
+        <p>
+            We will use employee salary data containing duplicate salaries.
+            Duplicate values are essential for understanding how the ranking
+            functions behave when ties occur.
+        </p>
+
+        <pre class="sql-code"><code>CREATE TABLE Employees
+(
+    EmployeeId INT PRIMARY KEY,
+    EmployeeName VARCHAR(50),
+    Department VARCHAR(30),
+    Salary DECIMAL(10,2)
+);
+
+INSERT INTO Employees
+    (EmployeeId, EmployeeName, Department, Salary)
+VALUES
+    (1, 'Alice', 'IT', 90000),
+    (2, 'Bob', 'IT', 80000),
+    (3, 'Carol', 'IT', 80000),
+    (4, 'David', 'IT', 70000),
+    (5, 'Emma', 'IT', 60000),
+    (6, 'Frank', 'HR', 75000),
+    (7, 'Grace', 'HR', 75000),
+    (8, 'Henry', 'HR', 60000),
+    (9, 'Ivy', 'Finance', 85000),
+    (10, 'Jack', 'Finance', 70000);</code></pre>
+
+        <h3>Sample data</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>EmployeeName</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Alice</td><td>IT</td><td>90,000</td></tr>
+                <tr><td>2</td><td>Bob</td><td>IT</td><td>80,000</td></tr>
+                <tr><td>3</td><td>Carol</td><td>IT</td><td>80,000</td></tr>
+                <tr><td>4</td><td>David</td><td>IT</td><td>70,000</td></tr>
+                <tr><td>5</td><td>Emma</td><td>IT</td><td>60,000</td></tr>
+                <tr><td>6</td><td>Frank</td><td>HR</td><td>75,000</td></tr>
+                <tr><td>7</td><td>Grace</td><td>HR</td><td>75,000</td></tr>
+                <tr><td>8</td><td>Henry</td><td>HR</td><td>60,000</td></tr>
+                <tr><td>9</td><td>Ivy</td><td>Finance</td><td>85,000</td></tr>
+                <tr><td>10</td><td>Jack</td><td>Finance</td><td>70,000</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>3. ROW_NUMBER() — Unique Sequential Number</h2>
+        <p>
+            ROW_NUMBER() assigns a different sequential number to every row,
+            even when multiple rows have the same salary.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Salary,
+    ROW_NUMBER() OVER
+    (
+        ORDER BY Salary DESC, EmployeeId
+    ) AS RowNum
+FROM Employees
+WHERE Department = 'IT';</code></pre>
+
+        <h3>Expected result</h3>
+        <table class="table">
+            <thead>
+                <tr><th>Employee</th><th>Salary</th><th>RowNum</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>90,000</td><td>1</td></tr>
+                <tr><td>Bob</td><td>80,000</td><td>2</td></tr>
+                <tr><td>Carol</td><td>80,000</td><td>3</td></tr>
+                <tr><td>David</td><td>70,000</td><td>4</td></tr>
+                <tr><td>Emma</td><td>60,000</td><td>5</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            Bob and Carol have the same salary, but they receive different row
+            numbers. EmployeeId is included as a tie-breaker so the ordering
+            is deterministic for this data.
+        </p>
+
+        <div class="info-box">
+            <strong>Use ROW_NUMBER() when:</strong>
+            You need exactly one row per position, deduplication, pagination,
+            or a fixed number of records from an ordered result.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>4. RANK() — Same Rank for Ties, With Gaps</h2>
+        <p>
+            RANK() gives the same rank to rows with equal values. The next rank
+            accounts for the number of tied rows, so gaps appear.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Salary,
+    RANK() OVER
+    (
+        ORDER BY Salary DESC
+    ) AS SalaryRank
+FROM Employees
+WHERE Department = 'IT';</code></pre>
+
+        <h3>Expected result</h3>
+        <table class="table">
+            <thead>
+                <tr><th>Employee</th><th>Salary</th><th>Rank</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>90,000</td><td>1</td></tr>
+                <tr><td>Bob</td><td>80,000</td><td>2</td></tr>
+                <tr><td>Carol</td><td>80,000</td><td>2</td></tr>
+                <tr><td>David</td><td>70,000</td><td>4</td></tr>
+                <tr><td>Emma</td><td>60,000</td><td>5</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            Bob and Carol both receive rank 2. David receives rank 4 because
+            two employees occupy the second position.
+        </p>
+
+        <div class="info-box">
+            <strong>Use RANK() when:</strong>
+            You want competition-style ranking, where tied participants share
+            a position and subsequent positions are skipped.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>5. DENSE_RANK() — Same Rank for Ties, Without Gaps</h2>
+        <p>
+            DENSE_RANK() also assigns the same rank to tied rows, but the next
+            distinct value receives the next consecutive rank.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Salary,
+    DENSE_RANK() OVER
+    (
+        ORDER BY Salary DESC
+    ) AS DenseSalaryRank
+FROM Employees
+WHERE Department = 'IT';</code></pre>
+
+        <h3>Expected result</h3>
+        <table class="table">
+            <thead>
+                <tr><th>Employee</th><th>Salary</th><th>Dense Rank</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>90,000</td><td>1</td></tr>
+                <tr><td>Bob</td><td>80,000</td><td>2</td></tr>
+                <tr><td>Carol</td><td>80,000</td><td>2</td></tr>
+                <tr><td>David</td><td>70,000</td><td>3</td></tr>
+                <tr><td>Emma</td><td>60,000</td><td>4</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Use DENSE_RANK() when:</strong>
+            You want to rank distinct values without gaps, such as finding
+            the second-highest distinct salary or the top three salary levels.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Compare All Three Functions</h2>
+        <p>
+            The following query calculates all three rankings together,
+            making their differences easy to see.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeName,
+    Salary,
+
+    ROW_NUMBER() OVER
+    (
+        ORDER BY Salary DESC, EmployeeId
+    ) AS RowNum,
+
+    RANK() OVER
+    (
+        ORDER BY Salary DESC
+    ) AS SalaryRank,
+
+    DENSE_RANK() OVER
+    (
+        ORDER BY Salary DESC
+    ) AS DenseRank
+
+FROM Employees
+WHERE Department = 'IT';</code></pre>
+
+        <h3>Combined output</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Salary</th>
+                    <th>ROW_NUMBER</th>
+                    <th>RANK</th>
+                    <th>DENSE_RANK</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>90,000</td><td>1</td><td>1</td><td>1</td></tr>
+                <tr><td>Bob</td><td>80,000</td><td>2</td><td>2</td><td>2</td></tr>
+                <tr><td>Carol</td><td>80,000</td><td>3</td><td>2</td><td>2</td></tr>
+                <tr><td>David</td><td>70,000</td><td>4</td><td>4</td><td>3</td></tr>
+                <tr><td>Emma</td><td>60,000</td><td>5</td><td>5</td><td>4</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Ranking behavior at a glance</h3>
+        <table class="table">
+            <thead>
+                <tr><th>Function</th><th>Ties share rank?</th><th>Leaves gaps?</th><th>Unique per row?</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ROW_NUMBER()</td><td>No</td><td>No</td><td>Yes</td></tr>
+                <tr><td>RANK()</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+                <tr><td>DENSE_RANK()</td><td>Yes</td><td>No</td><td>No</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>7. PARTITION BY — Rank Independently Within Each Department</h2>
+        <p>
+            PARTITION BY divides the result set into groups. The ranking function
+            starts again from 1 for every department.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeName,
+    Department,
+    Salary,
+
+    ROW_NUMBER() OVER
+    (
+        PARTITION BY Department
+        ORDER BY Salary DESC, EmployeeId
+    ) AS DepartmentRowNumber,
+
+    RANK() OVER
+    (
+        PARTITION BY Department
+        ORDER BY Salary DESC
+    ) AS DepartmentRank,
+
+    DENSE_RANK() OVER
+    (
+        PARTITION BY Department
+        ORDER BY Salary DESC
+    ) AS DepartmentDenseRank
+
+FROM Employees
+ORDER BY Department, Salary DESC, EmployeeId;</code></pre>
+
+        <h3>Expected result</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                    <th>Row Number</th>
+                    <th>Rank</th>
+                    <th>Dense Rank</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Ivy</td><td>Finance</td><td>85,000</td><td>1</td><td>1</td><td>1</td></tr>
+                <tr><td>Jack</td><td>Finance</td><td>70,000</td><td>2</td><td>2</td><td>2</td></tr>
+                <tr><td>Frank</td><td>HR</td><td>75,000</td><td>1</td><td>1</td><td>1</td></tr>
+                <tr><td>Grace</td><td>HR</td><td>75,000</td><td>2</td><td>1</td><td>1</td></tr>
+                <tr><td>Henry</td><td>HR</td><td>60,000</td><td>3</td><td>3</td><td>2</td></tr>
+                <tr><td>Alice</td><td>IT</td><td>90,000</td><td>1</td><td>1</td><td>1</td></tr>
+                <tr><td>Bob</td><td>IT</td><td>80,000</td><td>2</td><td>2</td><td>2</td></tr>
+                <tr><td>Carol</td><td>IT</td><td>80,000</td><td>3</td><td>2</td><td>2</td></tr>
+                <tr><td>David</td><td>IT</td><td>70,000</td><td>4</td><td>4</td><td>3</td></tr>
+                <tr><td>Emma</td><td>IT</td><td>60,000</td><td>5</td><td>5</td><td>4</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            Notice that the ranking restarts for Finance, HR, and IT.
+            In HR, Frank and Grace tie at rank 1. Henry receives rank 3
+            with RANK(), but rank 2 with DENSE_RANK().
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>8. NTILE() — Divide Rows Into Groups</h2>
+        <p>
+            NTILE(n) distributes ordered rows into n groups, with group sizes
+            differing by at most one row when possible. It is useful for
+            quartiles, performance bands, and segmentation.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeName,
+    Salary,
+    NTILE(4) OVER
+    (
+        ORDER BY Salary DESC, EmployeeId
+    ) AS SalaryQuartile
+FROM Employees;</code></pre>
+
+        <p>
+            With ten rows and four groups, SQL Server distributes the rows
+            into group sizes of 3, 3, 2, and 2, in that order.
+            NTILE() assigns groups based on row positions, not distinct
+            salary values. Employees with tied salaries can therefore be
+            placed in different groups.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>9. Real-World Example — Find the Top Three Employees Per Department</h2>
+        <p>
+            Requirement: Return the three highest-paid employees from every
+            department, including employees tied at the third position.
+        </p>
+
+        <h3>Option A: Include ties at the third position</h3>
+        <pre class="sql-code"><code>WITH RankedEmployees AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Department,
+        Salary,
+        RANK() OVER
+        (
+            PARTITION BY Department
+            ORDER BY Salary DESC
+        ) AS SalaryRank
+    FROM Employees
+)
+SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary,
+    SalaryRank
+FROM RankedEmployees
+WHERE SalaryRank &lt;= 3
+ORDER BY Department, Salary DESC;</code></pre>
+
+        <p>
+            RANK() includes all employees tied at a rank of 3 or better.
+            However, because RANK() leaves gaps, it does not mean the
+            first three distinct salary levels.
+        </p>
+
+        <h3>Option B: Top three distinct salary levels</h3>
+        <pre class="sql-code"><code>WITH RankedEmployees AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Department,
+        Salary,
+        DENSE_RANK() OVER
+        (
+            PARTITION BY Department
+            ORDER BY Salary DESC
+        ) AS SalaryLevel
+    FROM Employees
+)
+SELECT *
+FROM RankedEmployees
+WHERE SalaryLevel &lt;= 3
+ORDER BY Department, Salary DESC;</code></pre>
+
+        <p>
+            DENSE_RANK() returns every employee whose salary belongs to
+            one of the top three distinct salary levels in that department.
+        </p>
+
+        <h3>Option C: Exactly three employees per department</h3>
+        <pre class="sql-code"><code>WITH RankedEmployees AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Department,
+        Salary,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY Department
+            ORDER BY Salary DESC, EmployeeId
+        ) AS RowNum
+    FROM Employees
+)
+SELECT *
+FROM RankedEmployees
+WHERE RowNum &lt;= 3
+ORDER BY Department, Salary DESC;</code></pre>
+
+        <p>
+            ROW_NUMBER() returns no more than three rows per department.
+            When salaries tie, EmployeeId provides a consistent tie-breaker.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>10. Find the Second-Highest Distinct Salary</h2>
+        <p>
+            DENSE_RANK() is a natural choice when the requirement is the
+            second-highest distinct salary.
+        </p>
+
+        <pre class="sql-code"><code>WITH SalaryRanking AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Salary,
+        DENSE_RANK() OVER
+        (
+            ORDER BY Salary DESC
+        ) AS SalaryRank
+    FROM Employees
+)
+SELECT
+    EmployeeId,
+    EmployeeName,
+    Salary
+FROM SalaryRanking
+WHERE SalaryRank = 2;</code></pre>
+
+        <p>
+            All employees who earn the second-highest distinct salary
+            are returned. If the business requirement instead asks for
+            the second employee row, ROW_NUMBER() may be more appropriate.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Remove Duplicate Rows Using ROW_NUMBER()</h2>
+        <p>
+            A common production use case is identifying duplicate business
+            keys and retaining one preferred record.
+        </p>
+
+        <pre class="sql-code"><code>WITH DuplicateCheck AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Department,
+        Salary,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY EmployeeName, Department
+            ORDER BY EmployeeId
+        ) AS DuplicateNumber
+    FROM Employees
+)
+SELECT *
+FROM DuplicateCheck
+WHERE DuplicateNumber &gt; 1;</code></pre>
+
+        <p>
+            The query identifies rows after the first occurrence for each
+            EmployeeName and Department combination. The ORDER BY clause
+            determines which record is retained.
+        </p>
+
+        <div class="info-box">
+            <strong>Production warning:</strong> Preview the rows before deleting
+            them. Confirm the business key, retention rule, foreign-key
+            dependencies, and transaction strategy before running a DELETE.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Logical Processing and Important SQL Rules</h2>
+        <p>
+            Ranking functions are evaluated as part of the SELECT processing
+            stage, after the rows to be ranked have been filtered by the
+            FROM, JOIN, and WHERE operations.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">FROM and JOIN — build the input row set</div>
+            <div class="flow-step">WHERE — filter input rows</div>
+            <div class="flow-step">GROUP BY and HAVING — aggregate and filter groups, when present</div>
+            <div class="flow-step">SELECT — calculate ranking window functions</div>
+            <div class="flow-step">ORDER BY — arrange final output</div>
+        </div>
+
+        <h3>Why can't you filter a ranking alias in WHERE?</h3>
+        <p>This query is invalid:</p>
+        <pre class="sql-code"><code>SELECT
+    EmployeeName,
+    Salary,
+    ROW_NUMBER() OVER
+    (
+        ORDER BY Salary DESC
+    ) AS RowNum
+FROM Employees
+WHERE RowNum &lt;= 3;</code></pre>
+
+        <p>
+            WHERE is logically processed before SELECT calculates the
+            RowNum alias. Use a CTE or derived table instead.
+        </p>
+
+        <pre class="sql-code"><code>WITH Ranked AS
+(
+    SELECT
+        EmployeeName,
+        Salary,
+        ROW_NUMBER() OVER
+        (
+            ORDER BY Salary DESC
+        ) AS RowNum
+    FROM Employees
+)
+SELECT *
+FROM Ranked
+WHERE RowNum &lt;= 3;</code></pre>
+    </section>
+
+    <section class="content-section">
+        <h2>13. SQL Server Internals — How Ranking Is Executed</h2>
+        <p>
+            Ranking functions are logical expressions. SQL Server's optimizer
+            chooses physical operators to produce the required ordering and
+            calculate the window values.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>1. Access input rows</strong>
+                <p>
+                    SQL Server may read a table or use an index through
+                    an Index Scan, Index Seek, or another access operator.
+                </p>
+            </div>
+            <div class="flow-step">
+                <strong>2. Establish required ordering</strong>
+                <p>
+                    If the input is not already in a suitable order, the
+                    execution plan may use a Sort operator.
+                </p>
+            </div>
+            <div class="flow-step">
+                <strong>3. Calculate window values</strong>
+                <p>
+                    Depending on the plan and SQL Server version, operators
+                    such as Segment, Sequence Project, or Window Aggregate
+                    may be used to calculate ranking values.
+                </p>
+            </div>
+            <div class="flow-step">
+                <strong>4. Apply outer filtering</strong>
+                <p>
+                    When the ranking is calculated in a CTE or derived table,
+                    a Filter operator can retain only the required ranks.
+                </p>
+            </div>
+            <div class="flow-step">
+                <strong>5. Return final output</strong>
+                <p>
+                    A final Sort may be required if the outer ORDER BY
+                    requests an order not already guaranteed by the plan.
+                </p>
+            </div>
+        </div>
+
+        <div class="info-box">
+            The exact physical operators depend on the SQL Server version,
+            query shape, available indexes, estimated costs, cardinality
+            estimates, and execution plan choices. No single operator sequence
+            is guaranteed for every ranking query.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Execution Plan and Performance Testing</h2>
+        <p>
+            Test ranking queries with actual execution plans and runtime
+            measurements rather than assuming that one ranking function
+            is always faster than another.
+        </p>
+
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary,
+    ROW_NUMBER() OVER
+    (
+        PARTITION BY Department
+        ORDER BY Salary DESC, EmployeeId
+    ) AS RowNum
+FROM Employees;
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <h3>Execution plan areas to inspect</h3>
+        <ul class="learning-list">
+            <li><strong>Sort:</strong> Check whether SQL Server sorts a large input and whether the sort spills to tempdb.</li>
+            <li><strong>Index Scan or Seek:</strong> Understand how the rows are accessed.</li>
+            <li><strong>Memory grant:</strong> Review memory requested and used by sort or other operators.</li>
+            <li><strong>Spills:</strong> Investigate sort or window-related spills when present.</li>
+            <li><strong>Estimated vs actual rows:</strong> Large differences can indicate cardinality-estimation problems.</li>
+            <li><strong>Parallelism:</strong> Check whether parallel operators help or introduce additional exchanges and sorting.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>15. Indexing for Ranking Queries</h2>
+        <p>
+            If a query frequently ranks employees by department and salary,
+            an index aligned with the partition and ordering columns may
+            reduce sorting work.
+        </p>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Employees_Department_Salary
+ON Employees
+(
+    Department,
+    Salary DESC,
+    EmployeeId
+)
+INCLUDE
+(
+    EmployeeName
+);</code></pre>
+
+        <p>
+            This index may help queries that partition by Department and
+            order by Salary and EmployeeId. It can also cover the selected
+            columns in this example.
+        </p>
+
+        <div class="info-box">
+            <strong>Do not create an index automatically for every ranking query.</strong>
+            Consider write overhead, storage, index maintenance, existing
+            indexes, data distribution, and the wider workload. Validate
+            improvements using actual execution plans and measurements.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Common Mistakes</h2>
+        <ul class="learning-list">
+            <li><strong>Using ROW_NUMBER() when ties must be included:</strong> It gives every row a unique number, so tied rows may be separated.</li>
+            <li><strong>Using RANK() for the top three distinct values:</strong> Gaps can mean the third distinct value has a rank greater than 3. Use DENSE_RANK().</li>
+            <li><strong>Forgetting PARTITION BY:</strong> Without it, ranking is calculated across the entire input set.</li>
+            <li><strong>Using a non-deterministic tie order:</strong> Add a unique tie-breaker when exactly repeatable row numbering is required.</li>
+            <li><strong>Filtering the ranking alias in the same WHERE clause:</strong> Use a CTE or derived table.</li>
+            <li><strong>Confusing window ORDER BY with final ORDER BY:</strong> The window ORDER BY defines ranking; the outer ORDER BY defines display order.</li>
+            <li><strong>Assuming NTILE keeps equal values together:</strong> It divides rows by position, so ties may be split across groups.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>17. Practical Business Scenarios</h2>
+        <table class="table">
+            <thead>
+                <tr><th>Business requirement</th><th>Recommended function</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Exactly three employees per department</td><td>ROW_NUMBER()</td></tr>
+                <tr><td>Competition leaderboard with skipped positions</td><td>RANK()</td></tr>
+                <tr><td>Top three distinct salary levels</td><td>DENSE_RANK()</td></tr>
+                <tr><td>Second-highest distinct salary</td><td>DENSE_RANK()</td></tr>
+                <tr><td>Remove duplicate business-key records</td><td>ROW_NUMBER()</td></tr>
+                <tr><td>Divide customers into four ordered segments</td><td>NTILE(4)</td></tr>
+                <tr><td>Top employees per department, including ties at a rank threshold</td><td>RANK()</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>18. Practice Exercises</h2>
+        <ol class="learning-list">
+            <li>Write a query to assign ROW_NUMBER() to all employees ordered by salary from highest to lowest.</li>
+            <li>Write a query to rank employees by salary within each department using RANK().</li>
+            <li>Find employees earning the third-highest distinct salary in the company.</li>
+            <li>Return exactly two employees per department using ROW_NUMBER().</li>
+            <li>Return all employees in the top two distinct salary levels per department using DENSE_RANK().</li>
+            <li>Use NTILE(4) to divide employees into four salary groups.</li>
+            <li>Identify duplicate employee records using a chosen business key and ROW_NUMBER().</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>19. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>Which function assigns a unique number to every row?</p>
+        <p>A. RANK() &nbsp; B. DENSE_RANK() &nbsp; C. ROW_NUMBER() &nbsp; D. NTILE()</p>
+        <p><strong>Answer:</strong> C. ROW_NUMBER()</p>
+
+        <h3>Question 2</h3>
+        <p>Two employees tie at rank 2. What rank does the next employee receive with RANK()?</p>
+        <p>A. 2 &nbsp; B. 3 &nbsp; C. 4 &nbsp; D. 5</p>
+        <p><strong>Answer:</strong> C. 4</p>
+
+        <h3>Question 3</h3>
+        <p>Which function ranks distinct salary values without gaps?</p>
+        <p>A. ROW_NUMBER() &nbsp; B. RANK() &nbsp; C. DENSE_RANK() &nbsp; D. NTILE()</p>
+        <p><strong>Answer:</strong> C. DENSE_RANK()</p>
+
+        <h3>Question 4</h3>
+        <p>What does PARTITION BY Department do?</p>
+        <p>A. Sorts the table permanently</p>
+        <p>B. Restarts ranking for each department</p>
+        <p>C. Removes duplicate departments</p>
+        <p>D. Groups rows into one aggregate row</p>
+        <p><strong>Answer:</strong> B. Restarts ranking for each department</p>
+
+        <h3>Question 5</h3>
+        <p>Why is a CTE commonly used when filtering ROW_NUMBER()?</p>
+        <p>A. Ranking functions can only run inside CTEs</p>
+        <p>B. A CTE makes the ranking permanently stored</p>
+        <p>C. It allows the outer query to filter the calculated ranking value</p>
+        <p>D. It automatically creates an index</p>
+        <p><strong>Answer:</strong> C. It allows the outer query to filter the calculated ranking value</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>Learning Outcomes</h2>
+        <p>After completing this tutorial, learners should be able to:</p>
+        <ul class="learning-list">
+            <li>Explain the behavior of ROW_NUMBER(), RANK(), DENSE_RANK(), and NTILE().</li>
+            <li>Identify how ties affect ranking results.</li>
+            <li>Use PARTITION BY to rank records independently within groups.</li>
+            <li>Build Top-N-per-group and second-highest-salary queries.</li>
+            <li>Use ROW_NUMBER() to identify duplicate records.</li>
+            <li>Understand how SQL Server may execute ranking queries.</li>
+            <li>Evaluate sorting, indexes, memory grants, and execution-plan performance.</li>
+        </ul>
+    </section>
+
+</main>

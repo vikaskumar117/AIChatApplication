@@ -1,0 +1,908 @@
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Find the Highest Salary Per Department in SQL Server</h1>
+        <p>
+            Learn how to retrieve the highest salary in every department,
+            identify the employee earning that salary, handle multiple
+            employees with the same highest salary, and understand the
+            performance of different T-SQL approaches.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Problem Statement</h2>
+
+        <p>
+            Imagine an organization has multiple departments, and each
+            department has several employees. We need to identify the
+            highest salary in each department.
+        </p>
+
+        <p>For example:</p>
+
+        <ul class="learning-list">
+            <li>Which employee has the highest salary in IT?</li>
+            <li>Which employee has the highest salary in HR?</li>
+            <li>Which employee has the highest salary in Finance?</li>
+            <li>What if two employees have the same highest salary?</li>
+            <li>What if a department has no employees?</li>
+        </ul>
+
+        <div class="info-box">
+            <strong>Important distinction:</strong>
+            Finding the maximum salary per department and finding the
+            employee who earns that salary are two different tasks.
+            <code>MAX()</code> finds the salary value. Additional logic is
+            needed to retrieve the employee details.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>2. Create the Sample Tables</h2>
+
+        <p>We will use an Employees table containing employee details and salaries.</p>
+
+        <pre class="sql-code"><code>CREATE TABLE Employees
+(
+    EmployeeId INT PRIMARY KEY,
+    EmployeeName VARCHAR(50),
+    Department VARCHAR(50),
+    Salary DECIMAL(10, 2)
+);</code></pre>
+
+        <h3>Insert sample records</h3>
+
+        <pre class="sql-code"><code>INSERT INTO Employees
+    (EmployeeId, EmployeeName, Department, Salary)
+VALUES
+    (101, 'Alice', 'IT', 90000),
+    (102, 'Bob', 'HR', 80000),
+    (103, 'Carol', 'IT', 80000),
+    (104, 'David', 'Finance', 70000),
+    (105, 'Emma', 'HR', 60000),
+    (106, 'Frank', 'IT', 50000),
+    (107, 'Grace', 'Finance', 70000),
+    (108, 'Henry', 'HR', 40000),
+    (109, 'Ivy', 'Finance', 55000),
+    (110, 'Jack', 'IT', 90000);</code></pre>
+
+        <h3>Employee data</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>EmployeeName</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>101</td><td>Alice</td><td>IT</td><td>90,000</td></tr>
+                <tr><td>102</td><td>Bob</td><td>HR</td><td>80,000</td></tr>
+                <tr><td>103</td><td>Carol</td><td>IT</td><td>80,000</td></tr>
+                <tr><td>104</td><td>David</td><td>Finance</td><td>70,000</td></tr>
+                <tr><td>105</td><td>Emma</td><td>HR</td><td>60,000</td></tr>
+                <tr><td>106</td><td>Frank</td><td>IT</td><td>50,000</td></tr>
+                <tr><td>107</td><td>Grace</td><td>Finance</td><td>70,000</td></tr>
+                <tr><td>108</td><td>Henry</td><td>HR</td><td>40,000</td></tr>
+                <tr><td>109</td><td>Ivy</td><td>Finance</td><td>55,000</td></tr>
+                <tr><td>110</td><td>Jack</td><td>IT</td><td>90,000</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Expected highest salaries</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Highest Salary</th>
+                    <th>Employee(s)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>IT</td><td>90,000</td><td>Alice, Jack</td></tr>
+                <tr><td>HR</td><td>80,000</td><td>Bob</td></tr>
+                <tr><td>Finance</td><td>70,000</td><td>David, Grace</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>3. Approach 1 — GROUP BY with MAX()</h2>
+
+        <p>
+            The simplest approach is to group employees by department and
+            calculate the maximum salary in each group.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    Department,
+    MAX(Salary) AS HighestSalary
+FROM Employees
+GROUP BY Department;</code></pre>
+
+        <h3>Output</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>HighestSalary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Finance</td><td>70,000</td></tr>
+                <tr><td>HR</td><td>80,000</td></tr>
+                <tr><td>IT</td><td>90,000</td></tr>
+            </tbody>
+        </table>
+
+        <h3>How it works</h3>
+
+        <ol class="learning-list">
+            <li><code>GROUP BY Department</code> divides rows into department groups.</li>
+            <li><code>MAX(Salary)</code> calculates the maximum salary in each group.</li>
+            <li>SQL Server returns one row for each department.</li>
+        </ol>
+
+        <div class="info-box">
+            <strong>Limitation:</strong>
+            This query returns only the department and salary. It does not
+            return the employee name or EmployeeId.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>4. Approach 2 — GROUP BY with JOIN</h2>
+
+        <p>
+            If we need the complete employee details, first calculate the
+            maximum salary for each department. Then join that result back
+            to the Employees table.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    E.EmployeeId,
+    E.EmployeeName,
+    E.Department,
+    E.Salary
+FROM Employees E
+INNER JOIN
+(
+    SELECT
+        Department,
+        MAX(Salary) AS HighestSalary
+    FROM Employees
+    GROUP BY Department
+) M
+    ON E.Department = M.Department
+   AND E.Salary = M.HighestSalary
+ORDER BY E.Department, E.EmployeeName;</code></pre>
+
+        <h3>Output</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>EmployeeName</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>104</td><td>David</td><td>Finance</td><td>70,000</td></tr>
+                <tr><td>107</td><td>Grace</td><td>Finance</td><td>70,000</td></tr>
+                <tr><td>102</td><td>Bob</td><td>HR</td><td>80,000</td></tr>
+                <tr><td>101</td><td>Alice</td><td>IT</td><td>90,000</td></tr>
+                <tr><td>110</td><td>Jack</td><td>IT</td><td>90,000</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Execution flow</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Step 1: Group employees</strong>
+                <p>Divide the Employees table by Department.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 2: Calculate MAX(Salary)</strong>
+                <p>Find the highest salary in every department.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 3: Join with Employees</strong>
+                <p>Match department and salary against the original rows.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 4: Return employee details</strong>
+                <p>Return every employee whose salary matches the department maximum.</p>
+            </div>
+        </div>
+
+        <h3>Why do we join using two conditions?</h3>
+
+        <pre class="sql-code"><code>ON E.Department = M.Department
+AND E.Salary = M.HighestSalary</code></pre>
+
+        <ul class="learning-list">
+            <li>The first condition matches the department.</li>
+            <li>The second condition matches the maximum salary.</li>
+        </ul>
+
+        <p>
+            Both conditions are necessary. Matching only the department
+            would return all employees in that department.
+        </p>
+
+        <div class="info-box">
+            <strong>Handling ties:</strong>
+            This query returns all employees tied for the highest salary.
+            That is often the correct business behavior.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>5. Approach 3 — Using a CTE</h2>
+
+        <p>
+            A Common Table Expression makes the query easier to read by
+            separating the maximum salary calculation from the final query.
+        </p>
+
+        <pre class="sql-code"><code>WITH DepartmentMaxSalary AS
+(
+    SELECT
+        Department,
+        MAX(Salary) AS HighestSalary
+    FROM Employees
+    GROUP BY Department
+)
+SELECT
+    E.EmployeeId,
+    E.EmployeeName,
+    E.Department,
+    E.Salary
+FROM Employees E
+INNER JOIN DepartmentMaxSalary M
+    ON E.Department = M.Department
+   AND E.Salary = M.HighestSalary
+ORDER BY E.Department, E.EmployeeName;</code></pre>
+
+        <h3>How the CTE works</h3>
+
+        <ol class="learning-list">
+            <li>The CTE calculates the highest salary per department.</li>
+            <li>The main query joins the CTE to Employees.</li>
+            <li>The matching employee records are returned.</li>
+        </ol>
+
+        <p>
+            A CTE is a named query expression, not automatically a
+            materialized temporary result. SQL Server can optimize the
+            overall statement as a single query.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Approach 4 — Using DENSE_RANK()</h2>
+
+        <p>
+            Window functions are especially useful for ranking employees
+            within each department.
+        </p>
+
+        <pre class="sql-code"><code>WITH RankedEmployees AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Department,
+        Salary,
+        DENSE_RANK() OVER
+        (
+            PARTITION BY Department
+            ORDER BY Salary DESC
+        ) AS SalaryRank
+    FROM Employees
+)
+SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary
+FROM RankedEmployees
+WHERE SalaryRank = 1
+ORDER BY Department, EmployeeName;</code></pre>
+
+        <h3>Understanding the window function</h3>
+
+        <pre class="sql-code"><code>DENSE_RANK() OVER
+(
+    PARTITION BY Department
+    ORDER BY Salary DESC
+)</code></pre>
+
+        <ul class="learning-list">
+            <li><code>PARTITION BY Department</code> creates a separate ranking group for each department.</li>
+            <li><code>ORDER BY Salary DESC</code> places the highest salary first.</li>
+            <li><code>DENSE_RANK()</code> assigns the same rank to employees with equal salaries.</li>
+            <li><code>WHERE SalaryRank = 1</code> selects all employees ranked first.</li>
+        </ul>
+
+        <h3>Example ranking</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                    <th>DENSE_RANK</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>IT</td><td>90,000</td><td>1</td></tr>
+                <tr><td>Jack</td><td>IT</td><td>90,000</td><td>1</td></tr>
+                <tr><td>Carol</td><td>IT</td><td>80,000</td><td>2</td></tr>
+                <tr><td>Frank</td><td>IT</td><td>50,000</td><td>3</td></tr>
+                <tr><td>Bob</td><td>HR</td><td>80,000</td><td>1</td></tr>
+                <tr><td>Emma</td><td>HR</td><td>60,000</td><td>2</td></tr>
+                <tr><td>Henry</td><td>HR</td><td>40,000</td><td>3</td></tr>
+                <tr><td>David</td><td>Finance</td><td>70,000</td><td>1</td></tr>
+                <tr><td>Grace</td><td>Finance</td><td>70,000</td><td>1</td></tr>
+                <tr><td>Ivy</td><td>Finance</td><td>55,000</td><td>2</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Why DENSE_RANK()?</strong>
+            It assigns rank 1 to every employee tied at the highest salary.
+            Therefore, filtering rank 1 returns all top-paid employees.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Approach 5 — Using ROW_NUMBER()</h2>
+
+        <p>
+            Sometimes the requirement is to return exactly one employee
+            per department, even when multiple employees have the same
+            highest salary.
+        </p>
+
+        <p>
+            In that case, use <code>ROW_NUMBER()</code> with a deterministic
+            tie-breaking column.
+        </p>
+
+        <pre class="sql-code"><code>WITH RankedEmployees AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Department,
+        Salary,
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY Department
+            ORDER BY Salary DESC, EmployeeId ASC
+        ) AS RowNum
+    FROM Employees
+)
+SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary
+FROM RankedEmployees
+WHERE RowNum = 1
+ORDER BY Department;</code></pre>
+
+        <h3>How it works</h3>
+
+        <ul class="learning-list">
+            <li>Highest salary receives row number 1.</li>
+            <li>If salaries are tied, the smaller EmployeeId comes first.</li>
+            <li>Only the row numbered 1 is returned for each department.</li>
+        </ul>
+
+        <div class="info-box">
+            <strong>Important:</strong>
+            Without a unique tie-breaker such as EmployeeId, the chosen
+            employee among tied salaries may be nondeterministic.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>8. DENSE_RANK vs RANK vs ROW_NUMBER</h2>
+
+        <p>
+            These functions can all be used to rank employees, but they
+            behave differently when salaries are tied.
+        </p>
+
+        <p>Consider this salary data from one department:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>90,000</td></tr>
+                <tr><td>Jack</td><td>90,000</td></tr>
+                <tr><td>Carol</td><td>80,000</td></tr>
+                <tr><td>Frank</td><td>70,000</td></tr>
+            </tbody>
+        </table>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Salary</th>
+                    <th>ROW_NUMBER</th>
+                    <th>RANK</th>
+                    <th>DENSE_RANK</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>90,000</td><td>1</td><td>1</td><td>1</td></tr>
+                <tr><td>Jack</td><td>90,000</td><td>2</td><td>1</td><td>1</td></tr>
+                <tr><td>Carol</td><td>80,000</td><td>3</td><td>3</td><td>2</td></tr>
+                <tr><td>Frank</td><td>70,000</td><td>4</td><td>4</td><td>3</td></tr>
+            </tbody>
+        </table>
+
+        <ul class="learning-list">
+            <li><strong>ROW_NUMBER():</strong> Gives each row a unique sequential number.</li>
+            <li><strong>RANK():</strong> Gives tied rows the same rank and leaves gaps afterward.</li>
+            <li><strong>DENSE_RANK():</strong> Gives tied rows the same rank without gaps afterward.</li>
+        </ul>
+
+        <p>For finding all employees with the highest salary, both RANK() and DENSE_RANK() work when filtering rank 1. ROW_NUMBER() returns only one row.</p>
+    </section>
+
+    <section class="content-section">
+        <h2>9. Approach 6 — Using CROSS APPLY</h2>
+
+        <p>
+            SQL Server also supports <code>CROSS APPLY</code>, which can
+            be useful when selecting the top employee or employees for
+            each department.
+        </p>
+
+        <p>
+            First, create a separate Departments table so departments
+            exist independently of employee records.
+        </p>
+
+        <pre class="sql-code"><code>CREATE TABLE Departments
+(
+    DepartmentId INT PRIMARY KEY,
+    DepartmentName VARCHAR(50)
+);
+
+INSERT INTO Departments
+    (DepartmentId, DepartmentName)
+VALUES
+    (1, 'IT'),
+    (2, 'HR'),
+    (3, 'Finance'),
+    (4, 'Marketing');</code></pre>
+
+        <h3>Return all employees tied for the highest salary</h3>
+
+        <pre class="sql-code"><code>SELECT
+    D.DepartmentName,
+    T.EmployeeId,
+    T.EmployeeName,
+    T.Salary
+FROM Departments D
+CROSS APPLY
+(
+    SELECT TOP (1) WITH TIES
+        E.EmployeeId,
+        E.EmployeeName,
+        E.Salary
+    FROM Employees E
+    WHERE E.Department = D.DepartmentName
+    ORDER BY E.Salary DESC
+) T
+ORDER BY D.DepartmentName, T.EmployeeName;</code></pre>
+
+        <p>
+            <code>TOP (1) WITH TIES</code> returns the first salary row
+            and all other rows tied on the ORDER BY expression.
+        </p>
+
+        <p>
+            Because this is <code>CROSS APPLY</code>, departments without
+            matching employees are excluded.
+        </p>
+
+        <h3>Include departments without employees</h3>
+
+        <p>
+            Replace CROSS APPLY with OUTER APPLY to preserve every
+            department, including those without employees.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    D.DepartmentName,
+    T.EmployeeId,
+    T.EmployeeName,
+    T.Salary
+FROM Departments D
+OUTER APPLY
+(
+    SELECT TOP (1) WITH TIES
+        E.EmployeeId,
+        E.EmployeeName,
+        E.Salary
+    FROM Employees E
+    WHERE E.Department = D.DepartmentName
+    ORDER BY E.Salary DESC
+) T
+ORDER BY D.DepartmentName, T.EmployeeName;</code></pre>
+
+        <p>
+            Marketing will appear with NULL employee columns because
+            it currently has no employees.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>10. Handling NULL Salaries</h2>
+
+        <p>
+            SQL Server's <code>MAX()</code> ignores NULL values. If a
+            department has salaries 80,000, 60,000 and NULL, the maximum
+            is 80,000.
+        </p>
+
+        <p>
+            If every salary in a department is NULL, MAX(Salary) returns
+            NULL. A join using equality will not match NULL to NULL.
+        </p>
+
+        <pre class="sql-code"><code>-- NULL does not equal NULL in SQL comparisons.
+SELECT
+    NULL = NULL AS ComparisonResult;</code></pre>
+
+        <p>
+            The result is NULL (UNKNOWN), not TRUE.
+        </p>
+
+        <p>
+            If the business rule says employees with NULL salary should
+            be considered only when no non-NULL salary exists, explicitly
+            handle that condition.
+        </p>
+
+        <pre class="sql-code"><code>WITH DepartmentMax AS
+(
+    SELECT
+        Department,
+        MAX(Salary) AS HighestSalary
+    FROM Employees
+    GROUP BY Department
+)
+SELECT
+    E.EmployeeId,
+    E.EmployeeName,
+    E.Department,
+    E.Salary
+FROM Employees E
+INNER JOIN DepartmentMax M
+    ON E.Department = M.Department
+   AND
+   (
+       E.Salary = M.HighestSalary
+       OR
+       (
+           E.Salary IS NULL
+           AND M.HighestSalary IS NULL
+       )
+   );</code></pre>
+
+        <div class="info-box">
+            Decide the NULL salary rule with the business team. Treating
+            NULL as the highest salary is usually not appropriate unless
+            the business requirement explicitly says so.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>11. SQL Server Internal Processing</h2>
+
+        <p>
+            The query is declarative: you describe the result you want,
+            and SQL Server's optimizer chooses an execution strategy.
+        </p>
+
+        <h3>Conceptual processing for the GROUP BY and JOIN approach</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>1. Read employee rows</strong>
+                <p>SQL Server accesses the required table or index pages.</p>
+            </div>
+            <div class="flow-step">
+                <strong>2. Group by Department</strong>
+                <p>A possible plan operator is Hash Match (Aggregate) or Stream Aggregate.</p>
+            </div>
+            <div class="flow-step">
+                <strong>3. Calculate MAX(Salary)</strong>
+                <p>The aggregate computes one maximum value per department.</p>
+            </div>
+            <div class="flow-step">
+                <strong>4. Join the results</strong>
+                <p>The optimizer may select Nested Loops, Hash Match, or Merge Join.</p>
+            </div>
+            <div class="flow-step">
+                <strong>5. Return matching rows</strong>
+                <p>Rows matching the department and maximum salary are returned.</p>
+            </div>
+        </div>
+
+        <h3>Possible execution plan operators</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Operator</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Index Scan</td>
+                    <td>Reads index rows to obtain required data.</td>
+                </tr>
+                <tr>
+                    <td>Table Scan</td>
+                    <td>Reads rows from a heap table.</td>
+                </tr>
+                <tr>
+                    <td>Stream Aggregate</td>
+                    <td>Aggregates rows that arrive in suitable grouping order.</td>
+                </tr>
+                <tr>
+                    <td>Hash Match (Aggregate)</td>
+                    <td>Uses a hash structure to group and aggregate rows.</td>
+                </tr>
+                <tr>
+                    <td>Hash Match (Join)</td>
+                    <td>Joins two inputs using a hash-based strategy.</td>
+                </tr>
+                <tr>
+                    <td>Sort</td>
+                    <td>Orders rows when the required ordering is not already available.</td>
+                </tr>
+                <tr>
+                    <td>Window Aggregate</td>
+                    <td>May be used in plans involving window functions.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            These are possible operators, not a guaranteed sequence.
+            The actual plan depends on table size, indexes, statistics,
+            data distribution, query shape and SQL Server's cost estimates.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Performance Optimization</h2>
+
+        <h3>1. Create an index for department and salary</h3>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Employees_Department_Salary
+ON Employees
+(
+    Department,
+    Salary DESC
+)
+INCLUDE
+(
+    EmployeeId,
+    EmployeeName
+);</code></pre>
+
+        <p>
+            This index can help queries that group or filter by department
+            and need salary information. Included columns may help cover
+            the query and reduce lookups.
+        </p>
+
+        <h3>2. Consider the query workload</h3>
+
+        <ul class="learning-list">
+            <li>Check how frequently the query executes.</li>
+            <li>Check the number of employees and departments.</li>
+            <li>Check whether department values are evenly distributed.</li>
+            <li>Check whether the index is used by the actual execution plan.</li>
+            <li>Consider the write overhead and storage cost of additional indexes.</li>
+        </ul>
+
+        <h3>3. Measure the query</h3>
+
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+-- Run your highest salary query here.
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <p>
+            Review logical reads, CPU time and elapsed time. Also inspect
+            the actual execution plan for expensive operators, spills,
+            unexpected scans, inaccurate row estimates and key lookups.
+        </p>
+
+        <div class="info-box">
+            An index does not guarantee that a query will be faster.
+            Test with representative production-sized data and compare
+            actual plans and measurements.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Real-World Scenarios</h2>
+
+        <h3>Scenario 1: Highest-paid employee in every department</h3>
+        <p>
+            An HR dashboard needs to show the highest-paid employee or
+            employees in every department. Use DENSE_RANK() or GROUP BY
+            with JOIN when all tied employees should appear.
+        </p>
+
+        <h3>Scenario 2: Department salary benchmarking</h3>
+        <p>
+            Finance needs to compare the highest salary across departments.
+            Use GROUP BY with MAX() when only department-level salary
+            values are required.
+        </p>
+
+        <h3>Scenario 3: One representative employee per department</h3>
+        <p>
+            A report requires exactly one employee per department.
+            Use ROW_NUMBER() with a deterministic tie-breaker, such as
+            EmployeeId.
+        </p>
+
+        <h3>Scenario 4: Departments without employees</h3>
+        <p>
+            A management report must include every department even when
+            no employees are assigned. Start with the Departments table
+            and use OUTER APPLY or a LEFT JOIN.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Common Mistakes</h2>
+
+        <ol class="learning-list">
+            <li>
+                <strong>Using MAX() while selecting EmployeeName directly.</strong>
+                An aggregate query cannot select an ungrouped employee
+                name without additional logic.
+            </li>
+            <li>
+                <strong>Using ROW_NUMBER() when all ties are required.</strong>
+                ROW_NUMBER() returns only one row for rank 1.
+            </li>
+            <li>
+                <strong>Forgetting PARTITION BY.</strong>
+                Without partitioning by department, the ranking applies
+                across the whole result set.
+            </li>
+            <li>
+                <strong>Using an incomplete JOIN condition.</strong>
+                Match both department and maximum salary.
+            </li>
+            <li>
+                <strong>Ignoring NULL behavior.</strong>
+                MAX() ignores NULL values, and equality does not match NULL.
+            </li>
+            <li>
+                <strong>Assuming one execution plan is always best.</strong>
+                Different data sizes and distributions can produce
+                different optimal plans.
+            </li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>15. Practice Exercises</h2>
+
+        <p>Try these exercises using the Employees table.</p>
+
+        <ol class="learning-list">
+            <li>Find only the highest salary in each department.</li>
+            <li>Find the EmployeeName and Salary of every highest-paid employee per department.</li>
+            <li>Return exactly one highest-paid employee per department.</li>
+            <li>Return all employees tied for the highest salary per department.</li>
+            <li>Find departments where the highest salary is greater than 75,000.</li>
+            <li>Find the second-highest distinct salary per department.</li>
+            <li>Include departments that have no employees.</li>
+            <li>Explain how the result changes if ROW_NUMBER() is replaced with DENSE_RANK().</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>Which function returns all employees tied for the highest salary per department?</p>
+        <ul class="learning-list">
+            <li>A. ROW_NUMBER()</li>
+            <li>B. DENSE_RANK()</li>
+            <li>C. COUNT()</li>
+            <li>D. SUM()</li>
+        </ul>
+        <p><strong>Answer:</strong> B. DENSE_RANK()</p>
+
+        <h3>Question 2</h3>
+        <p>What does PARTITION BY Department do in a window function?</p>
+        <ul class="learning-list">
+            <li>A. Sorts all departments alphabetically</li>
+            <li>B. Creates separate ranking groups for each department</li>
+            <li>C. Removes duplicate departments</li>
+            <li>D. Calculates the department count</li>
+        </ul>
+        <p><strong>Answer:</strong> B. Creates separate ranking groups for each department.</p>
+
+        <h3>Question 3</h3>
+        <p>Which query returns exactly one row per department when salaries are tied?</p>
+        <ul class="learning-list">
+            <li>A. GROUP BY Department</li>
+            <li>B. DENSE_RANK() = 1</li>
+            <li>C. ROW_NUMBER() = 1 with a tie-breaker</li>
+            <li>D. MAX() without GROUP BY</li>
+        </ul>
+        <p><strong>Answer:</strong> C. ROW_NUMBER() = 1 with a tie-breaker.</p>
+
+        <h3>Question 4</h3>
+        <p>What happens when every salary in a department is NULL?</p>
+        <ul class="learning-list">
+            <li>A. MAX() returns 0</li>
+            <li>B. MAX() returns NULL</li>
+            <li>C. MAX() returns an error</li>
+            <li>D. MAX() returns the first row</li>
+        </ul>
+        <p><strong>Answer:</strong> B. MAX() returns NULL.</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>17. What You Should Be Able to Do</h2>
+
+        <ul class="learning-list">
+            <li>Calculate the highest salary in each department using MAX().</li>
+            <li>Retrieve complete employee details using JOIN.</li>
+            <li>Use CTEs to structure aggregate queries.</li>
+            <li>Use DENSE_RANK() to return all tied highest-paid employees.</li>
+            <li>Use ROW_NUMBER() to return exactly one employee per department.</li>
+            <li>Understand the differences between ranking functions.</li>
+            <li>Use CROSS APPLY and OUTER APPLY for per-department top-row queries.</li>
+            <li>Handle NULL salaries and departments without employees.</li>
+            <li>Inspect execution plans and evaluate index choices.</li>
+        </ul>
+
+        <p>
+            The key concept is to choose the query pattern based on the
+            business requirement: maximum salary only, all tied employees,
+            or exactly one employee per department.
+        </p>
+    </section>
+
+</main>

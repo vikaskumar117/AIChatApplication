@@ -1,0 +1,829 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>CTE vs Temporary Table vs Table Variable in SQL Server</h1>
+        <p>
+            Understand the differences between Common Table Expressions (CTEs),
+            temporary tables, and table variables. Learn how SQL Server handles
+            them internally and when to choose each approach in real applications.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Introduction</h2>
+        <p>
+            SQL Server developers often need to store intermediate query results
+            before using them in another operation. SQL Server provides several
+            approaches, including CTEs, temporary tables, and table variables.
+        </p>
+
+        <ul class="learning-list">
+            <li><strong>CTE:</strong> A named query expression available to one following statement.</li>
+            <li><strong>Temporary table:</strong> A temporary table created in tempdb, with support for indexes and statistics.</li>
+            <li><strong>Table variable:</strong> A table-like variable declared using DECLARE, with scope and lifetime similar to a variable.</li>
+        </ul>
+
+        <div class="info-box">
+            These three approaches are not interchangeable in every situation.
+            The best choice depends on row count, query complexity, reuse,
+            indexing requirements, statistics, and SQL Server version.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>2. Create Sample Business Data</h2>
+        <p>
+            We will use an employee table and calculate department salary
+            information. The same business requirement will be implemented
+            using all three approaches.
+        </p>
+
+        <pre class="sql-code"><code>CREATE TABLE Employees
+(
+    EmployeeId INT PRIMARY KEY,
+    EmployeeName VARCHAR(50),
+    Department VARCHAR(30),
+    Salary DECIMAL(10,2)
+);
+
+INSERT INTO Employees
+    (EmployeeId, EmployeeName, Department, Salary)
+VALUES
+    (1, 'Alice', 'IT', 90000),
+    (2, 'Bob', 'IT', 80000),
+    (3, 'Carol', 'IT', 75000),
+    (4, 'David', 'HR', 70000),
+    (5, 'Emma', 'HR', 65000),
+    (6, 'Frank', 'HR', 50000),
+    (7, 'Grace', 'Finance', 85000),
+    (8, 'Henry', 'Finance', 75000),
+    (9, 'Ivy', 'Finance', 60000),
+    (10, 'Jack', 'IT', 55000);</code></pre>
+
+        <h3>Sample data</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>EmployeeName</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Alice</td><td>IT</td><td>90,000</td></tr>
+                <tr><td>2</td><td>Bob</td><td>IT</td><td>80,000</td></tr>
+                <tr><td>3</td><td>Carol</td><td>IT</td><td>75,000</td></tr>
+                <tr><td>4</td><td>David</td><td>HR</td><td>70,000</td></tr>
+                <tr><td>5</td><td>Emma</td><td>HR</td><td>65,000</td></tr>
+                <tr><td>6</td><td>Frank</td><td>HR</td><td>50,000</td></tr>
+                <tr><td>7</td><td>Grace</td><td>Finance</td><td>85,000</td></tr>
+                <tr><td>8</td><td>Henry</td><td>Finance</td><td>75,000</td></tr>
+                <tr><td>9</td><td>Ivy</td><td>Finance</td><td>60,000</td></tr>
+                <tr><td>10</td><td>Jack</td><td>IT</td><td>55,000</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>3. Common Table Expression (CTE)</h2>
+
+        <h3>What is a CTE?</h3>
+        <p>
+            A Common Table Expression is a named query expression defined
+            using the WITH keyword. It can be referenced by the single
+            statement immediately following its definition.
+        </p>
+
+        <h3>Syntax</h3>
+        <pre class="sql-code"><code>WITH CTE_Name AS
+(
+    SELECT column1, column2
+    FROM SomeTable
+)
+SELECT *
+FROM CTE_Name;</code></pre>
+
+        <h3>Example: Calculate department average salary</h3>
+        <pre class="sql-code"><code>WITH DepartmentAverage AS
+(
+    SELECT
+        Department,
+        AVG(Salary) AS AverageSalary
+    FROM Employees
+    GROUP BY Department
+)
+SELECT
+    Department,
+    AverageSalary
+FROM DepartmentAverage;</code></pre>
+
+        <h3>Expected output</h3>
+        <table class="table">
+            <thead>
+                <tr><th>Department</th><th>AverageSalary</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Finance</td><td>73,333.33</td></tr>
+                <tr><td>HR</td><td>61,666.67</td></tr>
+                <tr><td>IT</td><td>75,000.00</td></tr>
+            </tbody>
+        </table>
+
+        <h3>CTE to find employees above their department average</h3>
+        <pre class="sql-code"><code>WITH DepartmentAverage AS
+(
+    SELECT
+        Department,
+        AVG(Salary) AS AverageSalary
+    FROM Employees
+    GROUP BY Department
+)
+SELECT
+    E.EmployeeName,
+    E.Department,
+    E.Salary,
+    D.AverageSalary
+FROM Employees E
+INNER JOIN DepartmentAverage D
+    ON E.Department = D.Department
+WHERE E.Salary > D.AverageSalary
+ORDER BY E.Department, E.Salary DESC;</code></pre>
+
+        <h3>Expected output</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                    <th>Department Average</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Grace</td><td>Finance</td><td>85,000</td><td>73,333.33</td></tr>
+                <tr><td>Alice</td><td>IT</td><td>90,000</td><td>75,000.00</td></tr>
+                <tr><td>Bob</td><td>IT</td><td>80,000</td><td>75,000.00</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Important CTE characteristics</h3>
+        <ul class="learning-list">
+            <li>A CTE is scoped to one following statement.</li>
+            <li>A CTE is not automatically stored as a physical temporary table.</li>
+            <li>A CTE can make complex queries easier to read.</li>
+            <li>A CTE can reference another CTE defined earlier in the same WITH clause.</li>
+            <li>A recursive CTE can process hierarchical data.</li>
+            <li>A CTE cannot be indexed directly.</li>
+        </ul>
+
+        <div class="info-box">
+            A CTE is generally expanded into the surrounding query during
+            optimization. Do not assume that defining a CTE means SQL Server
+            calculates and stores its results once. The optimizer may transform
+            or reevaluate parts of the query depending on the plan.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>4. Temporary Tables (#Temp)</h2>
+
+        <h3>What is a temporary table?</h3>
+        <p>
+            A temporary table is a table created in SQL Server's tempdb
+            database. It can hold intermediate data and can be referenced
+            by multiple statements while it remains in scope.
+        </p>
+
+        <h3>Create a temporary table</h3>
+        <pre class="sql-code"><code>CREATE TABLE #DepartmentAverage
+(
+    Department VARCHAR(30),
+    AverageSalary DECIMAL(12,2)
+);
+
+INSERT INTO #DepartmentAverage
+(
+    Department,
+    AverageSalary
+)
+SELECT
+    Department,
+    AVG(Salary)
+FROM Employees
+GROUP BY Department;
+
+SELECT *
+FROM #DepartmentAverage;</code></pre>
+
+        <h3>Expected output</h3>
+        <table class="table">
+            <thead>
+                <tr><th>Department</th><th>AverageSalary</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Finance</td><td>73333.33</td></tr>
+                <tr><td>HR</td><td>61666.67</td></tr>
+                <tr><td>IT</td><td>75000.00</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Reuse the temporary table in multiple statements</h3>
+        <pre class="sql-code"><code>-- First use
+SELECT *
+FROM #DepartmentAverage;
+
+-- Second use
+SELECT
+    E.EmployeeName,
+    E.Department,
+    E.Salary,
+    D.AverageSalary
+FROM Employees E
+INNER JOIN #DepartmentAverage D
+    ON E.Department = D.Department
+WHERE E.Salary > D.AverageSalary;
+
+-- Third use
+SELECT
+    Department,
+    COUNT(*) AS DepartmentCount
+FROM #DepartmentAverage
+GROUP BY Department;</code></pre>
+
+        <h3>Create an index on a temporary table</h3>
+        <pre class="sql-code"><code>CREATE INDEX IX_DepartmentAverage_Department
+ON #DepartmentAverage(Department);</code></pre>
+
+        <h3>Temporary table scope</h3>
+        <ul class="learning-list">
+            <li>A local temporary table starts with #.</li>
+            <li>It is generally visible within the creating session and nested execution scopes that can access it.</li>
+            <li>It is normally dropped when its creating session ends, or it can be explicitly dropped.</li>
+            <li>Temporary tables created inside stored procedures are normally dropped when the procedure finishes.</li>
+            <li>Global temporary tables start with ## and have broader visibility, with lifetime governed by their creation and active references.</li>
+        </ul>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS #DepartmentAverage;</code></pre>
+    </section>
+
+    <section class="content-section">
+        <h2>5. Table Variables (@Table)</h2>
+
+        <h3>What is a table variable?</h3>
+        <p>
+            A table variable is declared using DECLARE and a table type.
+            It can store rows and be queried like a table within its scope.
+        </p>
+
+        <h3>Syntax</h3>
+        <pre class="sql-code"><code>DECLARE @DepartmentAverage TABLE
+(
+    Department VARCHAR(30),
+    AverageSalary DECIMAL(12,2)
+);</code></pre>
+
+        <h3>Insert data into a table variable</h3>
+        <pre class="sql-code"><code>DECLARE @DepartmentAverage TABLE
+(
+    Department VARCHAR(30),
+    AverageSalary DECIMAL(12,2)
+);
+
+INSERT INTO @DepartmentAverage
+(
+    Department,
+    AverageSalary
+)
+SELECT
+    Department,
+    AVG(Salary)
+FROM Employees
+GROUP BY Department;
+
+SELECT *
+FROM @DepartmentAverage;</code></pre>
+
+        <h3>Expected output</h3>
+        <table class="table">
+            <thead>
+                <tr><th>Department</th><th>AverageSalary</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Finance</td><td>73333.33</td></tr>
+                <tr><td>HR</td><td>61666.67</td></tr>
+                <tr><td>IT</td><td>75000.00</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Table variable with a primary key</h3>
+        <pre class="sql-code"><code>DECLARE @Employees TABLE
+(
+    EmployeeId INT PRIMARY KEY,
+    EmployeeName VARCHAR(50),
+    Department VARCHAR(30),
+    Salary DECIMAL(10,2)
+);
+
+INSERT INTO @Employees
+SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary
+FROM Employees;
+
+SELECT *
+FROM @Employees;</code></pre>
+
+        <h3>Table variable characteristics</h3>
+        <ul class="learning-list">
+            <li>Declared using DECLARE.</li>
+            <li>Its scope is limited to the batch, procedure, or function in which it is declared.</li>
+            <li>It can have primary keys, unique constraints, and indexes defined through supported table-variable syntax.</li>
+            <li>It does not support the same post-creation index-management flexibility as a temporary table.</li>
+            <li>It can be passed to stored procedures using table-valued parameters when defined with a user-defined table type.</li>
+        </ul>
+
+        <div class="info-box">
+            Table variables are not guaranteed to remain entirely in memory.
+            They use tempdb-backed storage as needed, just like other temporary
+            relational structures.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Main Differences</h2>
+
+        <table class="table">
+            <thead>
+                <tr><th>Feature</th><th>CTE</th><th>Temporary Table</th><th>Table Variable</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Syntax</td><td>WITH</td><td>CREATE TABLE #Name</td><td>DECLARE @Name TABLE</td></tr>
+                <tr><td>Physical storage</td><td>No separate table storage by definition</td><td>tempdb</td><td>tempdb-backed storage as needed</td></tr>
+                <tr><td>Scope</td><td>One following statement</td><td>Session or procedure scope, depending on creation</td><td>Batch, procedure, or function scope</td></tr>
+                <tr><td>Multiple statements</td><td>No direct reuse across statements</td><td>Yes</td><td>Yes, within scope</td></tr>
+                <tr><td>Indexes</td><td>Not directly</td><td>Yes</td><td>Supported indexes through declaration constraints and inline index definitions, subject to version and syntax</td></tr>
+                <tr><td>Statistics</td><td>No separate table statistics</td><td>Column statistics can be created and maintained</td><td>Historically limited; deferred compilation can improve estimates</td></tr>
+                <tr><td>Recursive queries</td><td>Yes</td><td>Not inherently</td><td>Not inherently</td></tr>
+                <tr><td>Best fit</td><td>Readable single-statement logic</td><td>Reusable intermediate results and larger workloads</td><td>Scoped intermediate data, often small or moderate</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            The storage and performance behavior of table variables has
+            evolved across SQL Server versions. Avoid relying on the old
+            blanket claim that table variables always have a one-row estimate.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>7. SQL Server Internals — How They Work</h2>
+
+        <h3>CTE internal behavior</h3>
+        <div class="processing-flow">
+            <div class="flow-step">SQL Server parses the CTE definition</div>
+            <div class="flow-step">The optimizer incorporates the expression into the statement</div>
+            <div class="flow-step">The optimizer chooses scans, joins, aggregates, and other operators</div>
+            <div class="flow-step">The execution engine produces the result</div>
+        </div>
+        <p>
+            A CTE does not automatically create a separate object in tempdb.
+            SQL Server can choose to introduce a spool operator when useful,
+            but a spool is an execution-plan decision, not a guaranteed
+            property of CTEs.
+        </p>
+
+        <h3>Temporary table internal behavior</h3>
+        <div class="processing-flow">
+            <div class="flow-step">CREATE TABLE creates a temporary object in tempdb</div>
+            <div class="flow-step">INSERT or SELECT INTO loads rows</div>
+            <div class="flow-step">SQL Server maintains relevant metadata and statistics</div>
+            <div class="flow-step">Subsequent statements compile or recompile as needed</div>
+            <div class="flow-step">The temporary object is dropped explicitly or automatically at scope end</div>
+        </div>
+        <p>
+            Temporary tables support statistics and flexible indexing.
+            Their creation, population, and maintenance have costs, so
+            materializing intermediate results is useful only when it
+            benefits the overall workload.
+        </p>
+
+        <h3>Table variable internal behavior</h3>
+        <div class="processing-flow">
+            <div class="flow-step">DECLARE defines the table variable structure</div>
+            <div class="flow-step">INSERT adds rows to its temporary storage</div>
+            <div class="flow-step">The optimizer compiles queries referencing the variable</div>
+            <div class="flow-step">SQL Server uses available metadata and cardinality information</div>
+            <div class="flow-step">The variable is cleaned up when its scope ends</div>
+        </div>
+        <p>
+            Table variables do not have the same column-statistics behavior
+            as temporary tables. This can affect cardinality estimates and
+            join choices, especially for complex queries.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>8. Table Variable Deferred Compilation</h2>
+        <p>
+            SQL Server 2019 introduced table variable deferred compilation
+            as part of the Intelligent Query Processing family, with
+            compatibility level 150 or higher.
+        </p>
+
+        <p>
+            Earlier behavior often compiled a statement using a fixed
+            one-row estimate for a table variable. Deferred compilation
+            delays compilation of the referencing statement until its
+            first execution, allowing SQL Server to use the actual row
+            count present at that time.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    name,
+    compatibility_level
+FROM sys.databases
+WHERE name = DB_NAME();</code></pre>
+
+        <h3>Check the database compatibility level</h3>
+        <pre class="sql-code"><code>ALTER DATABASE YourDatabase
+SET COMPATIBILITY_LEVEL = 150;</code></pre>
+
+        <div class="info-box">
+            Changing compatibility level can affect many queries in the
+            database. Test the impact in a non-production environment
+            before changing production settings.
+        </div>
+
+        <h3>Important limitation</h3>
+        <p>
+            Deferred compilation uses the row count observed at initial
+            compilation. It does not give table variables full column
+            statistics. If row counts vary significantly between executions,
+            plan reuse and parameter sensitivity can still matter.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>9. Performance Comparison — Practical Test</h2>
+        <p>
+            The following script creates a larger sample table so that
+            execution plans and runtime behavior can be examined.
+        </p>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.EmployeePerformanceTest;
+
+CREATE TABLE dbo.EmployeePerformanceTest
+(
+    EmployeeId INT IDENTITY(1,1) PRIMARY KEY,
+    DepartmentId INT NOT NULL,
+    Salary DECIMAL(10,2) NOT NULL
+);
+
+INSERT INTO dbo.EmployeePerformanceTest
+    (DepartmentId, Salary)
+SELECT TOP (100000)
+    ABS(CHECKSUM(NEWID())) % 100 + 1,
+    30000 + ABS(CHECKSUM(NEWID())) % 100000
+FROM sys.all_objects A
+CROSS JOIN sys.all_objects B;</code></pre>
+
+        <h3>Test using a temporary table</h3>
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+DROP TABLE IF EXISTS #HighSalaryEmployees;
+
+SELECT
+    EmployeeId,
+    DepartmentId,
+    Salary
+INTO #HighSalaryEmployees
+FROM dbo.EmployeePerformanceTest
+WHERE Salary > 90000;
+
+CREATE INDEX IX_HighSalary_Department
+ON #HighSalaryEmployees(DepartmentId);
+
+SELECT
+    DepartmentId,
+    COUNT(*) AS EmployeeCount,
+    AVG(Salary) AS AverageSalary
+FROM #HighSalaryEmployees
+GROUP BY DepartmentId;
+
+DROP TABLE #HighSalaryEmployees;
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <h3>Test using a table variable</h3>
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+DECLARE @HighSalaryEmployees TABLE
+(
+    EmployeeId INT PRIMARY KEY,
+    DepartmentId INT,
+    Salary DECIMAL(10,2)
+);
+
+INSERT INTO @HighSalaryEmployees
+SELECT
+    EmployeeId,
+    DepartmentId,
+    Salary
+FROM dbo.EmployeePerformanceTest
+WHERE Salary > 90000;
+
+SELECT
+    DepartmentId,
+    COUNT(*) AS EmployeeCount,
+    AVG(Salary) AS AverageSalary
+FROM @HighSalaryEmployees
+GROUP BY DepartmentId;
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <p>
+            Compare logical reads, CPU time, elapsed time, actual row counts,
+            memory grants, and execution plans. Run each test more than once
+            under comparable conditions.
+        </p>
+
+        <div class="info-box">
+            Do not assume the temporary-table query must be faster. The
+            outcome depends on data volume, indexes, compilation, cache
+            state, server workload, and the downstream operations.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>10. CTE vs Temporary Table — Reusing Intermediate Results</h2>
+
+        <h3>CTE example</h3>
+        <pre class="sql-code"><code>WITH HighSalaryEmployees AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Department,
+        Salary
+    FROM Employees
+    WHERE Salary > 70000
+)
+SELECT *
+FROM HighSalaryEmployees;
+
+-- A second statement cannot directly reference
+-- the CTE defined above.
+SELECT *
+FROM HighSalaryEmployees;</code></pre>
+
+        <p>
+            The second SELECT fails because the CTE is only available to
+            the immediately following statement.
+        </p>
+
+        <h3>Temporary table example</h3>
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary
+INTO #HighSalaryEmployees
+FROM Employees
+WHERE Salary > 70000;
+
+-- First use
+SELECT *
+FROM #HighSalaryEmployees;
+
+-- Second use
+SELECT Department, COUNT(*) AS EmployeeCount
+FROM #HighSalaryEmployees
+GROUP BY Department;
+
+-- Third use
+SELECT *
+FROM #HighSalaryEmployees
+WHERE Department = 'IT';
+
+DROP TABLE #HighSalaryEmployees;</code></pre>
+
+        <p>
+            A temporary table is more appropriate when an intermediate
+            result must be reused by several statements.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Recursive CTE Example — Employee Hierarchy</h2>
+        <p>
+            Recursive CTEs are useful for hierarchical data such as
+            organizational structures, category trees, and parent-child
+            relationships.
+        </p>
+
+        <pre class="sql-code"><code>CREATE TABLE EmployeeHierarchy
+(
+    EmployeeId INT PRIMARY KEY,
+    EmployeeName VARCHAR(50),
+    ManagerId INT NULL
+);
+
+INSERT INTO EmployeeHierarchy
+VALUES
+    (1, 'CEO', NULL),
+    (2, 'IT Manager', 1),
+    (3, 'HR Manager', 1),
+    (4, 'Developer A', 2),
+    (5, 'Developer B', 2),
+    (6, 'HR Executive', 3);
+
+WITH EmployeeTree AS
+(
+    -- Anchor member
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        ManagerId,
+        0 AS HierarchyLevel
+    FROM EmployeeHierarchy
+    WHERE ManagerId IS NULL
+
+    UNION ALL
+
+    -- Recursive member
+    SELECT
+        E.EmployeeId,
+        E.EmployeeName,
+        E.ManagerId,
+        T.HierarchyLevel + 1
+    FROM EmployeeHierarchy E
+    INNER JOIN EmployeeTree T
+        ON E.ManagerId = T.EmployeeId
+)
+SELECT
+    EmployeeId,
+    EmployeeName,
+    ManagerId,
+    HierarchyLevel
+FROM EmployeeTree
+ORDER BY HierarchyLevel, EmployeeId
+OPTION (MAXRECURSION 100);</code></pre>
+
+        <h3>Expected output</h3>
+        <table class="table">
+            <thead>
+                <tr><th>Employee</th><th>ManagerId</th><th>HierarchyLevel</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>CEO</td><td>NULL</td><td>0</td></tr>
+                <tr><td>IT Manager</td><td>1</td><td>1</td></tr>
+                <tr><td>HR Manager</td><td>1</td><td>1</td></tr>
+                <tr><td>Developer A</td><td>2</td><td>2</td></tr>
+                <tr><td>Developer B</td><td>2</td><td>2</td></tr>
+                <tr><td>HR Executive</td><td>3</td><td>2</td></tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            Recursive CTEs require care with cycles and recursion limits.
+            MAXRECURSION limits recursion depth; it does not automatically
+            detect and correct bad hierarchical data.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>12. When Should You Use Each?</h2>
+
+        <table class="table">
+            <thead>
+                <tr><th>Requirement</th><th>Recommended option</th><th>Reason</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Readable single-statement query</td><td>CTE</td><td>Organizes query logic without separate table management</td></tr>
+                <tr><td>Recursive hierarchy</td><td>CTE</td><td>Supports recursive query expressions</td></tr>
+                <tr><td>Intermediate result reused across statements</td><td>Temporary table</td><td>Persists within the relevant scope</td></tr>
+                <tr><td>Large intermediate result with complex joins</td><td>Often temporary table</td><td>Can use indexes and column statistics</td></tr>
+                <tr><td>Small scoped intermediate result</td><td>Table variable or CTE</td><td>Depends on reuse and query complexity</td></tr>
+                <tr><td>Need to add indexes after loading data</td><td>Temporary table</td><td>Supports flexible index creation</td></tr>
+                <tr><td>Pass a structured collection to a procedure</td><td>Table-valued parameter</td><td>Uses a user-defined table type</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Common Mistakes</h2>
+        <ul class="learning-list">
+            <li><strong>Assuming a CTE is materialized:</strong> A CTE is not automatically stored as an intermediate table.</li>
+            <li><strong>Using a CTE across multiple statements:</strong> Its scope ends after the following statement.</li>
+            <li><strong>Assuming table variables are always in memory:</strong> They can use tempdb-backed storage.</li>
+            <li><strong>Assuming temporary tables are always faster:</strong> Their setup and maintenance have overhead.</li>
+            <li><strong>Ignoring statistics:</strong> Missing or limited statistics can affect cardinality estimates and join choices.</li>
+            <li><strong>Creating unnecessary indexes:</strong> Indexes cost storage and increase insert and maintenance work.</li>
+            <li><strong>Ignoring scope:</strong> A local temporary table and a table variable have different lifetime rules.</li>
+            <li><strong>Ignoring version differences:</strong> SQL Server compatibility level and version can change compilation behavior.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Production Considerations</h2>
+
+        <h3>tempdb workload</h3>
+        <p>
+            Temporary tables and table variables can use tempdb. Heavy
+            concurrent use can contribute to tempdb allocation, metadata,
+            and I/O pressure. Monitor tempdb rather than assuming every
+            temporary object is expensive.
+        </p>
+
+        <h3>Stored procedures</h3>
+        <p>
+            A temporary table created within a stored procedure is normally
+            dropped when that procedure completes. A table variable declared
+            inside a procedure is also scoped to that procedure execution.
+        </p>
+
+        <h3>Transaction behavior</h3>
+        <p>
+            Temporary objects participate in SQL Server transaction and
+            logging behavior. Do not assume that their data changes are
+            completely outside transaction management.
+        </p>
+
+        <h3>Plan quality</h3>
+        <p>
+            A temporary table can provide a useful optimization boundary:
+            SQL Server can compile later statements using information about
+            the populated temporary table. However, recompilation and plan
+            quality depend on the actual workload and execution context.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>15. Practical Exercises</h2>
+        <ol class="learning-list">
+            <li>Create a CTE to return employees earning more than 70,000.</li>
+            <li>Create a temporary table containing IT department employees.</li>
+            <li>Use the temporary table in three separate SELECT statements.</li>
+            <li>Create a table variable with EmployeeId as its primary key.</li>
+            <li>Compare execution plans for a temporary table and a table variable with a large row set.</li>
+            <li>Create a recursive CTE to display an employee-manager hierarchy.</li>
+            <li>Measure logical reads and elapsed time for equivalent queries using each approach.</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>How many statements can directly use a CTE definition?</p>
+        <p>A. One following statement &nbsp; B. All statements in the session &nbsp; C. One stored procedure &nbsp; D. Unlimited statements</p>
+        <p><strong>Answer:</strong> A. One following statement</p>
+
+        <h3>Question 2</h3>
+        <p>Which option supports flexible post-creation index creation?</p>
+        <p>A. CTE &nbsp; B. Temporary table &nbsp; C. Both CTE and table variable &nbsp; D. None</p>
+        <p><strong>Answer:</strong> B. Temporary table</p>
+
+        <h3>Question 3</h3>
+        <p>Where are local temporary tables created?</p>
+        <p>A. master &nbsp; B. model &nbsp; C. tempdb &nbsp; D. msdb</p>
+        <p><strong>Answer:</strong> C. tempdb</p>
+
+        <h3>Question 4</h3>
+        <p>Which option supports recursive query expressions?</p>
+        <p>A. CTE &nbsp; B. Temporary table only &nbsp; C. Table variable only &nbsp; D. All three inherently</p>
+        <p><strong>Answer:</strong> A. CTE</p>
+
+        <h3>Question 5</h3>
+        <p>What did table variable deferred compilation improve?</p>
+        <p>A. It automatically creates indexes</p>
+        <p>B. It allows initial compilation to use the actual table variable row count</p>
+        <p>C. It moves all table variables into RAM</p>
+        <p>D. It makes table variables permanent</p>
+        <p><strong>Answer:</strong> B. It allows initial compilation to use the actual table variable row count</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>Learning Outcomes</h2>
+        <p>After completing this tutorial, learners should be able to:</p>
+        <ul class="learning-list">
+            <li>Explain CTEs, temporary tables, and table variables.</li>
+            <li>Understand their scope and lifetime.</li>
+            <li>Choose an appropriate structure for intermediate query results.</li>
+            <li>Understand indexing and statistics differences.</li>
+            <li>Explain table variable deferred compilation.</li>
+            <li>Write recursive CTEs for hierarchical data.</li>
+            <li>Compare execution plans and runtime performance.</li>
+            <li>Make better decisions for production SQL Server workloads.</li>
+        </ul>
+    </section>
+
+</main>

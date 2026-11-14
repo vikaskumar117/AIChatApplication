@@ -1,0 +1,1279 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Diagnose SQL Server Errors by Cause</h1>
+        <p>
+            Learn a systematic approach to diagnosing SQL Server errors using
+            error numbers, messages, execution context, system views, transactions,
+            and troubleshooting techniques.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Learning Objectives</h2>
+        <ul class="learning-list">
+            <li>Understand SQL Server error messages and error numbers.</li>
+            <li>Identify syntax, object, conversion, constraint, and permission errors.</li>
+            <li>Diagnose deadlocks, blocking, timeouts, and transaction failures.</li>
+            <li>Use TRY...CATCH, ERROR_MESSAGE(), and THROW correctly.</li>
+            <li>Investigate errors using Extended Events and system views.</li>
+            <li>Build production-ready error handling and logging.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>2. How SQL Server Reports an Error</h2>
+        <p>
+            SQL Server detects errors at different stages of query processing.
+            The stage at which an error occurs determines whether it can be
+            handled by a particular TRY...CATCH block and what diagnostic
+            information is available.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>1. Parse</strong>
+                <p>Checks SQL syntax and statement structure.</p>
+            </div>
+            <div class="flow-step">
+                <strong>2. Bind and Compile</strong>
+                <p>Resolves object names, columns, data types, and query dependencies.</p>
+            </div>
+            <div class="flow-step">
+                <strong>3. Execute</strong>
+                <p>Runs the query and evaluates expressions.</p>
+            </div>
+            <div class="flow-step">
+                <strong>4. Runtime Validation</strong>
+                <p>Checks constraints, conversions, permissions, and resource conditions.</p>
+            </div>
+            <div class="flow-step">
+                <strong>5. Error Handling</strong>
+                <p>Returns the error to the client or transfers control to CATCH where applicable.</p>
+            </div>
+        </div>
+
+        <h3>Important distinction</h3>
+        <p>
+            Not every SQL Server error is raised at the same execution level.
+            Some compilation and name-resolution errors occur before a TRY block
+            starts executing. A TRY...CATCH block does not catch every possible
+            error, including certain connection-terminating errors and errors
+            occurring at the same execution level during compilation.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>3. Understand SQL Server Error Information</h2>
+        <p>
+            SQL Server error messages commonly include an error number,
+            severity, state, procedure, line number, and message text.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Meaning</th>
+                    <th>Diagnostic value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Error number</td>
+                    <td>Identifies the error type.</td>
+                    <td>Helps classify the failure.</td>
+                </tr>
+                <tr>
+                    <td>Severity</td>
+                    <td>Indicates the seriousness of the error.</td>
+                    <td>Helps distinguish ordinary errors from serious system problems.</td>
+                </tr>
+                <tr>
+                    <td>State</td>
+                    <td>Identifies a particular occurrence or code path.</td>
+                    <td>Can help distinguish where the error originated.</td>
+                </tr>
+                <tr>
+                    <td>Procedure</td>
+                    <td>Identifies the stored procedure, trigger, or function when available.</td>
+                    <td>Locates the database module involved.</td>
+                </tr>
+                <tr>
+                    <td>Line number</td>
+                    <td>Indicates the line associated with the error.</td>
+                    <td>Helps locate the failing statement.</td>
+                </tr>
+                <tr>
+                    <td>Message</td>
+                    <td>Human-readable description.</td>
+                    <td>Provides details about the failure.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Inspect an error using TRY...CATCH</h3>
+        <pre class="sql-code"><code>BEGIN TRY
+
+    SELECT 10 / 0 AS Result;
+
+END TRY
+BEGIN CATCH
+
+    SELECT
+        ERROR_NUMBER() AS ErrorNumber,
+        ERROR_SEVERITY() AS ErrorSeverity,
+        ERROR_STATE() AS ErrorState,
+        ERROR_PROCEDURE() AS ErrorProcedure,
+        ERROR_LINE() AS ErrorLine,
+        ERROR_MESSAGE() AS ErrorMessage;
+
+END CATCH;</code></pre>
+
+        <p>Typical result:</p>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ErrorNumber</th>
+                    <th>ErrorSeverity</th>
+                    <th>ErrorState</th>
+                    <th>ErrorMessage</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>8134</td>
+                    <td>16</td>
+                    <td>1</td>
+                    <td>Divide by zero error encountered.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Important:</strong> Error line numbers are relative to the
+            relevant batch or module. When dynamic SQL is involved, the reported
+            line may be relative to the dynamic SQL batch rather than the outer
+            stored procedure.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>4. Common SQL Server Errors and Their Causes</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Error</th>
+                    <th>Meaning</th>
+                    <th>Common cause</th>
+                    <th>Typical solution</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>102</td>
+                    <td>Incorrect syntax near token</td>
+                    <td>Invalid SQL syntax</td>
+                    <td>Check statement structure and keywords.</td>
+                </tr>
+                <tr>
+                    <td>207</td>
+                    <td>Invalid column name</td>
+                    <td>Wrong or missing column</td>
+                    <td>Verify table schema and spelling.</td>
+                </tr>
+                <tr>
+                    <td>208</td>
+                    <td>Invalid object name</td>
+                    <td>Wrong database, schema, or object name</td>
+                    <td>Check database context and schema.</td>
+                </tr>
+                <tr>
+                    <td>245</td>
+                    <td>Conversion failed</td>
+                    <td>Incompatible data types</td>
+                    <td>Validate data and use appropriate conversion.</td>
+                </tr>
+                <tr>
+                    <td>547</td>
+                    <td>Constraint conflict</td>
+                    <td>Foreign key or CHECK constraint violation</td>
+                    <td>Validate related data and business rules.</td>
+                </tr>
+                <tr>
+                    <td>2627</td>
+                    <td>Unique constraint violation</td>
+                    <td>Duplicate primary key or unique value</td>
+                    <td>Check existing keys before insertion.</td>
+                </tr>
+                <tr>
+                    <td>2601</td>
+                    <td>Duplicate index key</td>
+                    <td>Duplicate value in a unique index</td>
+                    <td>Review unique index requirements.</td>
+                </tr>
+                <tr>
+                    <td>1205</td>
+                    <td>Deadlock victim</td>
+                    <td>Concurrent transactions with conflicting locks</td>
+                    <td>Retry safely and reduce deadlock conditions.</td>
+                </tr>
+                <tr>
+                    <td>1222</td>
+                    <td>Lock request timeout</td>
+                    <td>Lock wait exceeded configured timeout</td>
+                    <td>Investigate blocking and transaction duration.</td>
+                </tr>
+                <tr>
+                    <td>1204</td>
+                    <td>Lock resource exhaustion</td>
+                    <td>Insufficient lock resources</td>
+                    <td>Investigate lock usage and transaction design.</td>
+                </tr>
+                <tr>
+                    <td>8152</td>
+                    <td>String or binary data truncation</td>
+                    <td>Value exceeds column capacity</td>
+                    <td>Validate length or change the column definition.</td>
+                </tr>
+                <tr>
+                    <td>2628</td>
+                    <td>Detailed truncation error</td>
+                    <td>Value exceeds target column capacity</td>
+                    <td>Inspect the reported table and column.</td>
+                </tr>
+                <tr>
+                    <td>18456</td>
+                    <td>Login failed</td>
+                    <td>Authentication or login configuration issue</td>
+                    <td>Inspect server error log and login configuration.</td>
+                </tr>
+                <tr>
+                    <td>229</td>
+                    <td>Permission denied</td>
+                    <td>Insufficient database permissions</td>
+                    <td>Grant the minimum required permission.</td>
+                </tr>
+                <tr>
+                    <td>4060</td>
+                    <td>Cannot open database</td>
+                    <td>Database unavailable or inaccessible to login</td>
+                    <td>Check database state and user access.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>5. Diagnose Syntax and Object Errors</h2>
+
+        <h3>Example A: Invalid column name (Error 207)</h3>
+        <pre class="sql-code"><code>CREATE TABLE Employees
+(
+    EmployeeID INT,
+    EmployeeName VARCHAR(100),
+    Salary DECIMAL(12,2)
+);
+
+SELECT EmployeeID, EmployeeName, MonthlySalary
+FROM Employees;</code></pre>
+
+        <p>
+            The query refers to MonthlySalary, but the table contains Salary.
+            SQL Server cannot bind the unknown column.
+        </p>
+
+        <p><strong>Diagnosis:</strong></p>
+        <pre class="sql-code"><code>SELECT
+    COLUMN_NAME,
+    DATA_TYPE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'Employees';</code></pre>
+
+        <p><strong>Correction:</strong></p>
+        <pre class="sql-code"><code>SELECT EmployeeID, EmployeeName, Salary
+FROM dbo.Employees;</code></pre>
+
+        <h3>Example B: Invalid object name (Error 208)</h3>
+        <pre class="sql-code"><code>SELECT *
+FROM Employee;</code></pre>
+
+        <p>Possible causes:</p>
+        <ul>
+            <li>The actual table is named Employees.</li>
+            <li>The table belongs to a different schema.</li>
+            <li>The query is running in the wrong database.</li>
+            <li>The object does not exist or is not visible to the caller.</li>
+        </ul>
+
+        <p><strong>Diagnostic commands:</strong></p>
+        <pre class="sql-code"><code>SELECT DB_NAME() AS CurrentDatabase;
+
+SELECT
+    SCHEMA_NAME(schema_id) AS SchemaName,
+    name AS ObjectName,
+    type_desc
+FROM sys.objects
+WHERE name = 'Employees';</code></pre>
+
+        <p><strong>Correct query:</strong></p>
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.Employees;</code></pre>
+
+        <div class="info-box">
+            Always use schema-qualified object names in production SQL,
+            such as dbo.Employees, to reduce ambiguity and improve consistency.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Diagnose Data Conversion Errors</h2>
+
+        <p>
+            Conversion errors occur when SQL Server cannot convert a value
+            into the requested data type.
+        </p>
+
+        <h3>Example: Error 245</h3>
+        <pre class="sql-code"><code>CREATE TABLE ImportData
+(
+    EmployeeID INT,
+    SalaryText VARCHAR(30)
+);
+
+INSERT INTO ImportData
+VALUES
+(1, '50000'),
+(2, '65000'),
+(3, 'UNKNOWN');
+
+SELECT
+    EmployeeID,
+    CAST(SalaryText AS INT) AS Salary
+FROM ImportData;</code></pre>
+
+        <p>
+            The third row contains UNKNOWN, which cannot be converted to INT.
+            The conversion fails.
+        </p>
+
+        <h3>Find invalid values safely</h3>
+        <pre class="sql-code"><code>SELECT
+    EmployeeID,
+    SalaryText
+FROM ImportData
+WHERE TRY_CONVERT(INT, SalaryText) IS NULL
+  AND SalaryText IS NOT NULL;</code></pre>
+
+        <p>Expected result:</p>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeID</th>
+                    <th>SalaryText</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>3</td>
+                    <td>UNKNOWN</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Safe conversion</h3>
+        <pre class="sql-code"><code>SELECT
+    EmployeeID,
+    TRY_CONVERT(INT, SalaryText) AS Salary
+FROM ImportData;</code></pre>
+
+        <p>
+            TRY_CONVERT returns NULL for values that cannot be converted.
+            This prevents an ordinary conversion failure from terminating
+            the statement, but it does not automatically make invalid data valid.
+            Production systems should record or reject invalid source values
+            according to the business rules.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Diagnose Constraint Errors</h2>
+
+        <p>
+            Constraints enforce data integrity. SQL Server raises errors when
+            an INSERT or UPDATE violates these rules.
+        </p>
+
+        <h3>Example: Foreign key violation (Error 547)</h3>
+        <pre class="sql-code"><code>CREATE TABLE Departments
+(
+    DepartmentID INT PRIMARY KEY,
+    DepartmentName VARCHAR(100)
+);
+
+CREATE TABLE Employees
+(
+    EmployeeID INT PRIMARY KEY,
+    EmployeeName VARCHAR(100),
+    DepartmentID INT,
+    CONSTRAINT FK_Employees_Departments
+        FOREIGN KEY (DepartmentID)
+        REFERENCES Departments(DepartmentID)
+);
+
+INSERT INTO Departments
+VALUES (10, 'IT');
+
+INSERT INTO Employees
+VALUES (1, 'Amit', 99);</code></pre>
+
+        <p>
+            Department 99 does not exist. The foreign key prevents an employee
+            from referencing a nonexistent department.
+        </p>
+
+        <p><strong>Investigate parent records:</strong></p>
+        <pre class="sql-code"><code>SELECT *
+FROM Departments
+WHERE DepartmentID = 99;</code></pre>
+
+        <p><strong>Correct the data or reject the request:</strong></p>
+        <pre class="sql-code"><code>INSERT INTO Employees
+VALUES (1, 'Amit', 10);</code></pre>
+
+        <h3>Example: Duplicate key (Error 2627 or 2601)</h3>
+        <pre class="sql-code"><code>CREATE TABLE Users
+(
+    UserID INT PRIMARY KEY,
+    Email VARCHAR(200) UNIQUE
+);
+
+INSERT INTO Users
+VALUES (1, 'amit@example.com');
+
+INSERT INTO Users
+VALUES (1, 'amit2@example.com');</code></pre>
+
+        <p>
+            The second statement violates the primary key. A duplicate email
+            would violate the unique constraint or unique index.
+        </p>
+
+        <div class="info-box">
+            A preliminary SELECT to check whether a key exists is not sufficient
+            to prevent duplicates under concurrency. Two sessions can both pass
+            the check. Keep the unique constraint or index as the final integrity
+            safeguard, and handle duplicate-key errors appropriately.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>8. Diagnose String Truncation Errors</h2>
+
+        <p>
+            A truncation error occurs when the incoming string or binary value
+            is larger than the destination column allows.
+        </p>
+
+        <pre class="sql-code"><code>CREATE TABLE Customers
+(
+    CustomerID INT PRIMARY KEY,
+    CustomerName VARCHAR(10)
+);
+
+INSERT INTO Customers
+VALUES (1, 'International');</code></pre>
+
+        <p>
+            International exceeds the ten-character capacity of CustomerName.
+            Depending on SQL Server version and configuration, the error may
+            identify only the general truncation problem or provide the table,
+            column, and truncated value details.
+        </p>
+
+        <h3>Inspect column capacity</h3>
+        <pre class="sql-code"><code>SELECT
+    COLUMN_NAME,
+    DATA_TYPE,
+    CHARACTER_MAXIMUM_LENGTH
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'Customers';</code></pre>
+
+        <h3>Check incoming values before insertion</h3>
+        <pre class="sql-code"><code>DECLARE @CustomerName VARCHAR(100) = 'International';
+
+SELECT
+    @CustomerName AS IncomingValue,
+    LEN(@CustomerName) AS CharacterCount;
+
+IF LEN(@CustomerName) > 10
+BEGIN
+    PRINT 'Customer name exceeds the allowed length.';
+END;</code></pre>
+
+        <p>
+            For Unicode data, use NVARCHAR and consider the distinction between
+            LEN, DATALENGTH, and the storage capacity of the destination column.
+            LEN excludes trailing spaces, while DATALENGTH reports bytes.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>9. Diagnose Deadlocks and Blocking</h2>
+
+        <p>
+            Deadlocks and blocking are related but different concurrency problems.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Condition</th>
+                    <th>Meaning</th>
+                    <th>Typical symptom</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Blocking</td>
+                    <td>One session waits for another session's lock.</td>
+                    <td>Query waits for a resource.</td>
+                </tr>
+                <tr>
+                    <td>Deadlock</td>
+                    <td>Two or more sessions form a circular dependency.</td>
+                    <td>SQL Server selects a victim and raises Error 1205.</td>
+                </tr>
+                <tr>
+                    <td>Lock timeout</td>
+                    <td>A lock request exceeds the configured wait limit.</td>
+                    <td>Error 1222 when the lock timeout is reached.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Example: Find currently blocked sessions</h3>
+        <pre class="sql-code"><code>SELECT
+    session_id,
+    blocking_session_id,
+    wait_type,
+    wait_time,
+    wait_resource,
+    status,
+    command
+FROM sys.dm_exec_requests
+WHERE blocking_session_id &lt;&gt; 0;</code></pre>
+
+        <h3>Find active requests and their SQL text</h3>
+        <pre class="sql-code"><code>SELECT
+    r.session_id,
+    r.blocking_session_id,
+    r.status,
+    r.wait_type,
+    r.wait_time,
+    r.cpu_time,
+    r.total_elapsed_time,
+    DB_NAME(r.database_id) AS DatabaseName,
+    SUBSTRING
+    (
+        st.text,
+        (r.statement_start_offset / 2) + 1,
+        (
+            (
+                CASE r.statement_end_offset
+                    WHEN -1 THEN DATALENGTH(st.text)
+                    ELSE r.statement_end_offset
+                END
+                - r.statement_start_offset
+            ) / 2
+        ) + 1
+    ) AS RunningStatement
+FROM sys.dm_exec_requests AS r
+CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) AS st
+WHERE r.session_id &lt;&gt; @@SPID;</code></pre>
+
+        <h3>Deadlock investigation</h3>
+        <p>
+            SQL Server provides the system_health Extended Events session,
+            which normally captures deadlock graph events. The deadlock graph
+            identifies participating sessions, statements, resources, and the
+            selected victim.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    XEvent.value
+    (
+        '(event/@timestamp)[1]',
+        'datetime2'
+    ) AS DeadlockTime,
+    XEvent.query('.') AS DeadlockEvent
+FROM
+(
+    SELECT CAST(event_data AS XML) AS EventData
+    FROM sys.fn_xe_file_target_read_file
+    (
+        'system_health*.xel',
+        NULL,
+        NULL,
+        NULL
+    )
+    WHERE object_name = 'xml_deadlock_report'
+) AS Deadlocks
+CROSS APPLY EventData.nodes
+(
+    '/event'
+) AS XEventData(XEvent);</code></pre>
+
+        <p>
+            The file path and permissions can vary by SQL Server installation.
+            Use the actual system_health event-file location if the wildcard
+            path does not resolve in your environment.
+        </p>
+
+        <h3>Typical deadlock prevention techniques</h3>
+        <ul>
+            <li>Access tables in a consistent order across transactions.</li>
+            <li>Keep transactions short.</li>
+            <li>Use appropriate indexes to reduce the number of locked rows or pages.</li>
+            <li>Avoid unnecessary user interaction inside open transactions.</li>
+            <li>Implement safe retry logic for deadlock victims.</li>
+            <li>Review isolation levels and lock hints carefully.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>10. Diagnose Login and Permission Errors</h2>
+
+        <h3>Login failure (Error 18456)</h3>
+        <p>Possible causes include:</p>
+        <ul>
+            <li>Incorrect username or password.</li>
+            <li>SQL Server authentication is disabled.</li>
+            <li>The login is disabled or locked by policy.</li>
+            <li>The login's default database is unavailable.</li>
+            <li>The login lacks access to the requested database.</li>
+        </ul>
+
+        <p>
+            The client often receives a general login-failed message. The SQL
+            Server error log may contain a more specific state value that helps
+            narrow down the cause. Avoid assuming that one state maps to the
+            same root cause in every environment.
+        </p>
+
+        <h3>Inspect login status</h3>
+        <pre class="sql-code"><code>SELECT
+    name,
+    type_desc,
+    is_disabled
+FROM sys.server_principals
+WHERE name = 'ApplicationLogin';</code></pre>
+
+        <h3>Database permission denied (Error 229)</h3>
+        <pre class="sql-code"><code>SELECT
+    USER_NAME() AS DatabaseUser,
+    SUSER_SNAME() AS LoginName;
+
+SELECT
+    HAS_PERMS_BY_NAME
+    (
+        'dbo.Employees',
+        'OBJECT',
+        'SELECT'
+    ) AS CanSelectEmployees;</code></pre>
+
+        <p>
+            Grant only the permission the application actually needs.
+        </p>
+
+        <pre class="sql-code"><code>GRANT SELECT
+ON OBJECT::dbo.Employees
+TO ApplicationUser;</code></pre>
+
+        <div class="info-box">
+            Do not solve permission problems by automatically adding users to
+            db_owner or sysadmin. Investigate the missing permission and grant
+            the least privilege necessary.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Build Reliable Error Handling with TRY...CATCH</h2>
+
+        <p>
+            TRY...CATCH allows a stored procedure or batch to respond to many
+            execution errors without immediately returning control to the caller.
+        </p>
+
+        <pre class="sql-code"><code>BEGIN TRY
+
+    DECLARE @Result INT;
+
+    SET @Result = 10 / 0;
+
+    SELECT @Result AS Result;
+
+END TRY
+BEGIN CATCH
+
+    SELECT
+        ERROR_NUMBER() AS ErrorNumber,
+        ERROR_MESSAGE() AS ErrorMessage,
+        ERROR_LINE() AS ErrorLine;
+
+END CATCH;</code></pre>
+
+        <h3>Rethrow an error using THROW</h3>
+        <pre class="sql-code"><code>BEGIN TRY
+
+    INSERT INTO Users
+    VALUES (1, 'amit@example.com');
+
+END TRY
+BEGIN CATCH
+
+    PRINT 'An error occurred while inserting the user.';
+
+    THROW;
+
+END CATCH;</code></pre>
+
+        <p>
+            THROW without arguments inside CATCH rethrows the original error,
+            preserving its error number, message, state, and relevant context.
+            Avoid replacing an unexpected database error with a generic
+            successful-looking response.
+        </p>
+
+        <h3>RAISERROR versus THROW</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>RAISERROR</th>
+                    <th>THROW</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Introduced</td>
+                    <td>Legacy SQL Server error-raising mechanism</td>
+                    <td>SQL Server 2012</td>
+                </tr>
+                <tr>
+                    <td>Rethrow original error</td>
+                    <td>Requires reconstructing error information</td>
+                    <td>THROW; inside CATCH</td>
+                </tr>
+                <tr>
+                    <td>Custom message</td>
+                    <td>Supports formatted messages</td>
+                    <td>Supports a message string</td>
+                </tr>
+                <tr>
+                    <td>Severity control</td>
+                    <td>Supports severity specification</td>
+                    <td>New errors use severity 16</td>
+                </tr>
+                <tr>
+                    <td>Transaction behavior</td>
+                    <td>Does not honor SET XACT_ABORT in the same way</td>
+                    <td>Honors SET XACT_ABORT</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            For most new application error-handling code, THROW is the preferred
+            mechanism. RAISERROR remains relevant in existing systems and for
+            specific legacy behaviors.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Production-Ready Transaction Error Handling</h2>
+
+        <p>
+            A production transaction should consider rollback behavior,
+            transaction state, error propagation, and logging.
+        </p>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.TransferAmount
+    @FromAccountID INT,
+    @ToAccountID INT,
+    @Amount DECIMAL(12,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+
+        IF @Amount &lt;= 0
+        BEGIN
+            THROW 50001, 'Transfer amount must be positive.', 1;
+        END;
+
+        BEGIN TRANSACTION;
+
+        UPDATE dbo.Accounts
+        SET Balance = Balance - @Amount
+        WHERE AccountID = @FromAccountID
+          AND Balance &gt;= @Amount;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            THROW 50002, 'Source account missing or insufficient balance.', 1;
+        END;
+
+        UPDATE dbo.Accounts
+        SET Balance = Balance + @Amount
+        WHERE AccountID = @ToAccountID;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            THROW 50003, 'Destination account not found.', 1;
+        END;
+
+        COMMIT TRANSACTION;
+
+    END TRY
+    BEGIN CATCH
+
+        IF XACT_STATE() &lt;&gt; 0
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+
+        THROW;
+
+    END CATCH;
+END;</code></pre>
+
+        <h3>Understand XACT_STATE()</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Value</th>
+                    <th>Meaning</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Transaction is active and committable.</td>
+                    <td>Commit or roll back.</td>
+                </tr>
+                <tr>
+                    <td>-1</td>
+                    <td>Transaction is active but uncommittable.</td>
+                    <td>Only a full rollback is allowed.</td>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>No active user transaction.</td>
+                    <td>No rollback is required.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            <strong>Production consideration:</strong> The procedure above assumes
+            it owns the transaction. If it can be called inside an existing
+            transaction, it should follow an explicit transaction ownership
+            or savepoint strategy. A nested BEGIN TRANSACTION does not create
+            an independently committable nested transaction.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Create an Application Error Log</h2>
+
+        <p>
+            Logging helps preserve error information after the application
+            request has completed. A production logging design should consider
+            retention, sensitive data, permissions, and whether logging itself
+            can fail.
+        </p>
+
+        <pre class="sql-code"><code>CREATE TABLE dbo.ErrorLog
+(
+    ErrorLogID BIGINT IDENTITY(1,1) PRIMARY KEY,
+    ErrorNumber INT,
+    ErrorSeverity INT,
+    ErrorState INT,
+    ErrorProcedure NVARCHAR(128),
+    ErrorLine INT,
+    ErrorMessage NVARCHAR(4000),
+    LoggedAt DATETIME2(3) NOT NULL
+        DEFAULT SYSUTCDATETIME(),
+    LoginName SYSNAME,
+    DatabaseName SYSNAME
+);</code></pre>
+
+        <h3>Log an error inside CATCH</h3>
+        <pre class="sql-code"><code>BEGIN TRY
+
+    SELECT 10 / 0;
+
+END TRY
+BEGIN CATCH
+
+    INSERT INTO dbo.ErrorLog
+    (
+        ErrorNumber,
+        ErrorSeverity,
+        ErrorState,
+        ErrorProcedure,
+        ErrorLine,
+        ErrorMessage,
+        LoginName,
+        DatabaseName
+    )
+    VALUES
+    (
+        ERROR_NUMBER(),
+        ERROR_SEVERITY(),
+        ERROR_STATE(),
+        ERROR_PROCEDURE(),
+        ERROR_LINE(),
+        ERROR_MESSAGE(),
+        ORIGINAL_LOGIN(),
+        DB_NAME()
+    );
+
+    THROW;
+
+END CATCH;</code></pre>
+
+        <p>
+            Be aware that if the transaction is uncommittable, the INSERT into
+            the error log may fail because the transaction cannot perform writes.
+            For high-reliability logging, consider logging through the application
+            layer or a separate connection, and ensure the original error is
+            preserved.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Investigate Errors Using SQL Server Diagnostic Tools</h2>
+
+        <h3>A. SQL Server Error Log</h3>
+        <p>
+            The SQL Server error log records important server-level events,
+            including startup and shutdown messages, certain login failures,
+            and system errors.
+        </p>
+
+        <pre class="sql-code"><code>EXEC sys.xp_readerrorlog
+    0,
+    1,
+    N'Login failed';</code></pre>
+
+        <p>
+            The first argument selects the current error log, and the second
+            selects the SQL Server error log rather than the SQL Server Agent
+            log. Access to diagnostic logs may require elevated permissions.
+        </p>
+
+        <h3>B. Extended Events</h3>
+        <p>
+            Extended Events provides lightweight event collection for SQL Server
+            troubleshooting. You can capture error events, deadlocks, long-running
+            statements, and other diagnostic information.
+        </p>
+
+        <pre class="sql-code"><code>CREATE EVENT SESSION CaptureErrors
+ON SERVER
+ADD EVENT sqlserver.error_reported
+(
+    ACTION
+    (
+        sqlserver.sql_text,
+        sqlserver.session_id,
+        sqlserver.username,
+        sqlserver.database_name
+    )
+    WHERE ([severity] &gt;= 11)
+)
+ADD TARGET package0.event_file
+(
+    SET filename = N'C:\SQLLogs\CaptureErrors.xel'
+);
+
+ALTER EVENT SESSION CaptureErrors
+ON SERVER
+STATE = START;</code></pre>
+
+        <p>
+            Ensure the SQL Server service account can write to the target
+            directory. Choose an appropriate retention and rollover policy
+            for production systems.
+        </p>
+
+        <h3>C. Query Store</h3>
+        <p>
+            Query Store helps investigate query performance changes by retaining
+            query text, execution plans, and runtime statistics. It is especially
+            useful when an application starts timing out after a deployment,
+            statistics update, or plan change.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    q.query_id,
+    qt.query_sql_text,
+    p.plan_id,
+    rs.avg_duration,
+    rs.max_duration,
+    rs.count_executions
+FROM sys.query_store_query AS q
+JOIN sys.query_store_query_text AS qt
+    ON q.query_text_id = qt.query_text_id
+JOIN sys.query_store_plan AS p
+    ON q.query_id = p.query_id
+JOIN sys.query_store_runtime_stats AS rs
+    ON p.plan_id = rs.plan_id
+ORDER BY rs.max_duration DESC;</code></pre>
+
+        <p>
+            Query Store is a performance investigation tool, not a complete
+            application error log. Use it alongside Extended Events,
+            application logs, and SQL Server error logs.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>15. A Systematic Troubleshooting Method</h2>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Step 1: Capture the failure</strong>
+                <p>Record the error number, message, time, application, and affected request.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 2: Classify the error</strong>
+                <p>Determine whether it is syntax, data, permission, concurrency, or resource related.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 3: Reproduce safely</strong>
+                <p>Reproduce using the same parameters, schema, permissions, and relevant data.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 4: Inspect context</strong>
+                <p>Check execution plan, transaction state, locks, object definitions, and server logs.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 5: Identify root cause</strong>
+                <p>Find the underlying condition instead of treating only the error message.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 6: Apply a controlled fix</strong>
+                <p>Correct code, schema, permissions, indexes, or transaction behavior.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 7: Verify and monitor</strong>
+                <p>Retest edge cases and monitor for recurrence.</p>
+            </div>
+        </div>
+
+        <h3>Root cause versus symptom</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Symptom</th>
+                    <th>Possible root cause</th>
+                    <th>Evidence to collect</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Application timeout</td>
+                    <td>Blocking, poor query plan, network delay, or application timeout setting</td>
+                    <td>Wait type, elapsed time, blocking chain, execution plan</td>
+                </tr>
+                <tr>
+                    <td>Insert failure</td>
+                    <td>Constraint violation, conversion, truncation, or permission issue</td>
+                    <td>Error number, input values, schema, permissions</td>
+                </tr>
+                <tr>
+                    <td>Intermittent deadlock</td>
+                    <td>Concurrent transactions accessing resources in conflicting orders</td>
+                    <td>Deadlock graph, transaction statements, indexes</td>
+                </tr>
+                <tr>
+                    <td>Login failure</td>
+                    <td>Authentication, login status, default database, or access configuration</td>
+                    <td>Server error log, login state, database availability</td>
+                </tr>
+                <tr>
+                    <td>Sudden performance regression</td>
+                    <td>Plan change, statistics change, parameter sensitivity, or data growth</td>
+                    <td>Query Store, actual plan, runtime statistics</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Advanced Considerations</h2>
+
+        <h3>Severity levels</h3>
+        <p>
+            SQL Server severity levels describe the general seriousness of
+            errors. User-correctable errors often have severity 11 through 16.
+            Higher severity levels can indicate serious system conditions.
+            Severity alone should not be used as the only measure of operational
+            impact.
+        </p>
+
+        <h3>Connection-terminating errors</h3>
+        <p>
+            Some errors terminate a connection or prevent normal CATCH processing.
+            The application should be able to detect a broken connection,
+            discard it, and establish a new connection when appropriate.
+        </p>
+
+        <h3>Parameter-sensitive query performance</h3>
+        <p>
+            A query may perform well for one parameter value and poorly for
+            another because the optimizer compiles and reuses plans based on
+            parameter values and available statistics. Investigate actual
+            execution plans and Query Store before applying hints or recompilation.
+        </p>
+
+        <h3>Client-side timeouts</h3>
+        <p>
+            A command timeout configured in an application is not the same as
+            SQL Server's lock timeout. A client may stop waiting while SQL Server
+            is still processing or cancelling the request. Correlate application
+            logs with SQL Server session and request information.
+        </p>
+
+        <h3>Permissions and execution context</h3>
+        <p>
+            A stored procedure may execute under different security rules
+            depending on ownership chaining, EXECUTE AS, module signing,
+            and the caller's permissions. Test using the same security context
+            as the application.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>17. Common Troubleshooting Mistakes</h2>
+        <ul>
+            <li>Fixing the error message without identifying the root cause.</li>
+            <li>Using SELECT checks instead of unique constraints to prevent duplicates.</li>
+            <li>Suppressing exceptions without recording useful diagnostic details.</li>
+            <li>Using broad permissions such as db_owner to bypass access errors.</li>
+            <li>Assuming every error is caught by TRY...CATCH.</li>
+            <li>Retrying every error, including permanent data validation failures.</li>
+            <li>Ignoring the transaction state after an error.</li>
+            <li>Changing indexes without examining execution plans and workload patterns.</li>
+            <li>Logging sensitive values such as passwords, tokens, or personal data.</li>
+            <li>Terminating blocking sessions without understanding the business impact.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>18. Practical Exercises</h2>
+
+        <h3>Exercise 1: Invalid column</h3>
+        <p>
+            Create a table with EmployeeID and EmployeeName. Write a query
+            referencing a nonexistent column. Identify the error number and
+            correct the query.
+        </p>
+
+        <h3>Exercise 2: Conversion failure</h3>
+        <p>
+            Create a table with VARCHAR salary values containing valid numbers
+            and invalid text. Use TRY_CONVERT to find invalid records.
+        </p>
+
+        <h3>Exercise 3: Duplicate key</h3>
+        <p>
+            Create a table with a unique email constraint. Insert a duplicate
+            email and handle the resulting error using TRY...CATCH.
+        </p>
+
+        <h3>Exercise 4: Foreign key violation</h3>
+        <p>
+            Create parent and child tables. Attempt to insert a child row
+            referencing a nonexistent parent. Diagnose the constraint failure.
+        </p>
+
+        <h3>Exercise 5: Transaction rollback</h3>
+        <p>
+            Create a transaction that updates two account balances. Deliberately
+            cause the second update to fail. Ensure the first update is rolled back.
+        </p>
+
+        <h3>Exercise 6: Blocking investigation</h3>
+        <p>
+            Open two SQL Server sessions. In the first session, update a row
+            inside an uncommitted transaction. In the second session, attempt
+            to update the same row. Inspect sys.dm_exec_requests to identify
+            the blocking session.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>19. Knowledge Check</h2>
+
+        <ol>
+            <li>
+                Which SQL Server error commonly indicates an invalid column name?
+                <p><strong>Answer:</strong> Error 207.</p>
+            </li>
+            <li>
+                Which error commonly indicates a foreign key or CHECK constraint conflict?
+                <p><strong>Answer:</strong> Error 547.</p>
+            </li>
+            <li>
+                What does TRY_CONVERT return when a value cannot be converted?
+                <p><strong>Answer:</strong> NULL, unless another error condition occurs.</p>
+            </li>
+            <li>
+                Which error indicates that a session was selected as a deadlock victim?
+                <p><strong>Answer:</strong> Error 1205.</p>
+            </li>
+            <li>
+                What does XACT_STATE() = -1 mean?
+                <p><strong>Answer:</strong> The transaction is uncommittable and must be rolled back.</p>
+            </li>
+            <li>
+                Which statement rethrows the original error from a CATCH block?
+                <p><strong>Answer:</strong> THROW;</p>
+            </li>
+            <li>
+                Which SQL Server feature captures deadlock graphs and other diagnostic events?
+                <p><strong>Answer:</strong> Extended Events.</p>
+            </li>
+            <li>
+                Does a client command timeout necessarily mean SQL Server has stopped executing the request?
+                <p><strong>Answer:</strong> No. The client may stop waiting while the server is still processing or cancelling the request.</p>
+            </li>
+        </ol>
+    </section>
+
+    <section class="outcome-section">
+        <h2>20. Final Learning Outcome</h2>
+        <p>
+            You should now be able to interpret SQL Server error information,
+            classify common failures, investigate their causes, implement
+            reliable error handling, and use SQL Server diagnostic tools
+            to troubleshoot production issues.
+        </p>
+        <p>
+            The key principle is to diagnose the underlying condition rather
+            than simply suppressing the error. Reliable SQL Server systems
+            preserve data integrity, capture useful diagnostics, recover
+            safely, and make recurring problems observable.
+        </p>
+    </section>
+
+</main>

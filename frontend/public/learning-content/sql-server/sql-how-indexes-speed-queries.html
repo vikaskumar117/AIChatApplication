@@ -1,0 +1,1202 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>How Indexes Speed Up Queries in SQL Server</h1>
+        <p>
+            Learn how SQL Server uses indexes to locate data efficiently,
+            reduce page reads, avoid unnecessary sorting, and improve query
+            performance. Compare execution plans and logical reads before
+            and after creating indexes.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Learning Objectives</h2>
+        <p>By the end of this tutorial, you will be able to:</p>
+        <ul class="learning-list">
+            <li>Understand how SQL Server retrieves data from tables and indexes.</li>
+            <li>Measure query performance using STATISTICS IO and STATISTICS TIME.</li>
+            <li>Identify index scans, index seeks, and key lookups in execution plans.</li>
+            <li>Design covering and composite indexes.</li>
+            <li>Recognize queries that cannot efficiently use indexes.</li>
+            <li>Understand selectivity, statistics, and optimizer decisions.</li>
+            <li>Evaluate the performance costs of maintaining indexes.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>2. Why Do Indexes Improve Query Performance?</h2>
+
+        <p>
+            Imagine a table containing five million employee records. You need
+            to find one employee using EmployeeId.
+        </p>
+
+        <p><strong>Without a useful index:</strong> SQL Server may need to examine many rows to find the requested employee.</p>
+        <p><strong>With a suitable index:</strong> SQL Server can navigate an index structure to locate the matching row without examining the entire table.</p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Query without a useful index</strong>
+                <p>Read many data pages</p>
+            </div>
+            <div class="flow-step">
+                <strong>Examine rows</strong>
+                <p>Evaluate the WHERE condition</p>
+            </div>
+            <div class="flow-step">
+                <strong>Return matching rows</strong>
+                <p>Discard nonmatching rows</p>
+            </div>
+        </div>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Query with a suitable index</strong>
+                <p>Navigate the B-tree</p>
+            </div>
+            <div class="flow-step">
+                <strong>Locate matching key</strong>
+                <p>Read the relevant leaf entry</p>
+            </div>
+            <div class="flow-step">
+                <strong>Retrieve required data</strong>
+                <p>Read only necessary rows or pages</p>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>Important:</strong> An index does not automatically make every
+            query faster. SQL Server chooses an execution plan based on estimated
+            cost, available indexes, statistics, query predicates, and the
+            amount of data that must be returned.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>3. Create a Large Sample Dataset</h2>
+
+        <p>
+            We will create a table containing 100,000 employee records. This
+            gives us enough rows to observe differences between scans and
+            index-based access.
+        </p>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.EmployeePerformance;
+
+CREATE TABLE dbo.EmployeePerformance
+(
+    EmployeeId INT NOT NULL,
+    EmployeeName VARCHAR(100) NOT NULL,
+    DepartmentId INT NOT NULL,
+    Salary DECIMAL(12,2) NOT NULL,
+    City VARCHAR(50) NOT NULL,
+    HireDate DATE NOT NULL,
+    IsActive BIT NOT NULL,
+
+    CONSTRAINT PK_EmployeePerformance
+        PRIMARY KEY NONCLUSTERED (EmployeeId)
+);
+
+-- Generate 100,000 employee rows.
+-- The clustered index is added later for demonstration.
+
+WITH Numbers AS
+(
+    SELECT TOP (100000)
+        ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n
+    FROM sys.all_objects AS a
+    CROSS JOIN sys.all_objects AS b
+)
+INSERT INTO dbo.EmployeePerformance
+(
+    EmployeeId,
+    EmployeeName,
+    DepartmentId,
+    Salary,
+    City,
+    HireDate,
+    IsActive
+)
+SELECT
+    CONVERT(INT, n),
+    CONCAT('Employee ', n),
+    CONVERT(INT, (n % 10) + 1),
+    CONVERT(DECIMAL(12,2), 30000 + (n % 70000)),
+    CASE n % 5
+        WHEN 0 THEN 'Pune'
+        WHEN 1 THEN 'Mumbai'
+        WHEN 2 THEN 'Delhi'
+        WHEN 3 THEN 'Bengaluru'
+        ELSE 'Chennai'
+    END,
+    DATEADD(DAY, CONVERT(INT, n % 3000), '2015-01-01'),
+    CASE WHEN n % 10 = 0 THEN 0 ELSE 1 END
+FROM Numbers;
+
+SELECT COUNT(*) AS TotalEmployees
+FROM dbo.EmployeePerformance;</code></pre>
+
+        <p><strong>Expected output:</strong></p>
+        <table class="table">
+            <thead>
+                <tr><th>TotalEmployees</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>100000</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            The primary key is nonclustered, so the table is initially a heap:
+            its data rows are not stored in a clustered index structure.
+            The nonclustered primary-key index provides a separate lookup
+            structure for EmployeeId.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>4. Measure Query Performance Before Creating an Index</h2>
+
+        <p>
+            SQL Server provides two useful session-level options for measuring
+            query execution:
+        </p>
+
+        <ul>
+            <li><strong>SET STATISTICS IO ON:</strong> Reports page reads and logical I/O.</li>
+            <li><strong>SET STATISTICS TIME ON:</strong> Reports CPU time and elapsed time.</li>
+        </ul>
+
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+SELECT
+    EmployeeId,
+    EmployeeName,
+    DepartmentId,
+    Salary,
+    City
+FROM dbo.EmployeePerformance
+WHERE City = 'Pune';
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <h3>What should you observe?</h3>
+        <p>
+            Because there is no index on City, SQL Server may scan the table's
+            data pages and evaluate the City condition for each row.
+        </p>
+
+        <p>In the Messages tab, examine information such as:</p>
+        <pre class="sql-code"><code>Table 'EmployeePerformance'.
+Scan count ..., logical reads ..., physical reads ...
+
+SQL Server Execution Times:
+CPU time = ... ms, elapsed time = ... ms.</code></pre>
+
+        <div class="info-box">
+            The values above are illustrative placeholders, not measured
+            results. Your actual reads and timings depend on the SQL Server
+            version, hardware, cache state, database settings, and execution plan.
+        </div>
+
+        <h3>Logical reads versus physical reads</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Meaning</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Logical reads</td>
+                    <td>8 KB pages accessed in the buffer pool.</td>
+                </tr>
+                <tr>
+                    <td>Physical reads</td>
+                    <td>Pages read from storage into memory.</td>
+                </tr>
+                <tr>
+                    <td>Read-ahead reads</td>
+                    <td>Pages SQL Server reads ahead of demand to support sequential access.</td>
+                </tr>
+                <tr>
+                    <td>CPU time</td>
+                    <td>Time spent executing on the CPU.</td>
+                </tr>
+                <tr>
+                    <td>Elapsed time</td>
+                    <td>Total wall-clock duration, including waits.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>5. Understand the Execution Plan</h2>
+
+        <p>
+            Enable the actual execution plan in SQL Server Management Studio
+            using Ctrl + M, then execute the query again.
+        </p>
+
+        <p>
+            An actual execution plan shows the operators used during execution
+            and runtime information where available.
+        </p>
+
+        <h3>Common operators</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Operator</th>
+                    <th>Purpose</th>
+                    <th>Typical use</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Table Scan</td>
+                    <td>Reads rows from a heap.</td>
+                    <td>No useful index or a scan is estimated cheaper.</td>
+                </tr>
+                <tr>
+                    <td>Clustered Index Scan</td>
+                    <td>Reads the clustered index leaf level.</td>
+                    <td>Large portion of a clustered table is needed.</td>
+                </tr>
+                <tr>
+                    <td>Index Seek</td>
+                    <td>Navigates an index to a qualifying key range.</td>
+                    <td>Selective predicates on indexed keys.</td>
+                </tr>
+                <tr>
+                    <td>Key Lookup</td>
+                    <td>Fetches missing columns from the clustered index.</td>
+                    <td>A nonclustered index does not cover the query.</td>
+                </tr>
+                <tr>
+                    <td>RID Lookup</td>
+                    <td>Fetches a row from a heap using its row identifier.</td>
+                    <td>A nonclustered index on a heap lacks required columns.</td>
+                </tr>
+                <tr>
+                    <td>Sort</td>
+                    <td>Sorts rows into the required order.</td>
+                    <td>No suitable index ordering is available.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            An Index Scan is not necessarily bad, and an Index Seek is not
+            necessarily good. Evaluate the number of rows read, logical reads,
+            lookups, and overall cost of the complete plan.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Create an Index and Compare Performance</h2>
+
+        <p>
+            Our previous query filters by City. Create a nonclustered index
+            on that column.
+        </p>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_EmployeePerformance_City
+ON dbo.EmployeePerformance (City);</code></pre>
+
+        <p>Execute the same query again:</p>
+
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+SELECT
+    EmployeeId,
+    EmployeeName,
+    DepartmentId,
+    Salary,
+    City
+FROM dbo.EmployeePerformance
+WHERE City = 'Pune';
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <h3>What may change?</h3>
+        <p>
+            SQL Server can now use the City index to locate matching entries.
+            However, this index does not contain every requested column.
+            The optimizer may choose an Index Seek followed by RID Lookups
+            to retrieve the remaining columns from the heap.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Index Seek</strong>
+                <p>Find index entries where City = 'Pune'.</p>
+            </div>
+            <div class="flow-step">
+                <strong>RID Lookup</strong>
+                <p>Retrieve other requested columns from the heap.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Return results</strong>
+                <p>Combine the retrieved row data.</p>
+            </div>
+        </div>
+
+        <p>
+            Whether this is faster depends on how many Pune rows qualify.
+            If many rows match, a scan can be cheaper than performing many
+            individual lookups.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Covering Index: Avoid Extra Lookups</h2>
+
+        <p>
+            A covering index contains all columns needed by a query. SQL Server
+            can return the result directly from the index without looking up
+            additional columns in the base table.
+        </p>
+
+        <h3>Create a covering index</h3>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_EmployeePerformance_City_Covering
+ON dbo.EmployeePerformance (City)
+INCLUDE
+(
+    EmployeeId,
+    EmployeeName,
+    DepartmentId,
+    Salary
+);</code></pre>
+
+        <p>Execute the query again:</p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    DepartmentId,
+    Salary,
+    City
+FROM dbo.EmployeePerformance
+WHERE City = 'Pune';</code></pre>
+
+        <p>
+            SQL Server may now satisfy the query using only the nonclustered
+            index. A separate lookup to the heap is no longer required.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Index Seek</strong>
+                <p>Find the matching City entries.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Read included columns</strong>
+                <p>Retrieve all selected values from the index.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Return results</strong>
+                <p>No separate RID Lookup is needed.</p>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>Key columns versus INCLUDE columns:</strong>
+            Key columns determine index ordering and can support searching and
+            sorting. Included columns are stored at the leaf level to cover
+            queries, but they do not define the index's search order.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>8. Clustered Index and Efficient Data Retrieval</h2>
+
+        <p>
+            A clustered index organizes the table's leaf level as the actual
+            table data. The leaf level contains the complete rows.
+        </p>
+
+        <p>
+            Let's create a clustered index on EmployeeId. Because the primary
+            key is currently nonclustered, this operation is valid.
+        </p>
+
+        <pre class="sql-code"><code>CREATE UNIQUE CLUSTERED INDEX
+    CX_EmployeePerformance_EmployeeId
+ON dbo.EmployeePerformance (EmployeeId);</code></pre>
+
+        <p>
+            Now the table is clustered by EmployeeId. A query that searches
+            for one EmployeeId can navigate the clustered index directly.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    DepartmentId,
+    Salary,
+    City
+FROM dbo.EmployeePerformance
+WHERE EmployeeId = 50000;</code></pre>
+
+        <p>
+            The execution plan will commonly use a Clustered Index Seek
+            because the clustered index contains the complete row.
+        </p>
+
+        <h3>How the B-tree navigation works</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Root page</strong>
+                <p>Identifies the appropriate index range.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Intermediate page</strong>
+                <p>Navigates toward the required key range.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Leaf page</strong>
+                <p>Contains the actual clustered table rows.</p>
+            </div>
+        </div>
+
+        <p>
+            SQL Server traverses the B-tree using page references. The number
+            of levels depends on index size, row width, and page density.
+            Frequently accessed pages may already be in the buffer pool,
+            avoiding physical disk reads.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>9. Composite Index: Improve Queries With Multiple Predicates</h2>
+
+        <p>
+            Consider a query that searches for active employees in a particular
+            department.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Salary
+FROM dbo.EmployeePerformance
+WHERE DepartmentId = 5
+  AND IsActive = 1;</code></pre>
+
+        <p>
+            Create a composite index with DepartmentId as the leading key.
+        </p>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX
+    IX_EmployeePerformance_Department_Active
+ON dbo.EmployeePerformance
+(
+    DepartmentId,
+    IsActive
+)
+INCLUDE
+(
+    EmployeeId,
+    EmployeeName,
+    Salary
+);</code></pre>
+
+        <p>
+            The index can support the equality predicates and cover the
+            selected columns. SQL Server may perform an Index Seek without
+            a separate lookup.
+        </p>
+
+        <h3>Why does key order matter?</h3>
+
+        <p>
+            Consider this index:
+        </p>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Employee_Department_Salary
+ON dbo.EmployeePerformance
+(
+    DepartmentId,
+    Salary
+);</code></pre>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Predicate</th>
+                    <th>Potential index use</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>DepartmentId = 5</td>
+                    <td>Can seek using the leading key.</td>
+                </tr>
+                <tr>
+                    <td>DepartmentId = 5 AND Salary &gt; 60000</td>
+                    <td>Can seek using both key columns.</td>
+                </tr>
+                <tr>
+                    <td>Salary &gt; 60000</td>
+                    <td>Cannot generally seek efficiently using Salary alone because it is not the leading key.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            Index design should reflect real query patterns, filtering
+            selectivity, sorting requirements, and the columns returned.
+            There is no universal rule that one key order is best for every query.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>10. Filtered Index: Index Only Relevant Rows</h2>
+
+        <p>
+            Suppose most queries retrieve only active employees. A filtered
+            index can store entries for active employees only.
+        </p>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX
+    IX_EmployeePerformance_ActiveDepartment
+ON dbo.EmployeePerformance
+(
+    DepartmentId
+)
+INCLUDE
+(
+    EmployeeId,
+    EmployeeName,
+    Salary
+)
+WHERE IsActive = 1;</code></pre>
+
+        <p>Example query:</p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Salary
+FROM dbo.EmployeePerformance
+WHERE DepartmentId = 5
+  AND IsActive = 1;</code></pre>
+
+        <p>
+            When the query predicate is compatible with the filter, SQL Server
+            can use the smaller filtered index. This can reduce storage and
+            maintenance compared with an index containing every row.
+        </p>
+
+        <div class="info-box">
+            Filtered indexes are especially useful when a subset of rows is
+            queried frequently, such as active records, unprocessed jobs,
+            or non-null values. The optimizer must be able to establish that
+            the query qualifies for the filter.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Why SQL Server Sometimes Does Not Use an Index</h2>
+
+        <p>
+            Creating an index does not guarantee that SQL Server will use it.
+            Some query patterns make an index less useful or prevent an
+            efficient seek.
+        </p>
+
+        <h3>11.1 Applying a function to an indexed column</h3>
+
+        <p>Potentially inefficient pattern:</p>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.EmployeePerformance
+WHERE YEAR(HireDate) = 2020;</code></pre>
+
+        <p>More index-friendly range predicate:</p>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.EmployeePerformance
+WHERE HireDate >= '20200101'
+  AND HireDate <  '20210101';</code></pre>
+
+        <p>
+            Applying YEAR() to every HireDate can prevent a straightforward
+            seek on a normal HireDate index. The range predicate allows SQL
+            Server to navigate a suitable index by date range.
+        </p>
+
+        <h3>11.2 Leading wildcard in LIKE</h3>
+
+        <pre class="sql-code"><code>-- A conventional index generally cannot seek efficiently
+-- using this leading-wildcard pattern.
+SELECT *
+FROM dbo.EmployeePerformance
+WHERE EmployeeName LIKE '%Alice%';
+
+-- A prefix search may be able to use an index seek.
+SELECT *
+FROM dbo.EmployeePerformance
+WHERE EmployeeName LIKE 'Employee 10%';</code></pre>
+
+        <h3>11.3 Implicit data type conversion</h3>
+
+        <p>
+            Comparing columns and parameters of different data types may
+            introduce an implicit conversion. Depending on data type
+            precedence and where the conversion occurs, this can harm
+            index usage.
+        </p>
+
+        <pre class="sql-code"><code>-- EmployeeId is INT. Avoid passing a mismatched
+-- string parameter when an INT parameter is appropriate.
+
+DECLARE @EmployeeId INT = 50000;
+
+SELECT *
+FROM dbo.EmployeePerformance
+WHERE EmployeeId = @EmployeeId;</code></pre>
+
+        <h3>11.4 Non-SARGable expressions</h3>
+
+        <p>
+            SARGable predicates allow SQL Server to use an index to search
+            for qualifying values efficiently.
+        </p>
+
+        <pre class="sql-code"><code>-- Less index-friendly
+SELECT *
+FROM dbo.EmployeePerformance
+WHERE Salary + 1000 > 70000;
+
+-- Prefer a direct comparison where logically equivalent
+SELECT *
+FROM dbo.EmployeePerformance
+WHERE Salary > 69000;</code></pre>
+
+        <p>
+            These expressions are logically equivalent for this example,
+            but the second form exposes a direct range predicate on Salary.
+        </p>
+
+        <h3>11.5 Returning too many rows</h3>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.EmployeePerformance
+WHERE DepartmentId IN (1,2,3,4,5,6,7,8,9,10);</code></pre>
+
+        <p>
+            If nearly every row qualifies, scanning the table may be cheaper
+            than navigating an index and retrieving a large number of rows.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>12. How the Query Optimizer Decides</h2>
+
+        <p>
+            SQL Server uses a cost-based optimizer. It considers alternative
+            execution strategies and estimates their costs using statistics,
+            cardinality estimates, available indexes, and query properties.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>SQL query</strong>
+                <p>Parse and bind objects and expressions.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Query optimization</strong>
+                <p>Explore candidate access paths and operators.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Cost estimation</strong>
+                <p>Estimate rows, I/O, CPU, and operator costs.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Chosen plan</strong>
+                <p>Select an estimated low-cost execution strategy.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Execution</strong>
+                <p>Run the selected operators and return rows.</p>
+            </div>
+        </div>
+
+        <h3>Example: Index Seek versus Index Scan</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Situation</th>
+                    <th>Possible choice</th>
+                    <th>Reason</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>One EmployeeId requested</td>
+                    <td>Index Seek</td>
+                    <td>Very few rows expected.</td>
+                </tr>
+                <tr>
+                    <td>Most employees in a department requested</td>
+                    <td>Index or table scan</td>
+                    <td>A large proportion of rows may qualify.</td>
+                </tr>
+                <tr>
+                    <td>All columns requested for many rows</td>
+                    <td>Clustered Index Scan</td>
+                    <td>Reading the clustered data directly may be cheaper.</td>
+                </tr>
+                <tr>
+                    <td>Small selective result from a covering index</td>
+                    <td>Index Seek</td>
+                    <td>Required data is available in the index.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            SQL Server does not simply choose an index because one exists.
+            It chooses a plan based on estimated cost. A scan can be the
+            correct and fastest plan.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>13. SQL Server Statistics and Cardinality Estimation</h2>
+
+        <p>
+            Statistics help SQL Server estimate how many rows will qualify
+            for a query. These estimates influence whether the optimizer
+            chooses a seek, scan, join strategy, or other operators.
+        </p>
+
+        <p>
+            Statistics commonly include a histogram on the first key column
+            and density information. The histogram helps estimate row counts
+            for ranges and values.
+        </p>
+
+        <h3>Inspect statistics</h3>
+
+        <pre class="sql-code"><code>DBCC SHOW_STATISTICS
+(
+    'dbo.EmployeePerformance',
+    'IX_EmployeePerformance_City'
+);</code></pre>
+
+        <p>Inspect index statistics properties:</p>
+
+        <pre class="sql-code"><code>SELECT
+    name,
+    auto_created,
+    user_created,
+    has_filter,
+    filter_definition
+FROM sys.stats
+WHERE object_id =
+    OBJECT_ID('dbo.EmployeePerformance');</code></pre>
+
+        <h3>Update statistics</h3>
+
+        <pre class="sql-code"><code>UPDATE STATISTICS dbo.EmployeePerformance;</code></pre>
+
+        <p>
+            Updating statistics can improve estimates when the underlying
+            data has changed. It is not a universal fix for slow queries;
+            first investigate the plan, estimated versus actual rows,
+            statistics, and query predicates.
+        </p>
+
+        <h3>Estimated rows versus actual rows</h3>
+
+        <p>
+            In an actual execution plan, compare Estimated Number of Rows
+            with Actual Number of Rows.
+        </p>
+
+        <ul>
+            <li>Large differences can indicate estimation problems.</li>
+            <li>Skewed data distributions can make estimates difficult.</li>
+            <li>Out-of-date statistics can contribute to poor estimates.</li>
+            <li>Parameter-sensitive queries can behave differently for different values.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Parameter Sniffing: A Brief Introduction</h2>
+
+        <p>
+            SQL Server can compile a parameterized query using the parameter
+            value available at compilation time. The resulting plan may not
+            be ideal for every later parameter value.
+        </p>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.GetEmployeesByDepartment
+    @DepartmentId INT
+AS
+BEGIN
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Salary
+    FROM dbo.EmployeePerformance
+    WHERE DepartmentId = @DepartmentId;
+END;</code></pre>
+
+        <p>
+            If department sizes differ significantly, one cached plan might
+            perform well for a small department but poorly for a large one,
+            or vice versa.
+        </p>
+
+        <p>
+            Investigate parameter values, actual plans, estimated rows, and
+            plan cache behavior before changing compilation settings.
+            SQL Server provides several approaches, including statement-level
+            recompilation and parameter-sensitive plan optimization in
+            supported versions and configurations.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>15. Indexes Have a Performance Cost Too</h2>
+
+        <p>
+            Indexes improve many read operations, but they consume resources
+            and must be maintained when data changes.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Operation</th>
+                    <th>Possible index impact</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>SELECT</td>
+                    <td>Can reduce reads and improve filtering or sorting.</td>
+                </tr>
+                <tr>
+                    <td>INSERT</td>
+                    <td>New index entries may need to be created.</td>
+                </tr>
+                <tr>
+                    <td>UPDATE</td>
+                    <td>Indexes containing changed columns may need maintenance.</td>
+                </tr>
+                <tr>
+                    <td>DELETE</td>
+                    <td>Corresponding index entries must be removed.</td>
+                </tr>
+                <tr>
+                    <td>Storage</td>
+                    <td>Every additional index consumes disk and memory resources.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Page splits and fragmentation</h3>
+
+        <p>
+            When an insert or update requires space in a full index page,
+            SQL Server may split the page to accommodate the new entry.
+            Page splits can increase write work and affect page density.
+        </p>
+
+        <p>
+            Fragmentation and page density should be evaluated in context.
+            Rebuilding or reorganizing every index on a fixed schedule is
+            not automatically beneficial.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    OBJECT_NAME(ips.object_id) AS TableName,
+    i.name AS IndexName,
+    ips.index_type_desc,
+    ips.avg_fragmentation_in_percent,
+    ips.page_count
+FROM sys.dm_db_index_physical_stats
+(
+    DB_ID(),
+    OBJECT_ID('dbo.EmployeePerformance'),
+    NULL,
+    NULL,
+    'LIMITED'
+) AS ips
+JOIN sys.indexes AS i
+    ON ips.object_id = i.object_id
+   AND ips.index_id = i.index_id
+ORDER BY ips.page_count DESC;</code></pre>
+
+        <p>
+            DMV visibility depends on SQL Server version and permissions.
+            Consider page count, workload, page density, and maintenance cost
+            before taking action.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Compare the Index Designs</h2>
+
+        <p>
+            We have created several indexes for demonstration. Each one
+            supports a different query pattern.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Index</th>
+                    <th>Query pattern</th>
+                    <th>Potential benefit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>City</td>
+                    <td>Filter by City</td>
+                    <td>Locate city entries without scanning all data pages.</td>
+                </tr>
+                <tr>
+                    <td>City with INCLUDE</td>
+                    <td>Filter by City and return selected columns</td>
+                    <td>Can eliminate row lookups.</td>
+                </tr>
+                <tr>
+                    <td>Clustered EmployeeId</td>
+                    <td>Find a specific EmployeeId</td>
+                    <td>Retrieve complete row through clustered seek.</td>
+                </tr>
+                <tr>
+                    <td>DepartmentId, IsActive</td>
+                    <td>Filter by department and active status</td>
+                    <td>Support multiple predicates and cover selected columns.</td>
+                </tr>
+                <tr>
+                    <td>Filtered active employees</td>
+                    <td>Query only active employees</td>
+                    <td>Store and maintain only qualifying rows.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            Do not create all these indexes automatically in a production
+            database. This is a teaching example. Real index design should
+            be based on observed workload, existing indexes, query plans,
+            write activity, and storage constraints.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>17. A Practical Index Optimization Workflow</h2>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Step 1: Identify the slow query</strong>
+                <p>Use application telemetry, Query Store, or monitoring tools.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 2: Capture the actual plan</strong>
+                <p>Inspect operators, row counts, lookups, and warnings.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 3: Measure I/O and CPU</strong>
+                <p>Use STATISTICS IO and STATISTICS TIME.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 4: Review predicates</strong>
+                <p>Check SARGability, data types, and filter selectivity.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 5: Design an index</strong>
+                <p>Choose keys and INCLUDE columns based on query patterns.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 6: Test and compare</strong>
+                <p>Compare reads, CPU, elapsed time, and actual plans.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 7: Validate workload impact</strong>
+                <p>Check writes, storage, concurrency, and maintenance.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>18. Common Indexing Mistakes</h2>
+
+        <ul>
+            <li>Creating an index for every column without understanding query patterns.</li>
+            <li>Assuming every Index Seek is faster than every Index Scan.</li>
+            <li>Ignoring Key Lookup or RID Lookup overhead.</li>
+            <li>Creating overly wide indexes with too many included columns.</li>
+            <li>Ignoring the leading-key order of composite indexes.</li>
+            <li>Using functions on indexed columns when a range predicate is possible.</li>
+            <li>Comparing different data types unnecessarily.</li>
+            <li>Ignoring index maintenance costs for write-heavy tables.</li>
+            <li>Trusting estimated plan cost percentages as measured execution time.</li>
+            <li>Rebuilding indexes without evaluating fragmentation, page count, and workload.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>19. Real-World Scenario: An Employee Search Screen</h2>
+
+        <p>
+            Imagine an HR application with a search screen that retrieves
+            active employees by department and displays their names and salaries.
+        </p>
+
+        <h3>Application query</h3>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Salary
+FROM dbo.EmployeePerformance
+WHERE DepartmentId = @DepartmentId
+  AND IsActive = 1
+ORDER BY Salary DESC;</code></pre>
+
+        <h3>Potential index design</h3>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX
+    IX_EmployeePerformance_Department_Active_Salary
+ON dbo.EmployeePerformance
+(
+    DepartmentId,
+    IsActive,
+    Salary DESC
+)
+INCLUDE
+(
+    EmployeeId,
+    EmployeeName
+);</code></pre>
+
+        <p>
+            This index may support filtering by department and active status,
+            provide salary ordering, and cover the selected columns.
+        </p>
+
+        <p>
+            The optimizer can potentially avoid an explicit Sort operator
+            because the index ordering matches the requested ordering after
+            the equality predicates. Confirm this in the actual execution plan.
+        </p>
+
+        <p>
+            In a production system, also consider how often this screen runs,
+            the number of rows per department, update frequency, and the
+            additional cost of maintaining the index.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>20. Hands-On Exercises</h2>
+
+        <ol>
+            <li>Run a query filtering by City before and after creating a City index. Compare logical reads.</li>
+            <li>Create an index on Salary and retrieve employees with Salary greater than 80000.</li>
+            <li>Create a composite index on DepartmentId and HireDate. Test equality and range predicates.</li>
+            <li>Create a covering index for a query that filters by DepartmentId and returns EmployeeName and Salary.</li>
+            <li>Compare a query using YEAR(HireDate) with an equivalent date-range query.</li>
+            <li>Inspect an actual execution plan and identify every scan, seek, and lookup.</li>
+            <li>Compare a filtered index with a regular index for active employees.</li>
+            <li>Explain why a scan may be cheaper than a seek when a large percentage of the table is returned.</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>21. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>What does STATISTICS IO report?</p>
+        <ul>
+            <li>A. Query syntax errors</li>
+            <li>B. Page I/O information</li>
+            <li>C. Index fragmentation only</li>
+            <li>D. Database backup size</li>
+        </ul>
+        <p><strong>Answer:</strong> B — It reports I/O information, including logical reads.</p>
+
+        <h3>Question 2</h3>
+        <p>What is a covering index?</p>
+        <ul>
+            <li>A. An index that contains all columns needed by a query</li>
+            <li>B. An index that covers every table in a database</li>
+            <li>C. An index that prevents all table scans</li>
+            <li>D. An index that contains only NULL values</li>
+        </ul>
+        <p><strong>Answer:</strong> A — A covering index can provide all required query columns without a separate lookup.</p>
+
+        <h3>Question 3</h3>
+        <p>Why can a leading wildcard reduce the usefulness of a conventional index?</p>
+        <ul>
+            <li>A. It disables SQL Server</li>
+            <li>B. It makes the predicate difficult to navigate as a starting-key range</li>
+            <li>C. It automatically deletes the index</li>
+            <li>D. It changes the column data type</li>
+        </ul>
+        <p><strong>Answer:</strong> B — A pattern such as '%Alice%' generally cannot use a normal B-tree index for an efficient prefix seek.</p>
+
+        <h3>Question 4</h3>
+        <p>Does an Index Seek always outperform an Index Scan?</p>
+        <ul>
+            <li>A. Yes</li>
+            <li>B. No</li>
+        </ul>
+        <p><strong>Answer:</strong> B — A scan can be more efficient when a large portion of the data is required.</p>
+
+        <h3>Question 5</h3>
+        <p>What is one disadvantage of creating many indexes?</p>
+        <ul>
+            <li>A. Increased write and storage overhead</li>
+            <li>B. Automatic removal of constraints</li>
+            <li>C. Elimination of all statistics</li>
+            <li>D. Inability to execute SELECT statements</li>
+        </ul>
+        <p><strong>Answer:</strong> A — Additional indexes require storage and maintenance during data modifications.</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>22. Key Takeaways</h2>
+
+        <ul class="learning-list">
+            <li>Indexes can reduce the number of pages SQL Server must read.</li>
+            <li>STATISTICS IO and STATISTICS TIME help measure query behavior.</li>
+            <li>Actual execution plans reveal the operators SQL Server uses.</li>
+            <li>Covering indexes can eliminate additional row lookups.</li>
+            <li>Composite index key order should reflect actual query predicates and ordering.</li>
+            <li>Filtered indexes can be effective for frequently queried subsets.</li>
+            <li>SARGable predicates make efficient index access more likely.</li>
+            <li>Statistics help the optimizer estimate qualifying row counts.</li>
+            <li>Scans are sometimes the correct choice.</li>
+            <li>Indexes improve reads but add storage and write-maintenance costs.</li>
+        </ul>
+
+        <p>
+            The central lesson is to measure before and after every indexing
+            change. A good index is one that improves the workload as a whole,
+            not merely one query in isolation.
+        </p>
+    </section>
+
+</main>

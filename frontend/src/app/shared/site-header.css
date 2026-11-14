@@ -26,16 +26,11 @@
   white-space: nowrap;
 }
 
-.brand-mark {
-  display: grid;
-  width: 34px;
-  height: 34px;
+.brand-logo {
+  display: block;
+  width: min(250px, 42vw);
+  height: auto;
   flex: 0 0 auto;
-  place-items: center;
-  padding: 5px;
-  border-radius: 11px;
-  background: #d9f4e8;
-  color: #11794f;
 }
 
 .header-actions {
@@ -269,7 +264,7 @@
 @media (max-width: 560px) {
   .site-header { min-height: 62px; gap: 6px; }
   .brand { gap: 6px; font-size: 12px; letter-spacing: -.3px; }
-  .brand-mark { width: 28px; height: 28px; padding: 4px; border-radius: 8px; }
+  .brand-logo { width: min(190px, 44vw); }
   .header-actions { gap: 3px; }
   .learning-link { margin-right: 3px; font-size: 10px; }
   .button { min-height: 32px; padding: 0 7px; font-size: 10px; }

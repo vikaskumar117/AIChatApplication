@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 112" fill="none">
+  <rect x="4" y="4" width="104" height="104" rx="28" fill="#E8F7EF"/>
+  <path d="M56 20 86 37v38L56 92 26 75V37l30-17Z" fill="#147D54"/>
+  <path d="M41 43h30M41 56h18M41 69h25" stroke="#fff" stroke-linecap="round" stroke-width="6"/>
+  <circle cx="74" cy="56" r="5" fill="#9FE3BC"/>
+  <text x="128" y="65" fill="#172554" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700">Concept of Engineering</text>
+  <path d="M130 84h300" stroke="#A8C8B5" stroke-linecap="round" stroke-width="2"/>
+  <circle cx="438" cy="84" r="3" fill="#147D54"/>
+</svg>

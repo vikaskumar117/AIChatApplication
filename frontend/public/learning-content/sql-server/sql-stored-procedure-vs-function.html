@@ -1,0 +1,1475 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Stored Procedure vs Function in SQL Server</h1>
+        <p>
+            Understand how stored procedures and user-defined functions work,
+            how they differ, when to use each, and how SQL Server executes
+            and optimizes them.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Learning Objectives</h2>
+        <ul class="learning-list">
+            <li>Understand stored procedures and user-defined functions.</li>
+            <li>Compare syntax, parameters, return values, and execution behavior.</li>
+            <li>Learn scalar, inline table-valued, and multi-statement table-valued functions.</li>
+            <li>Understand function restrictions and transaction behavior.</li>
+            <li>Analyze execution plans and performance differences.</li>
+            <li>Choose the appropriate database object for real-world requirements.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>2. What Is a Stored Procedure?</h2>
+
+        <p>
+            A stored procedure is a named collection of SQL statements stored
+            in a SQL Server database. It can accept input parameters, perform
+            operations, execute multiple statements, manage transactions,
+            return result sets, and return an integer status code.
+        </p>
+
+        <h3>Basic stored procedure</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.GetEmployees
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        EmployeeID,
+        EmployeeName,
+        Salary
+    FROM dbo.Employees;
+END;</code></pre>
+
+        <h3>Execute the procedure</h3>
+
+        <pre class="sql-code"><code>EXEC dbo.GetEmployees;</code></pre>
+
+        <p>
+            SQL Server executes the statements inside the procedure and sends
+            the SELECT result set to the client.
+        </p>
+
+        <h3>Stored procedure characteristics</h3>
+        <ul>
+            <li>Can contain multiple SQL statements.</li>
+            <li>Can perform INSERT, UPDATE, DELETE, and SELECT operations.</li>
+            <li>Can manage transactions.</li>
+            <li>Can use TRY...CATCH error handling.</li>
+            <li>Can return one or more result sets.</li>
+            <li>Can accept input and output parameters.</li>
+            <li>Can return an integer status code.</li>
+            <li>Can execute dynamic SQL.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>3. What Is a User-Defined Function?</h2>
+
+        <p>
+            A user-defined function (UDF) is a database object that accepts
+            parameters, performs calculations or data retrieval, and returns
+            a value or table.
+        </p>
+
+        <p>
+            Unlike a stored procedure, a function can be used inside SQL
+            expressions and queries, subject to the function type and SQL
+            Server's function restrictions.
+        </p>
+
+        <h3>Example: Scalar function</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER FUNCTION dbo.CalculateAnnualSalary
+(
+    @MonthlySalary DECIMAL(12,2)
+)
+RETURNS DECIMAL(14,2)
+AS
+BEGIN
+
+    RETURN @MonthlySalary * 12;
+
+END;</code></pre>
+
+        <h3>Use the function in a SELECT statement</h3>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeID,
+    EmployeeName,
+    Salary,
+    dbo.CalculateAnnualSalary(Salary) AS AnnualSalary
+FROM dbo.Employees;</code></pre>
+
+        <p>
+            The function calculates an annual salary for each row using the
+            monthly salary passed to it.
+        </p>
+
+        <h3>Function characteristics</h3>
+        <ul>
+            <li>Must return a scalar value or a table.</li>
+            <li>Can accept input parameters.</li>
+            <li>Can be used in SELECT statements and other permitted expressions.</li>
+            <li>Cannot directly modify permanent database state through ordinary DML.</li>
+            <li>Cannot independently manage transactions using BEGIN TRANSACTION, COMMIT, or ROLLBACK.</li>
+            <li>Cannot use ordinary TRY...CATCH error handling inside the function body.</li>
+            <li>Cannot execute stored procedures using EXEC.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>4. Stored Procedure vs Function: Core Differences</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>Stored Procedure</th>
+                    <th>User-Defined Function</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Primary purpose</td>
+                    <td>Perform database operations and business workflows.</td>
+                    <td>Calculate and return values or tables.</td>
+                </tr>
+                <tr>
+                    <td>Return requirement</td>
+                    <td>Does not require a RETURN value.</td>
+                    <td>Must return a scalar value or table.</td>
+                </tr>
+                <tr>
+                    <td>Execution</td>
+                    <td>EXEC or EXECUTE.</td>
+                    <td>Used in expressions or FROM clauses, depending on type.</td>
+                </tr>
+                <tr>
+                    <td>SELECT integration</td>
+                    <td>Cannot be called directly as a scalar expression or FROM source.</td>
+                    <td>Can be used in supported query contexts.</td>
+                </tr>
+                <tr>
+                    <td>INSERT, UPDATE, DELETE</td>
+                    <td>Can modify database tables.</td>
+                    <td>Cannot directly modify permanent database state through ordinary DML.</td>
+                </tr>
+                <tr>
+                    <td>Transactions</td>
+                    <td>Can manage transactions.</td>
+                    <td>Cannot independently manage transactions.</td>
+                </tr>
+                <tr>
+                    <td>TRY...CATCH</td>
+                    <td>Supported for catchable execution errors.</td>
+                    <td>Not supported inside the function body.</td>
+                </tr>
+                <tr>
+                    <td>Dynamic SQL</td>
+                    <td>Can execute dynamic SQL.</td>
+                    <td>Cannot execute dynamic SQL through EXEC or sp_executesql.</td>
+                </tr>
+                <tr>
+                    <td>Output parameters</td>
+                    <td>Supports OUTPUT parameters.</td>
+                    <td>Does not support OUTPUT parameters.</td>
+                </tr>
+                <tr>
+                    <td>Multiple result sets</td>
+                    <td>Can return multiple result sets.</td>
+                    <td>Returns one scalar value or one table result.</td>
+                </tr>
+                <tr>
+                    <td>Typical use</td>
+                    <td>Order processing, transfers, batch updates, reporting workflows.</td>
+                    <td>Calculations, reusable query logic, derived data.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>5. Types of SQL Server Functions</h2>
+
+        <p>
+            SQL Server supports several types of user-defined functions.
+            The most important categories are scalar functions and
+            table-valued functions.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>User-Defined Functions</strong>
+                <p>Functions created by database developers.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Scalar Functions</strong>
+                <p>Return one scalar value.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Table-Valued Functions</strong>
+                <p>Return a table that can participate in queries.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Table-Valued Variants</strong>
+                <p>Inline TVF and multi-statement TVF.</p>
+            </div>
+        </div>
+
+        <h3>5.1 Scalar Function</h3>
+
+        <p>
+            A scalar function returns a single value such as INT, DECIMAL,
+            VARCHAR, DATE, or another supported scalar data type.
+        </p>
+
+        <pre class="sql-code"><code>CREATE OR ALTER FUNCTION dbo.CalculateBonus
+(
+    @Salary DECIMAL(12,2),
+    @BonusPercentage DECIMAL(5,2)
+)
+RETURNS DECIMAL(12,2)
+AS
+BEGIN
+
+    RETURN @Salary * @BonusPercentage / 100;
+
+END;</code></pre>
+
+        <p><strong>Usage:</strong></p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeID,
+    EmployeeName,
+    Salary,
+    dbo.CalculateBonus(Salary, 10) AS Bonus
+FROM dbo.Employees;</code></pre>
+
+        <p>Sample output:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeID</th>
+                    <th>EmployeeName</th>
+                    <th>Salary</th>
+                    <th>Bonus</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Amit</td>
+                    <td>50000.00</td>
+                    <td>5000.00</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Priya</td>
+                    <td>70000.00</td>
+                    <td>7000.00</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Rahul</td>
+                    <td>60000.00</td>
+                    <td>6000.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>5.2 Inline Table-Valued Function</h3>
+
+        <p>
+            An inline table-valued function (iTVF) returns a table defined by
+            a single SELECT statement. It is often a strong choice for reusable
+            relational query logic.
+        </p>
+
+        <pre class="sql-code"><code>CREATE OR ALTER FUNCTION dbo.GetEmployeesByDepartment
+(
+    @DepartmentID INT
+)
+RETURNS TABLE
+AS
+RETURN
+(
+    SELECT
+        EmployeeID,
+        EmployeeName,
+        Salary,
+        DepartmentID
+    FROM dbo.Employees
+    WHERE DepartmentID = @DepartmentID
+);</code></pre>
+
+        <h3>Use the inline function</h3>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.GetEmployeesByDepartment(10);</code></pre>
+
+        <h3>Join an inline function with another table</h3>
+
+        <pre class="sql-code"><code>SELECT
+    e.EmployeeName,
+    e.Salary,
+    d.DepartmentName
+FROM dbo.GetEmployeesByDepartment(10) AS e
+JOIN dbo.Departments AS d
+    ON e.DepartmentID = d.DepartmentID;</code></pre>
+
+        <p>
+            SQL Server can generally expand an inline table-valued function
+            into the calling query, allowing the optimizer to consider the
+            combined relational expression.
+        </p>
+
+        <h3>5.3 Multi-Statement Table-Valued Function</h3>
+
+        <p>
+            A multi-statement table-valued function (MSTVF) declares a return
+            table variable and populates it through one or more statements.
+        </p>
+
+        <pre class="sql-code"><code>CREATE OR ALTER FUNCTION dbo.GetHighSalaryEmployees
+(
+    @MinimumSalary DECIMAL(12,2)
+)
+RETURNS @EmployeeList TABLE
+(
+    EmployeeID INT,
+    EmployeeName VARCHAR(100),
+    Salary DECIMAL(12,2)
+)
+AS
+BEGIN
+
+    INSERT INTO @EmployeeList
+    (
+        EmployeeID,
+        EmployeeName,
+        Salary
+    )
+    SELECT
+        EmployeeID,
+        EmployeeName,
+        Salary
+    FROM dbo.Employees
+    WHERE Salary &gt;= @MinimumSalary;
+
+    RETURN;
+
+END;</code></pre>
+
+        <h3>Use the multi-statement function</h3>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.GetHighSalaryEmployees(60000);</code></pre>
+
+        <p>
+            MSTVFs are useful when a function needs to construct its result
+            through multiple statements. However, their optimization behavior
+            can be less favorable than inline TVFs for complex workloads.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Function type</th>
+                    <th>Return</th>
+                    <th>Definition</th>
+                    <th>Typical optimization behavior</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Scalar UDF</td>
+                    <td>Single value</td>
+                    <td>Function body with RETURN</td>
+                    <td>Can be expensive when invoked repeatedly; eligible functions may be inlined.</td>
+                </tr>
+                <tr>
+                    <td>Inline TVF</td>
+                    <td>Table</td>
+                    <td>Single relational SELECT</td>
+                    <td>Usually optimized as part of the calling query.</td>
+                </tr>
+                <tr>
+                    <td>Multi-statement TVF</td>
+                    <td>Table</td>
+                    <td>Return table variable populated by statements</td>
+                    <td>May have weaker cardinality estimates and optimization choices.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Stored Procedure Parameters</h2>
+
+        <p>
+            Stored procedures support input parameters and output parameters.
+            They can also return an integer status code.
+        </p>
+
+        <h3>Input parameter</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.GetEmployeeByID
+    @EmployeeID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        EmployeeID,
+        EmployeeName,
+        Salary
+    FROM dbo.Employees
+    WHERE EmployeeID = @EmployeeID;
+END;</code></pre>
+
+        <p><strong>Execute with a named parameter:</strong></p>
+
+        <pre class="sql-code"><code>EXEC dbo.GetEmployeeByID
+    @EmployeeID = 1;</code></pre>
+
+        <h3>Output parameter</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.GetEmployeeCount
+    @DepartmentID INT,
+    @EmployeeCount INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        @EmployeeCount = COUNT(*)
+    FROM dbo.Employees
+    WHERE DepartmentID = @DepartmentID;
+END;</code></pre>
+
+        <p><strong>Execute and retrieve output:</strong></p>
+
+        <pre class="sql-code"><code>DECLARE @TotalEmployees INT;
+
+EXEC dbo.GetEmployeeCount
+    @DepartmentID = 10,
+    @EmployeeCount = @TotalEmployees OUTPUT;
+
+SELECT @TotalEmployees AS EmployeeCount;</code></pre>
+
+        <h3>Return status code</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.CheckEmployee
+    @EmployeeID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF EXISTS
+    (
+        SELECT 1
+        FROM dbo.Employees
+        WHERE EmployeeID = @EmployeeID
+    )
+        RETURN 1;
+
+    RETURN 0;
+END;</code></pre>
+
+        <p><strong>Capture the return code:</strong></p>
+
+        <pre class="sql-code"><code>DECLARE @Status INT;
+
+EXEC @Status = dbo.CheckEmployee
+    @EmployeeID = 1;
+
+SELECT @Status AS StatusCode;</code></pre>
+
+        <div class="info-box">
+            A stored procedure's RETURN value is an integer status code.
+            It is not the same as a SELECT result set or an OUTPUT parameter.
+            Use OUTPUT parameters for additional scalar values and SELECT
+            statements for result sets.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Why Functions Cannot Perform Ordinary Data Modification</h2>
+
+        <p>
+            Functions are designed to return values and participate in
+            expressions. SQL Server restricts side effects so that functions
+            can be used more predictably inside query execution.
+        </p>
+
+        <h3>Example of a prohibited operation</h3>
+
+        <pre class="sql-code"><code>CREATE FUNCTION dbo.UpdateEmployeeSalary
+(
+    @EmployeeID INT,
+    @NewSalary DECIMAL(12,2)
+)
+RETURNS INT
+AS
+BEGIN
+
+    UPDATE dbo.Employees
+    SET Salary = @NewSalary
+    WHERE EmployeeID = @EmployeeID;
+
+    RETURN 1;
+
+END;</code></pre>
+
+        <p>
+            This is not a valid way to update a permanent table from a
+            user-defined function. SQL Server rejects ordinary data modification
+            against permanent tables inside a function.
+        </p>
+
+        <h3>Correct implementation using a stored procedure</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.UpdateEmployeeSalary
+    @EmployeeID INT,
+    @NewSalary DECIMAL(12,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE dbo.Employees
+    SET Salary = @NewSalary
+    WHERE EmployeeID = @EmployeeID;
+
+    IF @@ROWCOUNT = 0
+    BEGIN
+        THROW 50010, 'Employee not found.', 1;
+    END;
+END;</code></pre>
+
+        <p><strong>Execute:</strong></p>
+
+        <pre class="sql-code"><code>EXEC dbo.UpdateEmployeeSalary
+    @EmployeeID = 1,
+    @NewSalary = 55000;</code></pre>
+
+        <p>
+            SQL Server functions can modify local variables and their own
+            return table variable where applicable. They can also read data
+            and use certain permitted built-in functions. The restriction is
+            specifically about prohibited side effects, not every assignment
+            or intermediate operation.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>8. Can a Stored Procedure Be Used Inside SELECT?</h2>
+
+        <p>
+            A stored procedure cannot be called as a scalar expression or
+            directly used as a table source in an ordinary SELECT statement.
+        </p>
+
+        <h3>Invalid usage</h3>
+
+        <pre class="sql-code"><code>SELECT dbo.GetEmployees();</code></pre>
+
+        <p>
+            This is invalid if GetEmployees is a stored procedure.
+        </p>
+
+        <h3>Valid procedure execution</h3>
+
+        <pre class="sql-code"><code>EXEC dbo.GetEmployees;</code></pre>
+
+        <h3>Alternative: Use a table-valued function</h3>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.GetEmployeesByDepartment(10);</code></pre>
+
+        <h3>Alternative: Capture a procedure result into a table</h3>
+
+        <p>
+            When a procedure returns a compatible result set, INSERT...EXEC
+            can capture it into a table or table variable.
+        </p>
+
+        <pre class="sql-code"><code>CREATE TABLE #EmployeeResults
+(
+    EmployeeID INT,
+    EmployeeName VARCHAR(100),
+    Salary DECIMAL(12,2)
+);
+
+INSERT INTO #EmployeeResults
+EXEC dbo.GetEmployees;
+
+SELECT *
+FROM #EmployeeResults;
+
+DROP TABLE #EmployeeResults;</code></pre>
+
+        <div class="info-box">
+            INSERT...EXEC has important restrictions. It cannot be freely
+            nested, and the destination column structure must match the
+            procedure's returned result set. For reusable relational logic,
+            an inline TVF or a view may be a better design.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>9. SQL Server Internals: How Stored Procedures Execute</h2>
+
+        <p>
+            When a stored procedure is executed, SQL Server processes its
+            statements, compiles or reuses plans as appropriate, and executes
+            the resulting operators.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>1. EXEC request</strong>
+                <p>Client submits a procedure call with parameter values.</p>
+            </div>
+            <div class="flow-step">
+                <strong>2. Object resolution</strong>
+                <p>SQL Server resolves the stored procedure and its dependencies.</p>
+            </div>
+            <div class="flow-step">
+                <strong>3. Plan lookup or compilation</strong>
+                <p>SQL Server looks for a reusable plan or compiles statements as needed.</p>
+            </div>
+            <div class="flow-step">
+                <strong>4. Optimization</strong>
+                <p>Statements are optimized using available metadata and statistics.</p>
+            </div>
+            <div class="flow-step">
+                <strong>5. Execution</strong>
+                <p>The execution engine runs the plan and performs requested operations.</p>
+            </div>
+            <div class="flow-step">
+                <strong>6. Results</strong>
+                <p>SQL Server returns result sets, output parameters, and a status code.</p>
+            </div>
+        </div>
+
+        <h3>Plan caching</h3>
+
+        <p>
+            SQL Server can cache execution plans for stored procedure
+            statements. When the procedure is executed again, SQL Server may
+            reuse an existing plan instead of compiling a new one.
+        </p>
+
+        <p>Inspect cached plans and their associated SQL text:</p>
+
+        <pre class="sql-code"><code>SELECT
+    cp.objtype,
+    cp.usecounts,
+    cp.size_in_bytes,
+    st.text
+FROM sys.dm_exec_cached_plans AS cp
+CROSS APPLY sys.dm_exec_sql_text(cp.plan_handle) AS st
+WHERE cp.objtype = 'Proc'
+ORDER BY cp.usecounts DESC;</code></pre>
+
+        <p>
+            Plan caching is not a guarantee that every execution will use the
+            same plan. Plans can be evicted, invalidated, recompiled, or
+            reoptimized under different conditions.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>10. SQL Server Internals: How Functions Execute</h2>
+
+        <p>
+            Function execution behavior depends heavily on the function type.
+            An inline TVF, multi-statement TVF, and scalar UDF can produce
+            very different execution plans.
+        </p>
+
+        <h3>Scalar UDF</h3>
+
+        <p>
+            Historically, scalar UDFs often caused performance problems because
+            the function could be invoked repeatedly for rows in the outer query.
+            This could lead to iterative execution and hide work from the
+            optimizer.
+        </p>
+
+        <h3>Scalar UDF inlining</h3>
+
+        <p>
+            SQL Server 2019 introduced scalar UDF inlining for eligible
+            functions when the database compatibility level is 150 or higher.
+            The optimizer can transform eligible scalar UDF logic into
+            relational expressions in the calling query.
+        </p>
+
+        <p>
+            Not every scalar function is eligible. Eligibility depends on
+            the function definition, SQL Server version, compatibility level,
+            configuration, and other restrictions.
+        </p>
+
+        <h3>Check database compatibility level</h3>
+
+        <pre class="sql-code"><code>SELECT
+    name,
+    compatibility_level
+FROM sys.databases
+WHERE name = DB_NAME();</code></pre>
+
+        <h3>Check scalar UDF inlining configuration</h3>
+
+        <pre class="sql-code"><code>SELECT
+    name,
+    value,
+    value_for_secondary
+FROM sys.database_scoped_configurations
+WHERE name = 'TSQL_SCALAR_UDF_INLINING';</code></pre>
+
+        <h3>Inline TVF optimization</h3>
+
+        <p>
+            An inline TVF is conceptually similar to a parameterized relational
+            query expression. SQL Server can generally incorporate its SELECT
+            definition into the calling query, allowing the optimizer to
+            choose joins, indexes, and access methods across the combined
+            expression.
+        </p>
+
+        <h3>Multi-statement TVF optimization</h3>
+
+        <p>
+            A multi-statement TVF populates a return table variable. Historically,
+            cardinality estimates for these functions could be poor, resulting
+            in inefficient joins and memory grants.
+        </p>
+
+        <p>
+            Interleaved execution, available in SQL Server 2017 and later for
+            eligible workloads at the appropriate compatibility level, can
+            improve estimates by materializing an MSTVF during optimization
+            and using its observed row count in the outer query plan.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Performance Comparison: Procedure vs Function</h2>
+
+        <p>
+            It is incorrect to assume that stored procedures are always faster
+            than functions. Performance depends on the function type, query
+            design, invocation pattern, optimizer behavior, and workload.
+        </p>
+
+        <h3>Example: Scalar function over many rows</h3>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeID,
+    EmployeeName,
+    dbo.CalculateAnnualSalary(Salary) AS AnnualSalary
+FROM dbo.Employees;</code></pre>
+
+        <p>
+            If a scalar function cannot be inlined, repeated invocation may
+            create overhead for a large result set.
+        </p>
+
+        <h3>Alternative: Direct expression</h3>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeID,
+    EmployeeName,
+    Salary * 12 AS AnnualSalary
+FROM dbo.Employees;</code></pre>
+
+        <p>
+            A direct expression is often simpler for straightforward arithmetic.
+            However, reusable function logic may still be valuable when the
+            function is eligible for inlining and the abstraction improves
+            maintainability.
+        </p>
+
+        <h3>Compare with an actual execution plan</h3>
+
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+SELECT
+    EmployeeID,
+    dbo.CalculateAnnualSalary(Salary) AS AnnualSalary
+FROM dbo.Employees;
+
+SELECT
+    EmployeeID,
+    Salary * 12 AS AnnualSalary
+FROM dbo.Employees;
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <p>
+            Compare logical reads, CPU time, elapsed time, row counts,
+            and execution plan operators. Run tests more than once and
+            avoid drawing conclusions from a single execution.
+        </p>
+
+        <h3>Performance characteristics</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Object</th>
+                    <th>Performance consideration</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Stored procedure</td>
+                    <td>Can use cached plans and execute complex database workflows.</td>
+                </tr>
+                <tr>
+                    <td>Scalar UDF</td>
+                    <td>May add per-row overhead if not inlined.</td>
+                </tr>
+                <tr>
+                    <td>Inline TVF</td>
+                    <td>Usually provides optimizer-friendly relational composition.</td>
+                </tr>
+                <tr>
+                    <td>Multi-statement TVF</td>
+                    <td>May introduce cardinality estimation and intermediate-result overhead.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Parameter Sniffing in Stored Procedures</h2>
+
+        <p>
+            SQL Server can use parameter values supplied during compilation
+            to estimate row counts and select an execution plan. This behavior
+            is commonly called parameter sniffing.
+        </p>
+
+        <p>
+            A plan optimized for one parameter value may perform poorly for
+            another value when the data distribution is uneven.
+        </p>
+
+        <h3>Example procedure</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.GetEmployeesByDepartment
+    @DepartmentID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        EmployeeID,
+        EmployeeName,
+        Salary
+    FROM dbo.Employees
+    WHERE DepartmentID = @DepartmentID;
+END;</code></pre>
+
+        <h3>Test different parameter values</h3>
+
+        <pre class="sql-code"><code>EXEC dbo.GetEmployeesByDepartment
+    @DepartmentID = 10;
+
+EXEC dbo.GetEmployeesByDepartment
+    @DepartmentID = 20;</code></pre>
+
+        <p>
+            Suppose Department 10 contains 50 employees, while Department 20
+            contains 100,000 employees. A plan optimized for one department
+            may not be ideal for the other.
+        </p>
+
+        <h3>Possible mitigation strategies</h3>
+
+        <ul>
+            <li>Improve statistics and indexing.</li>
+            <li>Use OPTION (RECOMPILE) for appropriate statements when recompilation cost is acceptable.</li>
+            <li>Use OPTIMIZE FOR when a deliberate representative estimate is appropriate.</li>
+            <li>Consider separate query paths for materially different data distributions.</li>
+            <li>Use Query Store to investigate plan regressions and evaluate supported plan forcing options.</li>
+            <li>Evaluate Parameter Sensitive Plan optimization where supported.</li>
+        </ul>
+
+        <div class="info-box">
+            Do not add RECOMPILE to every stored procedure as a default fix.
+            Recompilation has CPU and compilation overhead. Measure the workload
+            and choose a strategy based on actual parameter distribution.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Real-World Scenario: Order Processing</h2>
+
+        <p>
+            Consider an e-commerce application that processes customer orders.
+            The operation requires multiple database actions:
+        </p>
+
+        <ul>
+            <li>Validate customer existence.</li>
+            <li>Validate product availability.</li>
+            <li>Insert the order header.</li>
+            <li>Insert order items.</li>
+            <li>Update inventory.</li>
+            <li>Commit all changes together.</li>
+        </ul>
+
+        <p>
+            This is a transactional workflow. A stored procedure is an appropriate
+            database object because it can coordinate multiple data modifications
+            inside a transaction.
+        </p>
+
+        <h3>Sample schema</h3>
+
+        <pre class="sql-code"><code>CREATE TABLE dbo.Products
+(
+    ProductID INT PRIMARY KEY,
+    ProductName VARCHAR(100),
+    StockQuantity INT,
+    UnitPrice DECIMAL(12,2)
+);
+
+CREATE TABLE dbo.Orders
+(
+    OrderID INT IDENTITY(1,1) PRIMARY KEY,
+    CustomerID INT,
+    OrderDate DATETIME2 NOT NULL
+        DEFAULT SYSUTCDATETIME(),
+    TotalAmount DECIMAL(14,2)
+);
+
+CREATE TABLE dbo.OrderItems
+(
+    OrderItemID INT IDENTITY(1,1) PRIMARY KEY,
+    OrderID INT NOT NULL,
+    ProductID INT NOT NULL,
+    Quantity INT NOT NULL,
+    UnitPrice DECIMAL(12,2) NOT NULL,
+
+    FOREIGN KEY (OrderID)
+        REFERENCES dbo.Orders(OrderID),
+
+    FOREIGN KEY (ProductID)
+        REFERENCES dbo.Products(ProductID)
+);</code></pre>
+
+        <h3>Stored procedure for processing an order</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.ProcessOrder
+    @CustomerID INT,
+    @ProductID INT,
+    @Quantity INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @OrderID INT;
+    DECLARE @UnitPrice DECIMAL(12,2);
+
+    BEGIN TRY
+
+        IF @Quantity &lt;= 0
+        BEGIN
+            THROW 50020, 'Quantity must be greater than zero.', 1;
+        END;
+
+        BEGIN TRANSACTION;
+
+        SELECT
+            @UnitPrice = UnitPrice
+        FROM dbo.Products WITH (UPDLOCK, HOLDLOCK)
+        WHERE ProductID = @ProductID
+          AND StockQuantity &gt;= @Quantity;
+
+        IF @UnitPrice IS NULL
+        BEGIN
+            THROW 50021, 'Product unavailable or insufficient stock.', 1;
+        END;
+
+        INSERT INTO dbo.Orders
+        (
+            CustomerID,
+            TotalAmount
+        )
+        VALUES
+        (
+            @CustomerID,
+            @UnitPrice * @Quantity
+        );
+
+        SET @OrderID = SCOPE_IDENTITY();
+
+        INSERT INTO dbo.OrderItems
+        (
+            OrderID,
+            ProductID,
+            Quantity,
+            UnitPrice
+        )
+        VALUES
+        (
+            @OrderID,
+            @ProductID,
+            @Quantity,
+            @UnitPrice
+        );
+
+        UPDATE dbo.Products
+        SET StockQuantity = StockQuantity - @Quantity
+        WHERE ProductID = @ProductID
+          AND StockQuantity &gt;= @Quantity;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            THROW 50022, 'Inventory update failed.', 1;
+        END;
+
+        COMMIT TRANSACTION;
+
+        SELECT @OrderID AS OrderID;
+
+    END TRY
+    BEGIN CATCH
+
+        IF XACT_STATE() &lt;&gt; 0
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+
+        THROW;
+
+    END CATCH;
+END;</code></pre>
+
+        <p><strong>Execute:</strong></p>
+
+        <pre class="sql-code"><code>EXEC dbo.ProcessOrder
+    @CustomerID = 101,
+    @ProductID = 10,
+    @Quantity = 2;</code></pre>
+
+        <p>
+            The stored procedure is responsible for the workflow and transaction.
+            A function could separately calculate a discount, tax amount, or
+            other derived value, but it should not replace the transaction
+            orchestration.
+        </p>
+
+        <div class="info-box">
+            This example assumes that the referenced customer is validated
+            elsewhere or protected by a foreign key. Production order processing
+            should also consider multiple order lines, idempotency, currency
+            rounding, customer validation, inventory concurrency, and retry
+            behavior.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>14. When Should You Use a Stored Procedure?</h2>
+
+        <p>Choose a stored procedure when you need to:</p>
+
+        <ul>
+            <li>Insert, update, or delete permanent table data.</li>
+            <li>Execute a multi-step business workflow.</li>
+            <li>Manage transactions.</li>
+            <li>Handle errors with TRY...CATCH.</li>
+            <li>Return multiple result sets.</li>
+            <li>Use output parameters.</li>
+            <li>Execute dynamic SQL.</li>
+            <li>Control database access through an application-facing interface.</li>
+            <li>Perform batch processing and scheduled database operations.</li>
+        </ul>
+
+        <h3>Examples</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Business requirement</th>
+                    <th>Suggested object</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Transfer money between accounts</td>
+                    <td>Stored procedure</td>
+                </tr>
+                <tr>
+                    <td>Process an order</td>
+                    <td>Stored procedure</td>
+                </tr>
+                <tr>
+                    <td>Update employee salaries</td>
+                    <td>Stored procedure</td>
+                </tr>
+                <tr>
+                    <td>Import a batch of records</td>
+                    <td>Stored procedure</td>
+                </tr>
+                <tr>
+                    <td>Generate a multi-result-set report</td>
+                    <td>Stored procedure</td>
+                </tr>
+                <tr>
+                    <td>Perform scheduled cleanup</td>
+                    <td>Stored procedure</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>15. When Should You Use a Function?</h2>
+
+        <p>Choose a function when you need to:</p>
+
+        <ul>
+            <li>Calculate a reusable scalar value.</li>
+            <li>Return a filtered table for use in a query.</li>
+            <li>Encapsulate reusable relational logic.</li>
+            <li>Use derived values inside SELECT statements.</li>
+            <li>Join reusable query logic with other tables.</li>
+            <li>Centralize deterministic business calculations where appropriate.</li>
+        </ul>
+
+        <h3>Examples</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Business requirement</th>
+                    <th>Suggested object</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Calculate annual salary</td>
+                    <td>Scalar function or direct expression</td>
+                </tr>
+                <tr>
+                    <td>Calculate discount percentage</td>
+                    <td>Scalar function where appropriate</td>
+                </tr>
+                <tr>
+                    <td>Return employees for a department</td>
+                    <td>Inline table-valued function</td>
+                </tr>
+                <tr>
+                    <td>Return reusable filtered order rows</td>
+                    <td>Inline table-valued function</td>
+                </tr>
+                <tr>
+                    <td>Build a table result through multiple statements</td>
+                    <td>Multi-statement TVF when justified</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Security and Permissions</h2>
+
+        <p>
+            Stored procedures and functions can both be used as part of a
+            database security design. Ownership chaining can allow users
+            to execute a module without having direct permissions on every
+            underlying table, depending on ownership and execution context.
+        </p>
+
+        <h3>Grant procedure execution</h3>
+
+        <pre class="sql-code"><code>GRANT EXECUTE
+ON OBJECT::dbo.GetEmployeeByID
+TO ApplicationUser;</code></pre>
+
+        <h3>Grant function permission</h3>
+
+        <pre class="sql-code"><code>GRANT SELECT
+ON OBJECT::dbo.GetEmployeesByDepartment
+TO ApplicationUser;</code></pre>
+
+        <p>
+            The required permission depends on the function type and how it
+            is referenced. Use the narrowest permissions necessary and test
+            with the actual application user.
+        </p>
+
+        <h3>Inspect object permissions</h3>
+
+        <pre class="sql-code"><code>SELECT
+    USER_NAME(dp.grantee_principal_id) AS Grantee,
+    dp.permission_name,
+    dp.state_desc,
+    OBJECT_SCHEMA_NAME(dp.major_id) AS SchemaName,
+    OBJECT_NAME(dp.major_id) AS ObjectName
+FROM sys.database_permissions AS dp
+WHERE dp.major_id &gt; 0
+ORDER BY Grantee, ObjectName;</code></pre>
+
+        <div class="info-box">
+            Module signing and EXECUTE AS can provide more controlled
+            execution contexts for complex security requirements. Avoid
+            using broad database or server roles merely to make an application
+            procedure work.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>17. Common Mistakes and Misconceptions</h2>
+
+        <ul>
+            <li>Assuming every function is slower than every stored procedure.</li>
+            <li>Using scalar functions over large row sets without examining their execution plans.</li>
+            <li>Using multi-statement TVFs when an inline TVF would be sufficient.</li>
+            <li>Trying to update permanent tables inside a user-defined function.</li>
+            <li>Assuming a procedure's RETURN statement returns a result set.</li>
+            <li>Using OUTPUT parameters when a result set would be clearer.</li>
+            <li>Using a stored procedure when reusable relational logic belongs in an inline TVF.</li>
+            <li>Assuming stored procedures automatically prevent SQL injection.</li>
+            <li>Building dynamic SQL by concatenating untrusted input.</li>
+            <li>Ignoring parameter sniffing and plan quality.</li>
+        </ul>
+
+        <h3>Prevent SQL injection in stored procedures</h3>
+
+        <p>
+            Stored procedures are not automatically immune to SQL injection.
+            Use parameterized statements and validate identifiers when dynamic
+            SQL is necessary.
+        </p>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.SearchEmployee
+    @EmployeeName NVARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @SQL NVARCHAR(MAX);
+
+    SET @SQL =
+        N'SELECT EmployeeID, EmployeeName
+          FROM dbo.Employees
+          WHERE EmployeeName = @Name;';
+
+    EXEC sys.sp_executesql
+        @SQL,
+        N'@Name NVARCHAR(100)',
+        @Name = @EmployeeName;
+END;</code></pre>
+    </section>
+
+    <section class="content-section">
+        <h2>18. Decision Framework</h2>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Question 1: Do you need to modify permanent data?</strong>
+                <p>Yes: Use a stored procedure or another suitable DML statement.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Question 2: Do you need a transaction or multi-step workflow?</strong>
+                <p>Yes: Use a stored procedure.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Question 3: Do you need one reusable calculated value?</strong>
+                <p>Consider a scalar function or direct expression.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Question 4: Do you need reusable rows inside a query?</strong>
+                <p>Consider an inline table-valued function.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Question 5: Do you need to build a table result through multiple statements?</strong>
+                <p>Consider a multi-statement TVF, after evaluating its performance implications.</p>
+            </div>
+        </div>
+
+        <h3>Quick decision table</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Requirement</th>
+                    <th>Best starting choice</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Business workflow</td>
+                    <td>Stored procedure</td>
+                </tr>
+                <tr>
+                    <td>Transactional data modification</td>
+                    <td>Stored procedure</td>
+                </tr>
+                <tr>
+                    <td>One calculated value</td>
+                    <td>Scalar function or expression</td>
+                </tr>
+                <tr>
+                    <td>Reusable query result</td>
+                    <td>Inline TVF</td>
+                </tr>
+                <tr>
+                    <td>Multiple result sets</td>
+                    <td>Stored procedure</td>
+                </tr>
+                <tr>
+                    <td>Dynamic SQL</td>
+                    <td>Stored procedure</td>
+                </tr>
+                <tr>
+                    <td>Output parameter</td>
+                    <td>Stored procedure</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>19. Practical Exercises</h2>
+
+        <h3>Exercise 1: Create a stored procedure</h3>
+        <p>
+            Create a procedure that accepts DepartmentID and returns all
+            employees belonging to that department. Test it with at least
+            three different department IDs.
+        </p>
+
+        <h3>Exercise 2: Create a scalar function</h3>
+        <p>
+            Create a function that accepts a monthly salary and returns
+            annual salary after applying a 10 percent increase.
+        </p>
+
+        <h3>Exercise 3: Create an inline TVF</h3>
+        <p>
+            Create an inline TVF that returns employees earning more than
+            a supplied minimum salary. Join its output to the Departments table.
+        </p>
+
+        <h3>Exercise 4: Create an output parameter</h3>
+        <p>
+            Create a stored procedure that accepts DepartmentID and returns
+            the employee count using an OUTPUT parameter.
+        </p>
+
+        <h3>Exercise 5: Transaction handling</h3>
+        <p>
+            Create a money transfer procedure that debits one account and
+            credits another. Use TRY...CATCH, XACT_STATE(), and THROW.
+        </p>
+
+        <h3>Exercise 6: Performance comparison</h3>
+        <p>
+            Compare a scalar UDF against a direct SQL expression over a large
+            employee table. Record CPU time, elapsed time, logical reads,
+            and execution plan differences.
+        </p>
+
+        <h3>Exercise 7: Function design</h3>
+        <p>
+            Create both an inline TVF and a multi-statement TVF that return
+            the same employee rows. Compare their execution plans and
+            cardinality estimates.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>20. Knowledge Check</h2>
+
+        <ol>
+            <li>
+                Can a stored procedure return multiple result sets?
+                <p><strong>Answer:</strong> Yes.</p>
+            </li>
+            <li>
+                Can a scalar function be used inside a SELECT expression?
+                <p><strong>Answer:</strong> Yes, when used in a permitted context.</p>
+            </li>
+            <li>
+                Which function type returns a table using a single SELECT statement?
+                <p><strong>Answer:</strong> Inline table-valued function.</p>
+            </li>
+            <li>
+                Can a user-defined function independently begin and commit a transaction?
+                <p><strong>Answer:</strong> No.</p>
+            </li>
+            <li>
+                What does a stored procedure's RETURN statement return?
+                <p><strong>Answer:</strong> An integer status code.</p>
+            </li>
+            <li>
+                Which function type can be more difficult for the optimizer because it uses a return table variable?
+                <p><strong>Answer:</strong> Multi-statement table-valued function.</p>
+            </li>
+            <li>
+                What is scalar UDF inlining?
+                <p><strong>Answer:</strong> An optimization that transforms eligible scalar UDF logic into relational expressions in the calling query.</p>
+            </li>
+            <li>
+                Are stored procedures automatically protected from SQL injection?
+                <p><strong>Answer:</strong> No. Dynamic SQL must still be parameterized and safely constructed.</p>
+            </li>
+            <li>
+                Which object is generally more suitable for a multi-step order-processing transaction?
+                <p><strong>Answer:</strong> Stored procedure.</p>
+            </li>
+            <li>
+                Which object is generally suitable for reusable relational query logic?
+                <p><strong>Answer:</strong> Inline table-valued function.</p>
+            </li>
+        </ol>
+    </section>
+
+    <section class="outcome-section">
+        <h2>21. Final Learning Outcome</h2>
+
+        <p>
+            You should now understand the differences between stored procedures
+            and functions, how their execution models differ, and how to choose
+            an appropriate object for a database requirement.
+        </p>
+
+        <p>
+            Remember these core principles:
+        </p>
+
+        <ul class="learning-list">
+            <li>Use stored procedures for workflows, transactions, and data modifications.</li>
+            <li>Use scalar functions for suitable reusable calculations.</li>
+            <li>Prefer inline TVFs for reusable relational query logic.</li>
+            <li>Use multi-statement TVFs only when their additional flexibility is justified.</li>
+            <li>Measure performance using execution plans and runtime statistics.</li>
+            <li>Design security, parameter handling, and error handling deliberately.</li>
+        </ul>
+
+        <p>
+            The best database object is not determined by syntax alone.
+            It should fit the required behavior, query composition, performance,
+            security model, and long-term maintainability.
+        </p>
+    </section>
+
+</main>

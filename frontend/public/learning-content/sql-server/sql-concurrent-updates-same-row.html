@@ -1,0 +1,1493 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Concurrent Updates to the Same Row in SQL Server</h1>
+        <p>
+            Learn how SQL Server manages simultaneous updates, prevents
+            conflicting writes, and protects data from lost updates.
+            Explore locking, blocking, isolation levels, rowversion,
+            optimistic concurrency, and production-ready T-SQL patterns.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Learning Objectives</h2>
+        <ul class="learning-list">
+            <li>Understand concurrent database updates.</li>
+            <li>Understand lost updates and stale data.</li>
+            <li>Learn how SQL Server locks rows and pages.</li>
+            <li>Understand blocking and lock compatibility.</li>
+            <li>Compare pessimistic and optimistic concurrency.</li>
+            <li>Use atomic UPDATE statements to avoid race conditions.</li>
+            <li>Implement optimistic concurrency with rowversion.</li>
+            <li>Understand isolation levels and their effect on updates.</li>
+            <li>Diagnose blocking and deadlocks.</li>
+            <li>Design safe concurrent update patterns for production.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>2. What Is a Concurrent Update?</h2>
+
+        <p>
+            A concurrent update occurs when two or more sessions attempt to
+            modify the same database record at approximately the same time.
+        </p>
+
+        <p>
+            Consider a bank account with a balance of 10,000. Two users
+            simultaneously attempt withdrawals:
+        </p>
+
+        <ul>
+            <li>User A withdraws 2,000.</li>
+            <li>User B withdraws 3,000.</li>
+        </ul>
+
+        <p>
+            The correct final balance should be 5,000 if both withdrawals
+            are valid.
+        </p>
+
+        <h3>Sample table</h3>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.ConcurrentAccount;
+
+CREATE TABLE dbo.ConcurrentAccount
+(
+    AccountId INT PRIMARY KEY,
+    AccountName VARCHAR(50) NOT NULL,
+    Balance DECIMAL(12,2) NOT NULL
+);
+
+INSERT INTO dbo.ConcurrentAccount
+VALUES
+    (1, 'Alice', 10000.00),
+    (2, 'Bob', 5000.00);
+
+SELECT *
+FROM dbo.ConcurrentAccount;</code></pre>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>AccountId</th>
+                    <th>AccountName</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Alice</td><td>10000.00</td></tr>
+                <tr><td>2</td><td>Bob</td><td>5000.00</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>3. The Lost Update Problem</h2>
+
+        <p>
+            A lost update occurs when two sessions read the same original
+            value, independently calculate a new value, and one update
+            overwrites the other's result.
+        </p>
+
+        <h3>Example scenario</h3>
+
+        <p>Initial account balance: 10,000.</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Session A</th>
+                    <th>Session B</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Reads 10,000</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td></td>
+                    <td>Reads 10,000</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Calculates 10,000 - 2,000 = 8,000</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td></td>
+                    <td>Calculates 10,000 - 3,000 = 7,000</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>Writes 8,000</td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td></td>
+                    <td>Writes 7,000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            The final balance becomes 7,000. Session A's withdrawal has
+            effectively been overwritten.
+        </p>
+
+        <div class="info-box">
+            This example represents an application-level read-calculate-write
+            race. Ordinary SQL Server UPDATE statements acquire write locks
+            and do not simply allow two conflicting writes to overwrite
+            each other simultaneously. The risk commonly appears when
+            applications read a value, calculate a replacement outside the
+            database, and later write that stale replacement.
+        </div>
+
+        <h3>Reproduce the lost update pattern</h3>
+
+        <p>Run the following workflow using two separate query windows.</p>
+
+        <h4>Session A — Read the current balance</h4>
+
+        <pre class="sql-code"><code>DECLARE @Balance DECIMAL(12,2);
+
+SELECT @Balance = Balance
+FROM dbo.ConcurrentAccount
+WHERE AccountId = 1;
+
+SELECT @Balance AS BalanceReadBySessionA;
+
+WAITFOR DELAY '00:00:10';
+
+UPDATE dbo.ConcurrentAccount
+SET Balance = @Balance - 2000
+WHERE AccountId = 1;
+
+SELECT Balance AS FinalBalance
+FROM dbo.ConcurrentAccount
+WHERE AccountId = 1;</code></pre>
+
+        <h4>Session B — Run during Session A's delay</h4>
+
+        <pre class="sql-code"><code>DECLARE @Balance DECIMAL(12,2);
+
+SELECT @Balance = Balance
+FROM dbo.ConcurrentAccount
+WHERE AccountId = 1;
+
+SELECT @Balance AS BalanceReadBySessionB;
+
+UPDATE dbo.ConcurrentAccount
+SET Balance = @Balance - 3000
+WHERE AccountId = 1;
+
+SELECT Balance AS FinalBalance
+FROM dbo.ConcurrentAccount
+WHERE AccountId = 1;</code></pre>
+
+        <p>
+            Both sessions can read 10,000 before either performs its update.
+            Session B may write 7,000, followed by Session A writing its
+            stale calculation of 8,000.
+        </p>
+
+        <p>
+            Reset the test data before running it again:
+        </p>
+
+        <pre class="sql-code"><code>UPDATE dbo.ConcurrentAccount
+SET Balance = 10000
+WHERE AccountId = 1;</code></pre>
+    </section>
+
+    <section class="content-section">
+        <h2>4. Solution 1 — Use Atomic UPDATE Statements</h2>
+
+        <p>
+            One of the simplest ways to prevent lost updates is to perform
+            the calculation directly inside the UPDATE statement.
+        </p>
+
+        <h3>Instead of reading and writing a calculated value</h3>
+
+        <pre class="sql-code"><code>-- Avoid this application pattern:
+-- 1. SELECT Balance.
+-- 2. Calculate a new balance in application code.
+-- 3. UPDATE Balance using the old calculation.</code></pre>
+
+        <h3>Use an atomic update</h3>
+
+        <pre class="sql-code"><code>UPDATE dbo.ConcurrentAccount
+SET Balance = Balance - 2000
+WHERE AccountId = 1;</code></pre>
+
+        <p>
+            The calculation uses the current row value when SQL Server
+            executes the update. Conflicting writers are coordinated by
+            SQL Server's locking mechanisms.
+        </p>
+
+        <h3>Safe withdrawal with a balance check</h3>
+
+        <pre class="sql-code"><code>DECLARE @WithdrawalAmount DECIMAL(12,2) = 2000;
+
+UPDATE dbo.ConcurrentAccount
+SET Balance = Balance - @WithdrawalAmount
+WHERE AccountId = 1
+  AND Balance >= @WithdrawalAmount;
+
+IF @@ROWCOUNT = 0
+BEGIN
+    THROW 50001,
+        'Account not found or insufficient funds.',
+        1;
+END;</code></pre>
+
+        <p>
+            The balance check and debit are part of the same SQL statement.
+            If two withdrawals compete, SQL Server coordinates the updates.
+            The second statement evaluates the predicate against the
+            applicable current row state after obtaining the required lock.
+        </p>
+
+        <h3>Why this works</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Session A starts update</strong>
+                <p>Requests the necessary write locks.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Session B requests update</strong>
+                <p>Waits if it conflicts with Session A's locks.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Session A completes</strong>
+                <p>Its changes are committed and locks are released.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Session B proceeds</strong>
+                <p>Evaluates and applies its update using the applicable current row value.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>5. How SQL Server Locks Rows During Updates</h2>
+
+        <p>
+            SQL Server uses locks to coordinate concurrent operations.
+            An UPDATE typically acquires an update lock during qualification
+            and converts it to an exclusive lock when modifying the row.
+        </p>
+
+        <h3>Important lock modes</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Lock</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Shared (S)</td>
+                    <td>Protects data being read under locking isolation.</td>
+                </tr>
+                <tr>
+                    <td>Update (U)</td>
+                    <td>Used when a row is read with the intention of updating it.</td>
+                </tr>
+                <tr>
+                    <td>Exclusive (X)</td>
+                    <td>Protects data being modified.</td>
+                </tr>
+                <tr>
+                    <td>Intent Shared (IS)</td>
+                    <td>Indicates shared locks exist at a lower level.</td>
+                </tr>
+                <tr>
+                    <td>Intent Exclusive (IX)</td>
+                    <td>Indicates exclusive locks exist at a lower level.</td>
+                </tr>
+                <tr>
+                    <td>Shared with Intent Exclusive (SIX)</td>
+                    <td>Combines shared protection with exclusive intent at a lower level.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Basic lock compatibility</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Requested lock</th>
+                    <th>Existing S</th>
+                    <th>Existing U</th>
+                    <th>Existing X</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>S</td><td>Compatible</td><td>Compatible</td><td>Blocked</td></tr>
+                <tr><td>U</td><td>Compatible</td><td>Blocked</td><td>Blocked</td></tr>
+                <tr><td>X</td><td>Blocked</td><td>Blocked</td><td>Blocked</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            This is a simplified compatibility view. Actual locking behavior
+            also depends on lock granularity, intent locks, isolation level,
+            lock hints, and the query execution plan.
+        </p>
+
+        <h3>Lock granularity</h3>
+
+        <ul>
+            <li><strong>Key or RID lock:</strong> Protects an individual index key or heap row.</li>
+            <li><strong>Page lock:</strong> Protects an 8 KB data or index page.</li>
+            <li><strong>Table lock:</strong> Protects a table or its associated lock resource.</li>
+            <li><strong>Database lock:</strong> Protects database-level resources for particular operations.</li>
+        </ul>
+
+        <p>
+            SQL Server can choose different lock granularities based on
+            workload and execution behavior. It may also escalate many
+            fine-grained locks to a table-level lock.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Blocking Between Concurrent Updates</h2>
+
+        <p>
+            Blocking occurs when one session cannot continue because another
+            session holds an incompatible lock on a resource it needs.
+        </p>
+
+        <h3>Session A</h3>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.ConcurrentAccount
+SET Balance = Balance - 100
+WHERE AccountId = 1;
+
+WAITFOR DELAY '00:00:20';
+
+COMMIT TRANSACTION;</code></pre>
+
+        <h3>Session B</h3>
+
+        <pre class="sql-code"><code>UPDATE dbo.ConcurrentAccount
+SET Balance = Balance - 200
+WHERE AccountId = 1;</code></pre>
+
+        <p>
+            Run Session A first, then run Session B while Session A is
+            waiting. Session B will generally wait for Session A to release
+            its conflicting lock.
+        </p>
+
+        <h3>Blocking flow</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Session A updates row</strong>
+                <p>Obtains an exclusive lock.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Session B requests same row</strong>
+                <p>Requests a conflicting lock.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Session B waits</strong>
+                <p>SQL Server records a blocking relationship.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Session A commits</strong>
+                <p>Its locks are released.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Session B continues</strong>
+                <p>Its update can now proceed.</p>
+            </div>
+        </div>
+
+        <h3>Find blocked requests</h3>
+
+        <pre class="sql-code"><code>SELECT
+    session_id,
+    blocking_session_id,
+    status,
+    wait_type,
+    wait_time,
+    wait_resource,
+    command
+FROM sys.dm_exec_requests
+WHERE blocking_session_id <> 0;</code></pre>
+
+        <h3>Inspect current locks</h3>
+
+        <pre class="sql-code"><code>SELECT
+    request_session_id,
+    resource_type,
+    request_mode,
+    request_status,
+    resource_description
+FROM sys.dm_tran_locks
+WHERE resource_database_id = DB_ID()
+ORDER BY request_session_id;</code></pre>
+
+        <p>
+            These queries provide a snapshot of current activity. A blocking
+            relationship may disappear before the query runs, so capture
+            repeated samples or use monitoring tools when investigating
+            intermittent problems.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Pessimistic Concurrency Control</h2>
+
+        <p>
+            Pessimistic concurrency assumes conflicts are possible and
+            protects data using locks before allowing the relevant
+            modification to proceed.
+        </p>
+
+        <h3>Use UPDLOCK</h3>
+
+        <p>
+            UPDLOCK requests update locks for rows read by the query and
+            holds them until the transaction completes.
+        </p>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+DECLARE @CurrentBalance DECIMAL(12,2);
+
+SELECT @CurrentBalance = Balance
+FROM dbo.ConcurrentAccount WITH (UPDLOCK)
+WHERE AccountId = 1;
+
+IF @CurrentBalance >= 1000
+BEGIN
+    UPDATE dbo.ConcurrentAccount
+    SET Balance = @CurrentBalance - 1000
+    WHERE AccountId = 1;
+END
+ELSE
+BEGIN
+    THROW 50002, 'Insufficient funds.', 1;
+END;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <p>
+            The update lock helps prevent another session from independently
+            reading the same row with the intention of updating it under
+            conflicting locking behavior.
+        </p>
+
+        <h3>Use UPDLOCK with HOLDLOCK</h3>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+SELECT Balance
+FROM dbo.ConcurrentAccount
+    WITH (UPDLOCK, HOLDLOCK)
+WHERE AccountId = 1;
+
+-- Perform business validation and update.
+
+COMMIT TRANSACTION;</code></pre>
+
+        <p>
+            HOLDLOCK applies SERIALIZABLE semantics to the referenced table
+            for that statement. With UPDLOCK, the update lock is retained
+            through the transaction. Depending on the access path, SQL
+            Server may use key-range locks to protect relevant ranges.
+        </p>
+
+        <div class="info-box">
+            Lock hints are powerful but can reduce concurrency. Prefer a
+            simple atomic UPDATE when it satisfies the business requirement.
+            Add hints only when you understand the required protection
+            and have tested the resulting execution plan and lock behavior.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>8. Optimistic Concurrency Control</h2>
+
+        <p>
+            Optimistic concurrency assumes that conflicts are relatively
+            uncommon. Instead of locking a row for the entire time an
+            application user is editing it, the application checks whether
+            the row has changed before saving.
+        </p>
+
+        <p>
+            A typical workflow is:
+        </p>
+
+        <ol>
+            <li>Read the record and its version value.</li>
+            <li>Allow the application to edit the data.</li>
+            <li>Submit the update with the original version.</li>
+            <li>SQL Server updates only if the version is unchanged.</li>
+            <li>If no row is updated, report a concurrency conflict.</li>
+        </ol>
+
+        <h3>Example: Create a table with rowversion</h3>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.ProductInventory;
+
+CREATE TABLE dbo.ProductInventory
+(
+    ProductId INT PRIMARY KEY,
+    ProductName VARCHAR(100) NOT NULL,
+    Quantity INT NOT NULL,
+
+    VersionNumber ROWVERSION
+);
+
+INSERT INTO dbo.ProductInventory
+(
+    ProductId,
+    ProductName,
+    Quantity
+)
+VALUES
+    (1, 'Laptop', 20),
+    (2, 'Keyboard', 50);
+
+SELECT *
+FROM dbo.ProductInventory;</code></pre>
+
+        <p>
+            ROWVERSION is an automatically generated 8-byte binary value.
+            SQL Server changes it whenever a row containing a rowversion
+            column is inserted or updated.
+        </p>
+
+        <div class="info-box">
+            ROWVERSION is not a date or time. It is a database-wide version
+            counter value represented as binary data. It does not tell you
+            when the row was changed.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>9. Implement Optimistic Concurrency Using ROWVERSION</h2>
+
+        <h3>Step 1 — Read the row</h3>
+
+        <pre class="sql-code"><code>SELECT
+    ProductId,
+    ProductName,
+    Quantity,
+    VersionNumber
+FROM dbo.ProductInventory
+WHERE ProductId = 1;</code></pre>
+
+        <p>
+            Suppose the application receives a quantity of 20 and a
+            version value such as 0x00000000000007D1. The application
+            stores that original version while the user edits the record.
+        </p>
+
+        <h3>Step 2 — Update using the original version</h3>
+
+        <pre class="sql-code"><code>DECLARE @OriginalVersion BINARY(8) = 0x00000000000007D1;
+
+UPDATE dbo.ProductInventory
+SET Quantity = 18
+WHERE ProductId = 1
+  AND VersionNumber = @OriginalVersion;
+
+IF @@ROWCOUNT = 0
+BEGIN
+    THROW 50003,
+        'Concurrency conflict. The product was modified by another user.',
+        1;
+END;</code></pre>
+
+        <p>
+            The binary value above is illustrative. In a real application,
+            use the exact version value returned by the initial SELECT.
+        </p>
+
+        <h3>Step 3 — Return the new version</h3>
+
+        <pre class="sql-code"><code>DECLARE @OriginalVersion BINARY(8) = 0x00000000000007D1;
+
+UPDATE dbo.ProductInventory
+SET Quantity = 18
+OUTPUT
+    inserted.ProductId,
+    inserted.Quantity,
+    inserted.VersionNumber
+WHERE ProductId = 1
+  AND VersionNumber = @OriginalVersion;
+
+IF @@ROWCOUNT = 0
+BEGIN
+    THROW 50004,
+        'Concurrency conflict. Reload the record before saving.',
+        1;
+END;</code></pre>
+
+        <p>
+            The OUTPUT clause returns the new version generated by SQL
+            Server. The application should retain it for the next update.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>10. Demonstrate a ROWVERSION Conflict</h2>
+
+        <p>
+            This scenario simulates two application users editing the same
+            product.
+        </p>
+
+        <h3>Initial read by both users</h3>
+
+        <p>
+            Both users read ProductId 1, Quantity 20, and the same original
+            VersionNumber.
+        </p>
+
+        <h3>User A saves first</h3>
+
+        <pre class="sql-code"><code>DECLARE @VersionA BINARY(8);
+
+SELECT @VersionA = VersionNumber
+FROM dbo.ProductInventory
+WHERE ProductId = 1;
+
+UPDATE dbo.ProductInventory
+SET Quantity = 18
+WHERE ProductId = 1
+  AND VersionNumber = @VersionA;
+
+SELECT @@ROWCOUNT AS RowsUpdatedByUserA;</code></pre>
+
+        <h3>User B saves using the old version</h3>
+
+        <p>
+            To simulate User B, use the version value captured before
+            User A's update. The following example retrieves a stale
+            version before performing User A's update.
+        </p>
+
+        <pre class="sql-code"><code>DECLARE @StaleVersion BINARY(8);
+
+-- Capture the version before another user's update.
+SELECT @StaleVersion = VersionNumber
+FROM dbo.ProductInventory
+WHERE ProductId = 1;
+
+-- Simulate another user changing the row.
+UPDATE dbo.ProductInventory
+SET Quantity = 17
+WHERE ProductId = 1;
+
+-- Attempt to save with the stale version.
+UPDATE dbo.ProductInventory
+SET Quantity = 15
+WHERE ProductId = 1
+  AND VersionNumber = @StaleVersion;
+
+SELECT @@ROWCOUNT AS RowsUpdatedByUserB;</code></pre>
+
+        <p>
+            Expected result for the second update: 0 rows affected.
+            The row has changed since the stale version was captured.
+        </p>
+
+        <h3>Why optimistic concurrency is useful</h3>
+
+        <ul>
+            <li>Prevents silent overwriting of another user's changes.</li>
+            <li>Allows users to edit data without holding database locks for the entire editing session.</li>
+            <li>Works well for web applications and business forms.</li>
+            <li>Provides an explicit conflict signal for application handling.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Pessimistic vs Optimistic Concurrency</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Aspect</th>
+                    <th>Pessimistic</th>
+                    <th>Optimistic</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Approach</td>
+                    <td>Locks data to prevent conflicting work.</td>
+                    <td>Checks whether data changed before saving.</td>
+                </tr>
+                <tr>
+                    <td>Typical mechanism</td>
+                    <td>UPDATE locks, exclusive locks, UPDLOCK.</td>
+                    <td>ROWVERSION or original-value comparison.</td>
+                </tr>
+                <tr>
+                    <td>Conflict handling</td>
+                    <td>Other sessions may wait.</td>
+                    <td>Conflicting update is rejected.</td>
+                </tr>
+                <tr>
+                    <td>Good fit</td>
+                    <td>High-conflict critical updates.</td>
+                    <td>Low-conflict interactive applications.</td>
+                </tr>
+                <tr>
+                    <td>Main risk</td>
+                    <td>Blocking and deadlocks.</td>
+                    <td>Application must handle conflict and retry or reload.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Isolation Levels and Concurrent Updates</h2>
+
+        <p>
+            Isolation levels influence how transactions read data and how
+            locks or row versions are used. They do not eliminate the need
+            for correct update logic.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Isolation level</th>
+                    <th>Read behavior</th>
+                    <th>Update considerations</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>READ UNCOMMITTED</td>
+                    <td>Can read uncommitted changes.</td>
+                    <td>Does not provide safe application-level read-calculate-write behavior.</td>
+                </tr>
+                <tr>
+                    <td>READ COMMITTED</td>
+                    <td>Prevents dirty reads.</td>
+                    <td>Write locks coordinate conflicting updates.</td>
+                </tr>
+                <tr>
+                    <td>REPEATABLE READ</td>
+                    <td>Retains shared locks on read rows until transaction end.</td>
+                    <td>Can increase blocking.</td>
+                </tr>
+                <tr>
+                    <td>SERIALIZABLE</td>
+                    <td>Protects qualifying key ranges against phantom changes.</td>
+                    <td>Provides stronger protection but may reduce concurrency.</td>
+                </tr>
+                <tr>
+                    <td>SNAPSHOT</td>
+                    <td>Reads a transactionally consistent row-versioned snapshot.</td>
+                    <td>Can raise an update conflict if the row changed after the snapshot began.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Important SNAPSHOT behavior</h3>
+
+        <p>
+            Under SNAPSHOT isolation, if a transaction tries to update a
+            row that has been modified by another transaction since its
+            snapshot was established, SQL Server can terminate the
+            transaction with an update conflict.
+        </p>
+
+        <pre class="sql-code"><code>-- Enable SNAPSHOT isolation at database level.
+ALTER DATABASE YourDatabaseName
+SET ALLOW_SNAPSHOT_ISOLATION ON;
+GO
+
+-- Run in a session after enabling the option.
+SET TRANSACTION ISOLATION LEVEL SNAPSHOT;
+
+BEGIN TRANSACTION;
+
+SELECT *
+FROM dbo.ConcurrentAccount
+WHERE AccountId = 1;
+
+-- Perform additional work here.
+
+COMMIT TRANSACTION;</code></pre>
+
+        <p>
+            A SNAPSHOT transaction that encounters an update conflict must
+            be rolled back. The application can then reload the current
+            values and retry the complete business operation if appropriate.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Use SERIALIZABLE to Protect a Business Rule</h2>
+
+        <p>
+            Consider a reservation system where only one reservation is
+            allowed for a particular seat and show.
+        </p>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.SeatReservation;
+
+CREATE TABLE dbo.SeatReservation
+(
+    ReservationId INT IDENTITY PRIMARY KEY,
+    ShowId INT NOT NULL,
+    SeatNumber VARCHAR(10) NOT NULL,
+    CustomerName VARCHAR(100) NOT NULL,
+
+    CONSTRAINT UQ_Show_Seat
+        UNIQUE (ShowId, SeatNumber)
+);</code></pre>
+
+        <p>
+            The unique constraint is the strongest direct protection
+            against duplicate reservations for the same show and seat.
+            The application should still handle duplicate-key errors
+            cleanly.
+        </p>
+
+        <h3>Attempt to reserve a seat</h3>
+
+        <pre class="sql-code"><code>DECLARE @ShowId INT = 100;
+DECLARE @SeatNumber VARCHAR(10) = 'A10';
+
+BEGIN TRY
+
+    INSERT INTO dbo.SeatReservation
+    (
+        ShowId,
+        SeatNumber,
+        CustomerName
+    )
+    VALUES
+    (
+        @ShowId,
+        @SeatNumber,
+        'Alice'
+    );
+
+    SELECT 'Reservation successful' AS Result;
+
+END TRY
+BEGIN CATCH
+
+    IF ERROR_NUMBER() IN (2601, 2627)
+        SELECT 'Seat already reserved' AS Result;
+    ELSE
+        THROW;
+
+END CATCH;</code></pre>
+
+        <p>
+            A unique index protects the rule even when two sessions attempt
+            to insert the same reservation simultaneously. Only one can
+            successfully create the duplicate key.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Avoid Race Conditions with Conditional Updates</h2>
+
+        <p>
+            A race condition occurs when the result of an operation depends
+            on the timing or ordering of concurrent operations.
+        </p>
+
+        <h3>Unsafe inventory pattern</h3>
+
+        <pre class="sql-code"><code>-- Application reads quantity first.
+SELECT Quantity
+FROM dbo.ProductInventory
+WHERE ProductId = 1;
+
+-- Application later decides whether enough stock exists.
+-- Another transaction could change the quantity in between.</code></pre>
+
+        <h3>Safer inventory update</h3>
+
+        <pre class="sql-code"><code>DECLARE @RequestedQuantity INT = 2;
+
+UPDATE dbo.ProductInventory
+SET Quantity = Quantity - @RequestedQuantity
+WHERE ProductId = 1
+  AND Quantity >= @RequestedQuantity;
+
+IF @@ROWCOUNT = 0
+BEGIN
+    THROW 50005,
+        'Product not found or insufficient stock.',
+        1;
+END;</code></pre>
+
+        <p>
+            The availability check and quantity reduction occur in the
+            same statement. This is usually simpler and safer than
+            separately reading, checking, and updating the quantity.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>15. Deadlocks During Concurrent Updates</h2>
+
+        <p>
+            A deadlock occurs when two or more sessions each hold resources
+            needed by the others, forming a cycle of dependencies.
+            SQL Server detects the cycle and selects a transaction as
+            the deadlock victim.
+        </p>
+
+        <h3>Example</h3>
+
+        <p>Session A:</p>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.ConcurrentAccount
+SET Balance = Balance - 100
+WHERE AccountId = 1;
+
+WAITFOR DELAY '00:00:05';
+
+UPDATE dbo.ConcurrentAccount
+SET Balance = Balance + 100
+WHERE AccountId = 2;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <p>Session B:</p>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.ConcurrentAccount
+SET Balance = Balance - 100
+WHERE AccountId = 2;
+
+WAITFOR DELAY '00:00:05';
+
+UPDATE dbo.ConcurrentAccount
+SET Balance = Balance + 100
+WHERE AccountId = 1;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <p>
+            If both sessions acquire their first lock before requesting
+            the other account, each may wait for the other. SQL Server
+            can detect the deadlock and roll back one transaction.
+        </p>
+
+        <h3>Prevent this pattern by using a consistent order</h3>
+
+        <p>
+            Both transactions should access accounts in the same order.
+            For example, always update the lower AccountId first.
+        </p>
+
+        <pre class="sql-code"><code>BEGIN TRY
+
+    BEGIN TRANSACTION;
+
+    -- First update AccountId 1.
+    UPDATE dbo.ConcurrentAccount
+    SET Balance = Balance - 100
+    WHERE AccountId = 1;
+
+    -- Then update AccountId 2.
+    UPDATE dbo.ConcurrentAccount
+    SET Balance = Balance + 100
+    WHERE AccountId = 2;
+
+    COMMIT TRANSACTION;
+
+END TRY
+BEGIN CATCH
+
+    IF XACT_STATE() <> 0
+        ROLLBACK TRANSACTION;
+
+    THROW;
+
+END CATCH;</code></pre>
+
+        <p>
+            Consistent access order reduces one common source of deadlocks.
+            It does not eliminate every possible deadlock, so applications
+            should still handle deadlock error 1205.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Handle Deadlock Errors with Safe Retries</h2>
+
+        <p>
+            SQL Server reports error 1205 to the deadlock victim. An
+            application can retry the complete transaction after a
+            short delay, provided the business operation is safe to retry.
+        </p>
+
+        <h3>Example T-SQL retry pattern</h3>
+
+        <pre class="sql-code"><code>DECLARE @Attempt INT = 1;
+DECLARE @MaxAttempts INT = 3;
+DECLARE @Completed BIT = 0;
+
+WHILE @Attempt <= @MaxAttempts
+  AND @Completed = 0
+BEGIN
+    BEGIN TRY
+
+        BEGIN TRANSACTION;
+
+        UPDATE dbo.ConcurrentAccount
+        SET Balance = Balance - 100
+        WHERE AccountId = 1;
+
+        UPDATE dbo.ConcurrentAccount
+        SET Balance = Balance + 100
+        WHERE AccountId = 2;
+
+        COMMIT TRANSACTION;
+
+        SET @Completed = 1;
+
+    END TRY
+    BEGIN CATCH
+
+        IF XACT_STATE() <> 0
+            ROLLBACK TRANSACTION;
+
+        IF ERROR_NUMBER() = 1205
+           AND @Attempt < @MaxAttempts
+        BEGIN
+            SET @Attempt += 1;
+
+            WAITFOR DELAY '00:00:01';
+        END
+        ELSE
+        BEGIN
+            THROW;
+        END;
+
+    END CATCH;
+END;</code></pre>
+
+        <p>
+            This is an illustrative retry pattern. Production applications
+            should use bounded exponential backoff with jitter where
+            appropriate, log retry attempts, and ensure the complete
+            business operation is safe to execute again.
+        </p>
+
+        <div class="info-box">
+            Do not blindly retry every database error. A timeout or
+            connection failure can leave the application uncertain about
+            whether a commit succeeded. Use idempotency keys or another
+            reliable request-tracking strategy when duplicate execution
+            would cause incorrect business results.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>17. Inspect Transaction and Session Information</h2>
+
+        <h3>Find sessions with open transactions</h3>
+
+        <pre class="sql-code"><code>SELECT
+    s.session_id,
+    s.login_name,
+    s.host_name,
+    s.program_name,
+    s.status,
+    s.open_transaction_count
+FROM sys.dm_exec_sessions AS s
+WHERE s.is_user_process = 1
+  AND s.open_transaction_count > 0
+ORDER BY s.open_transaction_count DESC;</code></pre>
+
+        <h3>Find active transactions</h3>
+
+        <pre class="sql-code"><code>SELECT
+    st.session_id,
+    at.transaction_id,
+    at.name AS TransactionName,
+    at.transaction_begin_time,
+    at.transaction_state
+FROM sys.dm_tran_session_transactions AS st
+JOIN sys.dm_tran_active_transactions AS at
+    ON st.transaction_id = at.transaction_id
+ORDER BY at.transaction_begin_time;</code></pre>
+
+        <h3>Find blocking chains</h3>
+
+        <pre class="sql-code"><code>SELECT
+    session_id,
+    blocking_session_id,
+    wait_type,
+    wait_time,
+    wait_resource,
+    status,
+    command
+FROM sys.dm_exec_requests
+WHERE blocking_session_id <> 0
+   OR session_id IN
+      (
+          SELECT blocking_session_id
+          FROM sys.dm_exec_requests
+          WHERE blocking_session_id <> 0
+      );</code></pre>
+
+        <p>
+            These diagnostic queries may require appropriate server
+            permissions. Depending on SQL Server version, viewing server
+            state may require VIEW SERVER STATE or VIEW SERVER PERFORMANCE
+            STATE.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>18. SQL Server Internals: What Happens During an UPDATE?</h2>
+
+        <p>
+            A typical UPDATE involves several internal components:
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Query compilation</strong>
+                <p>SQL Server creates or reuses an execution plan.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Access data</strong>
+                <p>The execution plan locates the target row through an index or scan.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Acquire locks</strong>
+                <p>SQL Server requests the locks required by the operation.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Modify buffer pages</strong>
+                <p>The affected data page is modified in memory.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Generate log records</strong>
+                <p>Changes are recorded in the transaction log.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Commit</strong>
+                <p>Required log records are hardened for a fully durable commit.</p>
+            </div>
+        </div>
+
+        <h3>Important execution plan operators</h3>
+
+        <ul>
+            <li><strong>Index Seek:</strong> Locates rows using an index key.</li>
+            <li><strong>Index Scan:</strong> Reads an index range or the entire index.</li>
+            <li><strong>Clustered Index Update:</strong> Modifies rows in a clustered index.</li>
+            <li><strong>Table Update:</strong> Modifies rows in a heap.</li>
+            <li><strong>Index Update:</strong> Maintains affected nonclustered indexes.</li>
+            <li><strong>Sort:</strong> May be used to prepare rows for an operation or optimize access order.</li>
+        </ul>
+
+        <p>
+            The actual plan depends on indexes, predicates, statistics,
+            cardinality estimates, SQL Server version, and optimizer choices.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>19. Performance Optimization for Concurrent Updates</h2>
+
+        <h3>1. Create useful indexes</h3>
+
+        <p>
+            An index on the columns used to locate a row can reduce the
+            number of rows SQL Server must examine and can reduce
+            unnecessary lock acquisition.
+        </p>
+
+        <pre class="sql-code"><code>CREATE INDEX IX_ConcurrentAccount_AccountId
+ON dbo.ConcurrentAccount(AccountId);</code></pre>
+
+        <p>
+            In this example, AccountId is already the primary key and
+            therefore has a supporting index. The additional index is
+            unnecessary and is shown only to illustrate the syntax.
+        </p>
+
+        <h3>2. Keep transactions short</h3>
+
+        <p>
+            Do not perform unrelated application operations, file uploads,
+            user interactions, or long-running calculations while holding
+            database locks.
+        </p>
+
+        <h3>3. Update only required columns</h3>
+
+        <pre class="sql-code"><code>UPDATE dbo.ConcurrentAccount
+SET Balance = Balance - 100
+WHERE AccountId = 1;</code></pre>
+
+        <h3>4. Avoid unnecessary scans</h3>
+
+        <p>
+            Ensure that update predicates are supported by appropriate
+            indexes. A poorly selective update can touch many rows and
+            increase lock duration and transaction-log activity.
+        </p>
+
+        <h3>5. Monitor waits and blocking</h3>
+
+        <pre class="sql-code"><code>SELECT
+    wait_type,
+    waiting_tasks_count,
+    wait_time_ms,
+    max_wait_time_ms
+FROM sys.dm_os_wait_stats
+WHERE wait_type LIKE 'LCK%'
+ORDER BY wait_time_ms DESC;</code></pre>
+
+        <p>
+            Wait statistics are cumulative since the last reset or
+            server start. They should be interpreted alongside workload
+            timing and other diagnostic evidence.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>20. Production Design Patterns</h2>
+
+        <h3>Pattern A — Atomic counter increment</h3>
+
+        <pre class="sql-code"><code>UPDATE dbo.ProductInventory
+SET Quantity = Quantity + 1
+WHERE ProductId = 1;</code></pre>
+
+        <p>
+            Use a database-side expression rather than reading the
+            existing value into application code and writing a calculated
+            replacement later.
+        </p>
+
+        <h3>Pattern B — Conditional stock reservation</h3>
+
+        <pre class="sql-code"><code>DECLARE @RequestedQuantity INT = 3;
+
+UPDATE dbo.ProductInventory
+SET Quantity = Quantity - @RequestedQuantity
+WHERE ProductId = 1
+  AND Quantity >= @RequestedQuantity;
+
+IF @@ROWCOUNT = 0
+BEGIN
+    THROW 50006, 'Insufficient inventory.', 1;
+END;</code></pre>
+
+        <h3>Pattern C — Optimistic update with ROWVERSION</h3>
+
+        <pre class="sql-code"><code>UPDATE dbo.ProductInventory
+SET Quantity = 15
+WHERE ProductId = 1
+  AND VersionNumber = @OriginalVersion;
+
+IF @@ROWCOUNT = 0
+BEGIN
+    THROW 50007, 'Record changed. Reload and try again.', 1;
+END;</code></pre>
+
+        <h3>Pattern D — Prevent duplicate operations</h3>
+
+        <p>
+            For operations such as payment processing or order submission,
+            a unique request identifier can help prevent duplicate
+            processing when clients retry requests.
+        </p>
+
+        <pre class="sql-code"><code>CREATE TABLE dbo.ProcessedRequest
+(
+    RequestId UNIQUEIDENTIFIER NOT NULL
+        CONSTRAINT PK_ProcessedRequest PRIMARY KEY,
+
+    ProcessedAt DATETIME2 NOT NULL
+        CONSTRAINT DF_ProcessedRequest_ProcessedAt
+        DEFAULT SYSUTCDATETIME()
+);</code></pre>
+
+        <p>
+            Insert the request identifier and perform the associated
+            database changes in the same transaction. A duplicate key
+            indicates that the request identifier has already been used.
+            The application must also define how to return the result
+            of an earlier successful request.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>21. Common Mistakes</h2>
+
+        <ul>
+            <li>Reading a value, calculating a replacement in application code, and writing stale data later.</li>
+            <li>Assuming READ COMMITTED prevents every application-level lost update.</li>
+            <li>Holding transactions open while waiting for user input.</li>
+            <li>Using UPDLOCK or HOLDLOCK everywhere without understanding the impact.</li>
+            <li>Assuming ROWVERSION represents a date or timestamp.</li>
+            <li>Ignoring the possibility of deadlocks.</li>
+            <li>Retrying transactions without ensuring that the operation is safe to repeat.</li>
+            <li>Using a SELECT followed by an UPDATE when a single conditional UPDATE would work.</li>
+            <li>Failing to check @@ROWCOUNT after a conditional update.</li>
+            <li>Assuming an application timeout proves that a transaction did not commit.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>22. Hands-On Exercises</h2>
+
+        <ol>
+            <li>Reproduce a lost update using two query windows.</li>
+            <li>Fix the lost update by using an atomic UPDATE statement.</li>
+            <li>Run two withdrawals against one account and verify the final balance.</li>
+            <li>Observe blocking using two sessions updating the same row.</li>
+            <li>Inspect the locks using sys.dm_tran_locks.</li>
+            <li>Create a ROWVERSION column and implement optimistic concurrency.</li>
+            <li>Simulate a stale version update and detect the conflict.</li>
+            <li>Create a unique reservation constraint and test concurrent inserts.</li>
+            <li>Reproduce a deadlock using opposite update order.</li>
+            <li>Modify the transactions to access rows in a consistent order.</li>
+            <li>Implement bounded deadlock retries.</li>
+            <li>Build an inventory reservation procedure that cannot reduce stock below zero.</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>23. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>What is a lost update?</p>
+        <ul>
+            <li>A. A database backup failure.</li>
+            <li>B. One update overwrites another user's intended change.</li>
+            <li>C. An index becomes fragmented.</li>
+            <li>D. A transaction is automatically committed.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — A stale calculated value can overwrite a newer value.</p>
+
+        <h3>Question 2</h3>
+        <p>Which technique is often simplest for a counter increment?</p>
+        <ul>
+            <li>A. Read, calculate, and write in separate application operations.</li>
+            <li>B. Use an atomic UPDATE expression.</li>
+            <li>C. Disable locking.</li>
+            <li>D. Use READ UNCOMMITTED.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — SQL Server applies the calculation as part of the update statement.</p>
+
+        <h3>Question 3</h3>
+        <p>What does ROWVERSION provide?</p>
+        <ul>
+            <li>A. A human-readable date.</li>
+            <li>B. A row change version value.</li>
+            <li>C. A transaction isolation level.</li>
+            <li>D. A backup identifier.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — ROWVERSION changes when a row containing that column is updated.</p>
+
+        <h3>Question 4</h3>
+        <p>What does UPDLOCK request?</p>
+        <ul>
+            <li>A. An update lock on rows read by the query.</li>
+            <li>B. A database backup.</li>
+            <li>C. A table deletion.</li>
+            <li>D. A shared snapshot.</li>
+        </ul>
+        <p><strong>Answer:</strong> A — UPDLOCK requests update locks and holds them until the transaction completes.</p>
+
+        <h3>Question 5</h3>
+        <p>What is blocking?</p>
+        <ul>
+            <li>A. A query waiting for an incompatible lock.</li>
+            <li>B. A query running without indexes.</li>
+            <li>C. A transaction-log backup.</li>
+            <li>D. A failed database connection.</li>
+        </ul>
+        <p><strong>Answer:</strong> A — One session waits for another session to release a conflicting resource.</p>
+
+        <h3>Question 6</h3>
+        <p>Which SQL Server error is commonly associated with a deadlock victim?</p>
+        <ul>
+            <li>A. 2627</li>
+            <li>B. 1205</li>
+            <li>C. 208</li>
+            <li>D. 245</li>
+        </ul>
+        <p><strong>Answer:</strong> B — Error 1205 indicates that the transaction was chosen as a deadlock victim.</p>
+
+        <h3>Question 7</h3>
+        <p>Why use a conditional inventory UPDATE?</p>
+        <ul>
+            <li>A. To disable concurrent transactions.</li>
+            <li>B. To check stock and reduce it within one statement.</li>
+            <li>C. To remove all indexes.</li>
+            <li>D. To avoid transaction logging.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — The condition and update are evaluated as one database operation.</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>24. Key Takeaways</h2>
+
+        <ul class="learning-list">
+            <li>Concurrent updates occur when multiple sessions modify shared data.</li>
+            <li>Lost updates often result from application-level read-calculate-write patterns.</li>
+            <li>Atomic UPDATE statements are a strong default for counters, balances, and inventory changes.</li>
+            <li>SQL Server uses locks to coordinate conflicting writes.</li>
+            <li>Blocking occurs when a session waits for an incompatible lock.</li>
+            <li>Pessimistic concurrency uses locks to protect data.</li>
+            <li>Optimistic concurrency detects changes using ROWVERSION or original values.</li>
+            <li>Isolation levels affect read consistency and concurrency behavior.</li>
+            <li>Consistent resource access order helps reduce deadlocks.</li>
+            <li>Production applications should handle conflicts, deadlocks, retries, and uncertain request outcomes carefully.</li>
+        </ul>
+
+        <p>
+            Reliable concurrent update design is essential for banking,
+            inventory, order processing, booking, and other multi-user
+            systems. The best solution usually combines atomic SQL
+            operations, appropriate constraints, short transactions,
+            and a concurrency strategy suited to the workload.
+        </p>
+    </section>
+
+</main>

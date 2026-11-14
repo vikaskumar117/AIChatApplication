@@ -1,0 +1,958 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Employees Above Their Department Average in SQL Server</h1>
+        <p>
+            Learn how to compare each employee's salary against the average
+            salary of their department using multiple T-SQL approaches.
+            Understand correlated subqueries, window functions, NULL handling,
+            execution plans and performance optimization.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Problem Statement</h2>
+
+        <p>
+            Imagine an organization has several departments, and each
+            department has employees with different salaries.
+        </p>
+
+        <p>The requirement is to find employees whose salary is greater than the average salary of their own department.</p>
+
+        <p>For example:</p>
+
+        <ul class="learning-list">
+            <li>Find employees earning more than the IT department average.</li>
+            <li>Find employees earning more than the HR department average.</li>
+            <li>Find employees earning more than the Finance department average.</li>
+            <li>Compare each employee against the correct department, not the company-wide average.</li>
+        </ul>
+
+        <div class="info-box">
+            <strong>Important distinction:</strong>
+            We are not comparing every employee against one overall company
+            average. Each employee must be compared against the average
+            calculated for their own department.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>2. Create the Sample Table</h2>
+
+        <pre class="sql-code"><code>CREATE TABLE Employees
+(
+    EmployeeId INT PRIMARY KEY,
+    EmployeeName VARCHAR(50),
+    Department VARCHAR(50),
+    Salary DECIMAL(10, 2)
+);
+
+INSERT INTO Employees
+    (EmployeeId, EmployeeName, Department, Salary)
+VALUES
+    (101, 'Alice', 'IT', 90000),
+    (102, 'Bob', 'HR', 80000),
+    (103, 'Carol', 'IT', 80000),
+    (104, 'David', 'Finance', 70000),
+    (105, 'Emma', 'HR', 60000),
+    (106, 'Frank', 'IT', 50000),
+    (107, 'Grace', 'Finance', 70000),
+    (108, 'Henry', 'HR', 40000),
+    (109, 'Ivy', 'Finance', 55000),
+    (110, 'Jack', 'IT', 90000);</code></pre>
+
+        <h3>Employee data</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>EmployeeName</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>101</td><td>Alice</td><td>IT</td><td>90,000</td></tr>
+                <tr><td>102</td><td>Bob</td><td>HR</td><td>80,000</td></tr>
+                <tr><td>103</td><td>Carol</td><td>IT</td><td>80,000</td></tr>
+                <tr><td>104</td><td>David</td><td>Finance</td><td>70,000</td></tr>
+                <tr><td>105</td><td>Emma</td><td>HR</td><td>60,000</td></tr>
+                <tr><td>106</td><td>Frank</td><td>IT</td><td>50,000</td></tr>
+                <tr><td>107</td><td>Grace</td><td>Finance</td><td>70,000</td></tr>
+                <tr><td>108</td><td>Henry</td><td>HR</td><td>40,000</td></tr>
+                <tr><td>109</td><td>Ivy</td><td>Finance</td><td>55,000</td></tr>
+                <tr><td>110</td><td>Jack</td><td>IT</td><td>90,000</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>3. Understand the Department Averages</h2>
+
+        <p>
+            Before finding employees above average, calculate the average
+            salary for each department.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    Department,
+    AVG(Salary) AS AverageSalary
+FROM Employees
+GROUP BY Department;</code></pre>
+
+        <h3>Expected output</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>AverageSalary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Finance</td><td>65,000</td></tr>
+                <tr><td>HR</td><td>60,000</td></tr>
+                <tr><td>IT</td><td>77,500</td></tr>
+            </tbody>
+        </table>
+
+        <h3>How are these averages calculated?</h3>
+
+        <p><strong>IT:</strong></p>
+        <pre class="sql-code"><code>(90000 + 80000 + 50000 + 90000) / 4
+= 77500</code></pre>
+
+        <p><strong>HR:</strong></p>
+        <pre class="sql-code"><code>(80000 + 60000 + 40000) / 3
+= 60000</code></pre>
+
+        <p><strong>Finance:</strong></p>
+        <pre class="sql-code"><code>(70000 + 70000 + 55000) / 3
+= 65000</code></pre>
+
+        <div class="info-box">
+            SQL Server's AVG() ignores NULL values. It calculates the
+            average using non-NULL salary values, not the total number
+            of rows when some salaries are NULL.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>4. Approach 1 — Using a Correlated Subquery</h2>
+
+        <p>
+            A correlated subquery refers to a column from the outer query.
+            Here, the inner query uses the current employee's Department
+            to calculate that department's average salary.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    E.EmployeeId,
+    E.EmployeeName,
+    E.Department,
+    E.Salary
+FROM Employees E
+WHERE E.Salary >
+(
+    SELECT AVG(E2.Salary)
+    FROM Employees E2
+    WHERE E2.Department = E.Department
+)
+ORDER BY E.Department, E.Salary DESC;</code></pre>
+
+        <h3>Expected output</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>EmployeeId</th>
+                    <th>EmployeeName</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                    <th>Department Average</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>104</td><td>David</td><td>Finance</td><td>70,000</td><td>65,000</td></tr>
+                <tr><td>107</td><td>Grace</td><td>Finance</td><td>70,000</td><td>65,000</td></tr>
+                <tr><td>102</td><td>Bob</td><td>HR</td><td>80,000</td><td>60,000</td></tr>
+                <tr><td>101</td><td>Alice</td><td>IT</td><td>90,000</td><td>77,500</td></tr>
+                <tr><td>110</td><td>Jack</td><td>IT</td><td>90,000</td><td>77,500</td></tr>
+                <tr><td>103</td><td>Carol</td><td>IT</td><td>80,000</td><td>77,500</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Understand the query step by step</h3>
+
+        <pre class="sql-code"><code>WHERE E.Salary >
+(
+    SELECT AVG(E2.Salary)
+    FROM Employees E2
+    WHERE E2.Department = E.Department
+)</code></pre>
+
+        <ol class="learning-list">
+            <li>The outer query considers an employee row.</li>
+            <li>The inner query uses that employee's Department.</li>
+            <li>AVG() calculates the average salary for that department.</li>
+            <li>The outer query compares the employee's salary with that average.</li>
+            <li>Only employees with a greater salary are returned.</li>
+        </ol>
+
+        <h3>Example: Alice</h3>
+
+        <pre class="sql-code"><code>Employee: Alice
+Department: IT
+Salary: 90000
+
+IT Average: 77500
+
+90000 > 77500
+
+Result: Alice is included.</code></pre>
+
+        <div class="info-box">
+            <strong>Why is it called correlated?</strong>
+            The inner query refers to E.Department from the outer query.
+            The two queries are logically related through that reference.
+            SQL Server may transform and optimize the query rather than
+            literally executing the inner query independently for every row.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>5. Approach 2 — Using a CTE and JOIN</h2>
+
+        <p>
+            We can calculate the department averages once in a CTE and
+            join those results to the Employees table.
+        </p>
+
+        <pre class="sql-code"><code>WITH DepartmentAverage AS
+(
+    SELECT
+        Department,
+        AVG(Salary) AS AverageSalary
+    FROM Employees
+    GROUP BY Department
+)
+SELECT
+    E.EmployeeId,
+    E.EmployeeName,
+    E.Department,
+    E.Salary,
+    D.AverageSalary
+FROM Employees E
+INNER JOIN DepartmentAverage D
+    ON E.Department = D.Department
+WHERE E.Salary > D.AverageSalary
+ORDER BY E.Department, E.Salary DESC;</code></pre>
+
+        <h3>How it works</h3>
+
+        <ol class="learning-list">
+            <li>The CTE groups employees by department.</li>
+            <li>AVG(Salary) calculates the average for each group.</li>
+            <li>The main query joins every employee to their department average.</li>
+            <li>The WHERE clause selects salaries greater than the average.</li>
+        </ol>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Step 1: Group employees</strong>
+                <p>Separate employee records by department.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 2: Calculate averages</strong>
+                <p>Calculate AVG(Salary) for each department.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 3: Join averages</strong>
+                <p>Associate each employee with the correct department average.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Step 4: Filter employees</strong>
+                <p>Return only employees earning more than their department average.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Approach 3 — Using a Window Function</h2>
+
+        <p>
+            A window function calculates the department average while
+            retaining every employee row. This is one of the clearest
+            approaches for this problem.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary,
+    AVG(Salary) OVER
+    (
+        PARTITION BY Department
+    ) AS DepartmentAverage
+FROM Employees;</code></pre>
+
+        <h3>Expected intermediate output</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                    <th>DepartmentAverage</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>IT</td><td>90,000</td><td>77,500</td></tr>
+                <tr><td>Bob</td><td>HR</td><td>80,000</td><td>60,000</td></tr>
+                <tr><td>Carol</td><td>IT</td><td>80,000</td><td>77,500</td></tr>
+                <tr><td>David</td><td>Finance</td><td>70,000</td><td>65,000</td></tr>
+                <tr><td>Emma</td><td>HR</td><td>60,000</td><td>60,000</td></tr>
+                <tr><td>Frank</td><td>IT</td><td>50,000</td><td>77,500</td></tr>
+                <tr><td>Grace</td><td>Finance</td><td>70,000</td><td>65,000</td></tr>
+                <tr><td>Henry</td><td>HR</td><td>40,000</td><td>60,000</td></tr>
+                <tr><td>Ivy</td><td>Finance</td><td>55,000</td><td>65,000</td></tr>
+                <tr><td>Jack</td><td>IT</td><td>90,000</td><td>77,500</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Understand PARTITION BY</h3>
+
+        <pre class="sql-code"><code>AVG(Salary) OVER
+(
+    PARTITION BY Department
+)</code></pre>
+
+        <ul class="learning-list">
+            <li>PARTITION BY Department divides rows into department groups.</li>
+            <li>AVG(Salary) calculates an average for each group.</li>
+            <li>The average is repeated on each employee row in that department.</li>
+            <li>Unlike GROUP BY, the window function does not collapse the employee rows into one row per department.</li>
+        </ul>
+
+        <h3>Filter employees above their average</h3>
+
+        <p>
+            SQL Server does not allow a window function to be used directly
+            in the WHERE clause of the same SELECT query block. Use a CTE
+            or derived table.
+        </p>
+
+        <pre class="sql-code"><code>WITH EmployeeAverage AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Department,
+        Salary,
+        AVG(Salary) OVER
+        (
+            PARTITION BY Department
+        ) AS DepartmentAverage
+    FROM Employees
+)
+SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary,
+    DepartmentAverage
+FROM EmployeeAverage
+WHERE Salary > DepartmentAverage
+ORDER BY Department, Salary DESC;</code></pre>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Approach 4 — Using a Derived Table</h2>
+
+        <p>
+            A derived table is a subquery placed in the FROM clause.
+            It can calculate the department average and expose it to
+            the outer query.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    E.EmployeeId,
+    E.EmployeeName,
+    E.Department,
+    E.Salary,
+    D.AverageSalary
+FROM Employees E
+INNER JOIN
+(
+    SELECT
+        Department,
+        AVG(Salary) AS AverageSalary
+    FROM Employees
+    GROUP BY Department
+) D
+    ON E.Department = D.Department
+WHERE E.Salary > D.AverageSalary;</code></pre>
+
+        <p>
+            This has the same general logic as the CTE approach. The
+            derived table calculates one average per department, and
+            the outer query compares employee salaries against it.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>8. Approach 5 — Using CROSS APPLY</h2>
+
+        <p>
+            CROSS APPLY can calculate a department average for each
+            employee's department.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    E.EmployeeId,
+    E.EmployeeName,
+    E.Department,
+    E.Salary,
+    A.AverageSalary
+FROM Employees E
+CROSS APPLY
+(
+    SELECT AVG(E2.Salary) AS AverageSalary
+    FROM Employees E2
+    WHERE E2.Department = E.Department
+) A
+WHERE E.Salary > A.AverageSalary
+ORDER BY E.Department, E.Salary DESC;</code></pre>
+
+        <p>
+            The APPLY expression is correlated to the current outer
+            employee through E.Department.
+        </p>
+
+        <p>
+            Since AVG() returns one row even when no non-NULL values
+            exist, CROSS APPLY does not remove the employee in that
+            situation. The calculated average will be NULL.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>9. Compare the Different Approaches</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Approach</th>
+                    <th>Best use</th>
+                    <th>Key concept</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Correlated subquery</td>
+                    <td>Direct comparison against a related group average</td>
+                    <td>Outer query reference</td>
+                </tr>
+                <tr>
+                    <td>CTE + JOIN</td>
+                    <td>Readable multi-step query</td>
+                    <td>Aggregate first, then join</td>
+                </tr>
+                <tr>
+                    <td>Window function</td>
+                    <td>Keep employee details alongside group statistics</td>
+                    <td>PARTITION BY</td>
+                </tr>
+                <tr>
+                    <td>Derived table</td>
+                    <td>Inline aggregation</td>
+                    <td>Subquery in FROM</td>
+                </tr>
+                <tr>
+                    <td>CROSS APPLY</td>
+                    <td>Correlated calculations and per-row logic</td>
+                    <td>APPLY operator</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            These query forms can produce similar results, and SQL Server
+            may transform them into similar execution plans. Do not assume
+            one form is automatically faster. Measure with realistic data.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>10. Company Average vs Department Average</h2>
+
+        <p>
+            A common mistake is comparing employees against the overall
+            company average instead of their own department average.
+        </p>
+
+        <h3>Company-wide average</h3>
+
+        <pre class="sql-code"><code>SELECT AVG(Salary) AS CompanyAverage
+FROM Employees;</code></pre>
+
+        <p>The company-wide average in this sample is 68,500.</p>
+
+        <h3>Employees above the company average</h3>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary
+FROM Employees
+WHERE Salary >
+(
+    SELECT AVG(Salary)
+    FROM Employees
+);</code></pre>
+
+        <p>
+            This is a different business question. It compares every
+            employee against one company-wide number.
+        </p>
+
+        <h3>Employees above their department average</h3>
+
+        <pre class="sql-code"><code>SELECT
+    EmployeeId,
+    EmployeeName,
+    Department,
+    Salary
+FROM Employees E
+WHERE Salary >
+(
+    SELECT AVG(Salary)
+    FROM Employees E2
+    WHERE E2.Department = E.Department
+);</code></pre>
+
+        <p>
+            This second query compares employees against the average
+            calculated for their own department.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Handling NULL Salaries</h2>
+
+        <p>
+            SQL Server's AVG() ignores NULL values. Consider this data:
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th>Salary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Employee A</td><td>Support</td><td>50,000</td></tr>
+                <tr><td>Employee B</td><td>Support</td><td>70,000</td></tr>
+                <tr><td>Employee C</td><td>Support</td><td>NULL</td></tr>
+            </tbody>
+        </table>
+
+        <p>SQL Server calculates:</p>
+
+        <pre class="sql-code"><code>AVG(Salary)
+= (50000 + 70000) / 2
+= 60000</code></pre>
+
+        <p>
+            Employee B is above average. Employee A is below average.
+            Employee C has a NULL salary, so the comparison evaluates
+            to UNKNOWN and that employee is not returned.
+        </p>
+
+        <h3>What if all salaries in a department are NULL?</h3>
+
+        <p>
+            AVG(Salary) returns NULL. A comparison such as
+            <code>Salary &gt; NULL</code> does not evaluate to TRUE.
+            Therefore, no employees in that department are returned
+            by the above-average query.
+        </p>
+
+        <div class="info-box">
+            Do not automatically replace NULL with zero using ISNULL()
+            or COALESCE(). A missing salary and a salary of zero may
+            represent different business meanings.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Find Employees at or Above Their Department Average</h2>
+
+        <p>
+            If the requirement includes employees whose salaries equal
+            their department average, change the greater-than operator
+            to greater-than-or-equal.
+        </p>
+
+        <pre class="sql-code"><code>WITH EmployeeAverage AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Department,
+        Salary,
+        AVG(Salary) OVER
+        (
+            PARTITION BY Department
+        ) AS DepartmentAverage
+    FROM Employees
+)
+SELECT *
+FROM EmployeeAverage
+WHERE Salary >= DepartmentAverage;</code></pre>
+
+        <p>
+            In the sample data, Emma's salary is exactly equal to the
+            HR department average, so she is included in this version.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Find Employees Below Their Department Average</h2>
+
+        <p>
+            The same logic can be reversed to find employees whose
+            salary is less than their department average.
+        </p>
+
+        <pre class="sql-code"><code>WITH EmployeeAverage AS
+(
+    SELECT
+        EmployeeId,
+        EmployeeName,
+        Department,
+        Salary,
+        AVG(Salary) OVER
+        (
+            PARTITION BY Department
+        ) AS DepartmentAverage
+    FROM Employees
+)
+SELECT *
+FROM EmployeeAverage
+WHERE Salary < DepartmentAverage;</code></pre>
+
+        <p>
+            In the sample data, this returns employees earning below
+            their department average, including Frank, Emma, Henry
+            and Ivy.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Find Departments Where the Average Salary Is Above a Threshold</h2>
+
+        <p>
+            Sometimes the requirement is not about individual employees.
+            Instead, the organization wants departments whose average
+            salary exceeds a specific amount.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    Department,
+    AVG(Salary) AS AverageSalary
+FROM Employees
+GROUP BY Department
+HAVING AVG(Salary) > 65000;</code></pre>
+
+        <h3>Expected output</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>AverageSalary</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>IT</td><td>77,500</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            HAVING filters groups after aggregation. WHERE filters
+            individual rows before grouping.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>15. SQL Server Internal Processing</h2>
+
+        <p>
+            SQL Server's optimizer determines how to execute the query.
+            The logical requirement is to calculate a department average
+            and compare employee salaries against it.
+        </p>
+
+        <h3>Conceptual execution flow for the CTE and JOIN approach</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>1. Read employee data</strong>
+                <p>Access the necessary table or index rows.</p>
+            </div>
+            <div class="flow-step">
+                <strong>2. Group by department</strong>
+                <p>Build department groups for aggregation.</p>
+            </div>
+            <div class="flow-step">
+                <strong>3. Calculate AVG(Salary)</strong>
+                <p>Calculate one average value per department.</p>
+            </div>
+            <div class="flow-step">
+                <strong>4. Join average values</strong>
+                <p>Associate the average with the matching employees.</p>
+            </div>
+            <div class="flow-step">
+                <strong>5. Apply the salary filter</strong>
+                <p>Return rows where salary exceeds the department average.</p>
+            </div>
+        </div>
+
+        <h3>Possible execution plan operators</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Operator</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Index Scan</td><td>Reads rows from an index.</td></tr>
+                <tr><td>Table Scan</td><td>Reads rows from a heap table.</td></tr>
+                <tr><td>Hash Match (Aggregate)</td><td>Groups rows and calculates aggregates.</td></tr>
+                <tr><td>Stream Aggregate</td><td>Aggregates rows that arrive in suitable grouping order.</td></tr>
+                <tr><td>Hash Match (Join)</td><td>Joins the department averages to employee rows.</td></tr>
+                <tr><td>Nested Loops</td><td>May be used for joins when the estimated input sizes and access paths make it appropriate.</td></tr>
+                <tr><td>Filter</td><td>Applies the salary comparison.</td></tr>
+                <tr><td>Window Aggregate</td><td>May participate in a plan for the window-function approach.</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            The exact operators and their order are selected by the
+            optimizer. A correlated subquery does not necessarily mean
+            the inner query physically executes once for every employee.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Performance Optimization</h2>
+
+        <h3>1. Consider an index on Department and Salary</h3>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Employees_Department_Salary
+ON Employees
+(
+    Department,
+    Salary
+)
+INCLUDE
+(
+    EmployeeId,
+    EmployeeName
+);</code></pre>
+
+        <p>
+            This index may help when queries group or filter by department
+            and need salary and employee details. Its benefit depends on
+            the table size, selectivity, workload and chosen execution plan.
+        </p>
+
+        <h3>2. Avoid unnecessary repeated calculations</h3>
+
+        <p>
+            A window-function or aggregate-and-join approach can make
+            the calculation easier to express when the query needs
+            department averages and multiple employee columns.
+        </p>
+
+        <h3>3. Measure the actual workload</h3>
+
+        <pre class="sql-code"><code>SET STATISTICS IO ON;
+SET STATISTICS TIME ON;
+
+-- Execute the query being tested.
+
+SET STATISTICS IO OFF;
+SET STATISTICS TIME OFF;</code></pre>
+
+        <p>
+            Inspect logical reads, CPU time, elapsed time and the actual
+            execution plan. Compare alternative query forms using the
+            same representative data and conditions.
+        </p>
+
+        <div class="info-box">
+            An index is not automatically beneficial. Extra indexes
+            require storage and can increase the cost of INSERT, UPDATE
+            and DELETE operations.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>17. Real-World Scenarios</h2>
+
+        <h3>Scenario 1: HR salary analysis</h3>
+        <p>
+            HR wants to identify employees earning above their department
+            average to support compensation reviews.
+        </p>
+
+        <h3>Scenario 2: Sales performance</h3>
+        <p>
+            A company wants to find sales representatives whose monthly
+            revenue is above their regional average. The same logic can
+            be applied by partitioning on Region.
+        </p>
+
+        <h3>Scenario 3: Branch performance</h3>
+        <p>
+            A banking organization wants to identify branches whose
+            transaction volume is above their regional average.
+        </p>
+
+        <h3>Scenario 4: Product pricing analysis</h3>
+        <p>
+            A retailer wants to find products priced above the average
+            price in their product category.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>18. Common Mistakes</h2>
+
+        <ol class="learning-list">
+            <li>
+                <strong>Comparing against the company average.</strong>
+                The requirement is department-specific, so use the
+                department correlation or PARTITION BY.
+            </li>
+            <li>
+                <strong>Using GROUP BY when employee details are required.</strong>
+                GROUP BY returns one row per group. Use a JOIN or window
+                function to retain employee rows.
+            </li>
+            <li>
+                <strong>Using a window function directly in WHERE.</strong>
+                Calculate it in a CTE or derived table, then filter.
+            </li>
+            <li>
+                <strong>Forgetting the department condition.</strong>
+                A correlated subquery must match the employee's department.
+            </li>
+            <li>
+                <strong>Ignoring NULL salary values.</strong>
+                AVG() ignores NULL, and comparisons with NULL do not
+                evaluate to TRUE.
+            </li>
+            <li>
+                <strong>Assuming a CTE is materialized.</strong>
+                A CTE is a query expression; it does not automatically
+                create a stored intermediate table.
+            </li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>19. Practice Exercises</h2>
+
+        <ol class="learning-list">
+            <li>Find employees earning more than their department average using a correlated subquery.</li>
+            <li>Solve the same problem using a CTE and JOIN.</li>
+            <li>Solve the same problem using AVG() OVER (PARTITION BY Department).</li>
+            <li>Find employees whose salaries are equal to or greater than their department average.</li>
+            <li>Find employees earning below their department average.</li>
+            <li>Find departments whose average salary exceeds 65,000.</li>
+            <li>Find employees earning more than the company-wide average.</li>
+            <li>Explain how NULL salaries affect AVG().</li>
+            <li>Compare the actual execution plans of the correlated subquery and window-function approaches.</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>20. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>Which clause divides employees into department groups for a window function?</p>
+        <ul class="learning-list">
+            <li>A. ORDER BY</li>
+            <li>B. PARTITION BY</li>
+            <li>C. GROUP BY</li>
+            <li>D. HAVING</li>
+        </ul>
+        <p><strong>Answer:</strong> B. PARTITION BY.</p>
+
+        <h3>Question 2</h3>
+        <p>What does AVG(Salary) OVER (PARTITION BY Department) return?</p>
+        <ul class="learning-list">
+            <li>A. One row for the entire company</li>
+            <li>B. One row per department only</li>
+            <li>C. The department average alongside each employee row</li>
+            <li>D. The maximum salary in each department</li>
+        </ul>
+        <p><strong>Answer:</strong> C. The department average alongside each employee row.</p>
+
+        <h3>Question 3</h3>
+        <p>Why is a correlated subquery called correlated?</p>
+        <ul class="learning-list">
+            <li>A. It always uses a JOIN</li>
+            <li>B. It references a column from the outer query</li>
+            <li>C. It cannot use aggregate functions</li>
+            <li>D. It returns only one row in total</li>
+        </ul>
+        <p><strong>Answer:</strong> B. It references a column from the outer query.</p>
+
+        <h3>Question 4</h3>
+        <p>What does AVG() do with NULL values?</p>
+        <ul class="learning-list">
+            <li>A. Treats them as zero</li>
+            <li>B. Ignores them</li>
+            <li>C. Returns an error</li>
+            <li>D. Counts them as one</li>
+        </ul>
+        <p><strong>Answer:</strong> B. Ignores them.</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>21. What You Should Be Able to Do</h2>
+
+        <ul class="learning-list">
+            <li>Calculate average salaries using GROUP BY.</li>
+            <li>Find employees above their department average with a correlated subquery.</li>
+            <li>Use CTEs and JOINs to compare employees with department averages.</li>
+            <li>Use AVG() OVER (PARTITION BY Department).</li>
+            <li>Understand the difference between GROUP BY and window functions.</li>
+            <li>Compare company averages and department averages.</li>
+            <li>Handle NULL salary values correctly.</li>
+            <li>Inspect execution plans and evaluate indexing options.</li>
+        </ul>
+
+        <p>
+            The key concept is to calculate the correct department-level
+            average and compare each employee against that value. Window
+            functions are particularly useful when you need to preserve
+            individual employee rows while calculating group statistics.
+        </p>
+    </section>
+
+</main>

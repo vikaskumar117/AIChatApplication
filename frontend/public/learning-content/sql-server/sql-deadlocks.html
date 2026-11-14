@@ -1,0 +1,1133 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Deadlocks and Safe Recovery in SQL Server</h1>
+        <p>
+            Understand SQL Server locking, blocking, deadlock cycles, deadlock
+            detection, victim selection, Extended Events, and practical
+            techniques for preventing and recovering from deadlocks.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Learning Objectives</h2>
+        <ul class="learning-list">
+            <li>Understand locks, blocking, and deadlocks.</li>
+            <li>Recognize the four conditions required for a deadlock.</li>
+            <li>Reproduce a deadlock using two SQL Server sessions.</li>
+            <li>Understand how SQL Server selects a deadlock victim.</li>
+            <li>Capture and interpret deadlock graphs.</li>
+            <li>Write transactions that handle deadlock errors safely.</li>
+            <li>Reduce deadlock risk through indexing and consistent access order.</li>
+            <li>Distinguish deadlocks from ordinary blocking and long-running transactions.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>2. What Is a Deadlock?</h2>
+
+        <p>
+            A deadlock occurs when two or more sessions are waiting for
+            resources held by each other, creating a circular wait that
+            prevents any participating session from continuing.
+        </p>
+
+        <p>Consider two bank accounts:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>AccountId</th>
+                    <th>AccountName</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Account A</td><td>1000</td></tr>
+                <tr><td>2</td><td>Account B</td><td>2000</td></tr>
+            </tbody>
+        </table>
+
+        <p>Two sessions attempt to update the accounts in opposite orders:</p>
+
+        <ul>
+            <li>Session 1 locks Account A and then requests Account B.</li>
+            <li>Session 2 locks Account B and then requests Account A.</li>
+        </ul>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Session 1</strong>
+                <p>Owns lock on Account A</p>
+                <p>Waits for Account B</p>
+            </div>
+            <div class="flow-step">
+                <strong>Session 2</strong>
+                <p>Owns lock on Account B</p>
+                <p>Waits for Account A</p>
+            </div>
+            <div class="flow-step">
+                <strong>Circular wait</strong>
+                <p>Neither session can proceed</p>
+            </div>
+            <div class="flow-step">
+                <strong>Deadlock detected</strong>
+                <p>SQL Server terminates one victim</p>
+            </div>
+        </div>
+
+        <div class="info-box">
+            A deadlock is different from blocking. Blocking is a normal
+            consequence of incompatible locks. A deadlock is a cycle of
+            dependencies that cannot resolve without intervention.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>3. Understand SQL Server Locks</h2>
+
+        <p>
+            SQL Server uses locks to protect data while transactions read
+            or modify it. Locks help preserve consistency and isolation.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Lock type</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Shared (S)</td>
+                    <td>Used for reading under locking-based isolation.</td>
+                </tr>
+                <tr>
+                    <td>Exclusive (X)</td>
+                    <td>Used to protect modified data.</td>
+                </tr>
+                <tr>
+                    <td>Update (U)</td>
+                    <td>Helps coordinate operations that may update data.</td>
+                </tr>
+                <tr>
+                    <td>Intent (IS, IX, SIX)</td>
+                    <td>Indicates that lower-level locks exist or may be acquired.</td>
+                </tr>
+                <tr>
+                    <td>Schema (Sch-S, Sch-M)</td>
+                    <td>Protects schema stability and schema modifications.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Common lock resources</h3>
+        <ul>
+            <li><strong>RID:</strong> A row identifier in a heap.</li>
+            <li><strong>KEY:</strong> An index key.</li>
+            <li><strong>PAGE:</strong> An 8 KB data or index page.</li>
+            <li><strong>OBJECT:</strong> A table or other object.</li>
+            <li><strong>HoBT:</strong> A heap or B-tree structure.</li>
+            <li><strong>METADATA:</strong> Metadata resources.</li>
+        </ul>
+
+        <p>
+            Locks can be acquired at different granularities. SQL Server may
+            also escalate locks when appropriate. The actual lock strategy
+            depends on the statement, isolation level, indexes, and workload.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>4. Blocking Versus Deadlock</h2>
+
+        <h3>Blocking example</h3>
+
+        <p>
+            Session 1 updates an employee and holds an exclusive lock.
+            Session 2 tries to update the same employee and must wait.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Session</th>
+                    <th>Action</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Session 1</td><td>Updates Employee 10</td><td>Running or holding transaction open</td></tr>
+                <tr><td>Session 2</td><td>Updates Employee 10</td><td>Waiting for Session 1</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            When Session 1 commits or rolls back, Session 2 can continue.
+            There is no circular dependency, so this is blocking rather than
+            a deadlock.
+        </p>
+
+        <h3>Deadlock example</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Session</th>
+                    <th>Owns</th>
+                    <th>Waits for</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Session 1</td><td>Resource A</td><td>Resource B</td></tr>
+                <tr><td>Session 2</td><td>Resource B</td><td>Resource A</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            Each session is waiting for a resource held by the other. SQL
+            Server must break the cycle by terminating one transaction.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>5. The Four Necessary Conditions for a Deadlock</h2>
+
+        <p>
+            The classical deadlock model describes four conditions that must
+            exist simultaneously for a deadlock to occur.
+        </p>
+
+        <ol>
+            <li>
+                <strong>Mutual exclusion:</strong>
+                A resource cannot be simultaneously held in incompatible modes.
+            </li>
+            <li>
+                <strong>Hold and wait:</strong>
+                A session holds one resource while requesting another.
+            </li>
+            <li>
+                <strong>No preemption:</strong>
+                A resource cannot simply be taken away from a session; it must
+                be released by the owner.
+            </li>
+            <li>
+                <strong>Circular wait:</strong>
+                Sessions form a cycle of resource dependencies.
+            </li>
+        </ol>
+
+        <p>
+            A prevention strategy attempts to eliminate one or more of these
+            conditions in the application or database design.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Create Sample Tables for a Deadlock Demonstration</h2>
+
+        <p>Run this setup script once in a test database.</p>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.BankAccount;
+
+CREATE TABLE dbo.BankAccount
+(
+    AccountId INT NOT NULL
+        CONSTRAINT PK_BankAccount PRIMARY KEY,
+    AccountName VARCHAR(50) NOT NULL,
+    Balance DECIMAL(12,2) NOT NULL
+);
+
+INSERT INTO dbo.BankAccount
+(
+    AccountId,
+    AccountName,
+    Balance
+)
+VALUES
+    (1, 'Account A', 1000.00),
+    (2, 'Account B', 2000.00);
+
+SELECT *
+FROM dbo.BankAccount;</code></pre>
+
+        <p>Expected starting data:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>AccountId</th>
+                    <th>AccountName</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Account A</td><td>1000.00</td></tr>
+                <tr><td>2</td><td>Account B</td><td>2000.00</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Reproduce a Deadlock Using Two SQL Server Sessions</h2>
+
+        <p>
+            Open two separate query windows connected to the same SQL Server
+            database. These examples are for a test environment only.
+        </p>
+
+        <h3>Session 1</h3>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance - 100
+WHERE AccountId = 1;
+
+WAITFOR DELAY '00:00:10';
+
+UPDATE dbo.BankAccount
+SET Balance = Balance + 100
+WHERE AccountId = 2;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <h3>Session 2</h3>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance - 200
+WHERE AccountId = 2;
+
+WAITFOR DELAY '00:00:10';
+
+UPDATE dbo.BankAccount
+SET Balance = Balance + 200
+WHERE AccountId = 1;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <h3>Execution instructions</h3>
+        <ol>
+            <li>Start Session 1.</li>
+            <li>Within approximately five seconds, start Session 2.</li>
+            <li>Both sessions acquire exclusive locks on different accounts.</li>
+            <li>Each session then requests the account locked by the other.</li>
+            <li>SQL Server detects the cycle and chooses a deadlock victim.</li>
+        </ol>
+
+        <p>
+            One session should receive error 1205. The exact timing can vary,
+            so this demonstration may need to be repeated.
+        </p>
+
+        <pre class="sql-code"><code>Msg 1205, Level 13, State 51
+Transaction (Process ID ...) was deadlocked on lock resources
+with another process and has been chosen as the deadlock victim.
+Rerun the transaction.</code></pre>
+
+        <div class="info-box">
+            Do not run this demonstration against production data. If you
+            interrupt a session manually or an unexpected error occurs,
+            inspect the transaction state and clean up the test session
+            before repeating it.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>8. How SQL Server Detects and Resolves Deadlocks</h2>
+
+        <p>
+            SQL Server has a deadlock monitor that periodically checks for
+            deadlock cycles. When a cycle is detected, the Database Engine
+            selects a victim and terminates its transaction to break the cycle.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Sessions acquire locks</strong>
+                <p>Each session owns one or more resources.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Sessions request additional locks</strong>
+                <p>Requests become blocked by other sessions.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Deadlock monitor detects cycle</strong>
+                <p>SQL Server examines the wait-for relationships.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Victim selected</strong>
+                <p>SQL Server chooses one transaction to terminate.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Victim transaction rolled back</strong>
+                <p>Locks are released and the other transaction can proceed.</p>
+            </div>
+        </div>
+
+        <h3>How is the victim selected?</h3>
+
+        <p>
+            SQL Server considers deadlock priority and estimated rollback cost.
+            The transaction with the lower DEADLOCK_PRIORITY is generally
+            selected. If priorities are equal, SQL Server considers rollback
+            cost. A tie can be resolved by other internal selection criteria.
+        </p>
+
+        <h3>Set deadlock priority</h3>
+
+        <pre class="sql-code"><code>SET DEADLOCK_PRIORITY LOW;
+
+-- This session is more willing to become
+-- the victim when competing with a NORMAL priority session.
+
+BEGIN TRANSACTION;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance + 10
+WHERE AccountId = 1;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <p>
+            Supported values include LOW, NORMAL, HIGH, or a numeric value
+            from -10 through 10.
+        </p>
+
+        <div class="info-box">
+            DEADLOCK_PRIORITY does not prevent deadlocks. It only influences
+            victim selection. It should not be used as a substitute for
+            correcting transaction design.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>9. Error 1205: Handling a Deadlock Victim</h2>
+
+        <p>
+            SQL Server reports error number 1205 to the session selected
+            as the victim. The victim transaction is rolled back by SQL Server.
+            The application should treat the operation as failed and decide
+            whether it is safe to retry.
+        </p>
+
+        <h3>Basic TRY/CATCH handling</h3>
+
+        <pre class="sql-code"><code>BEGIN TRY
+
+    BEGIN TRANSACTION;
+
+    UPDATE dbo.BankAccount
+    SET Balance = Balance - 100
+    WHERE AccountId = 1;
+
+    UPDATE dbo.BankAccount
+    SET Balance = Balance + 100
+    WHERE AccountId = 2;
+
+    COMMIT TRANSACTION;
+
+END TRY
+BEGIN CATCH
+
+    IF XACT_STATE() <> 0
+        ROLLBACK TRANSACTION;
+
+    SELECT
+        ERROR_NUMBER() AS ErrorNumber,
+        ERROR_MESSAGE() AS ErrorMessage,
+        ERROR_LINE() AS ErrorLine;
+
+    THROW;
+
+END CATCH;</code></pre>
+
+        <p>
+            This pattern ensures that an open or uncommittable transaction
+            is rolled back before the error is rethrown.
+        </p>
+
+        <h3>Understanding XACT_STATE()</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Value</th>
+                    <th>Meaning</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Transaction is active and committable.</td>
+                    <td>Commit or roll back as appropriate.</td>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>No active user transaction.</td>
+                    <td>No rollback is required.</td>
+                </tr>
+                <tr>
+                    <td>-1</td>
+                    <td>Transaction is active but uncommittable.</td>
+                    <td>Must roll back the transaction.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>10. Implement a Retry Strategy</h2>
+
+        <p>
+            Deadlocks are sometimes unavoidable in concurrent systems.
+            A common recovery approach is to retry the entire transaction
+            after a short delay.
+        </p>
+
+        <h3>Example stored procedure with retry logic</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.TransferMoney
+    @FromAccountId INT,
+    @ToAccountId INT,
+    @Amount DECIMAL(12,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @Attempt INT = 1;
+    DECLARE @MaxAttempts INT = 3;
+
+    WHILE @Attempt <= @MaxAttempts
+    BEGIN
+        BEGIN TRY
+
+            BEGIN TRANSACTION;
+
+            IF @Amount <= 0
+                THROW 50001, 'Amount must be greater than zero.', 1;
+
+            IF @FromAccountId = @ToAccountId
+                THROW 50002, 'Source and destination must differ.', 1;
+
+            -- Validate sufficient balance.
+            IF NOT EXISTS
+            (
+                SELECT 1
+                FROM dbo.BankAccount
+                WHERE AccountId = @FromAccountId
+                  AND Balance >= @Amount
+            )
+                THROW 50003, 'Insufficient balance or account missing.', 1;
+
+            -- Debit source account.
+            UPDATE dbo.BankAccount
+            SET Balance = Balance - @Amount
+            WHERE AccountId = @FromAccountId;
+
+            IF @@ROWCOUNT <> 1
+                THROW 50004, 'Source account update failed.', 1;
+
+            -- Credit destination account.
+            UPDATE dbo.BankAccount
+            SET Balance = Balance + @Amount
+            WHERE AccountId = @ToAccountId;
+
+            IF @@ROWCOUNT <> 1
+                THROW 50005, 'Destination account update failed.', 1;
+
+            COMMIT TRANSACTION;
+            RETURN;
+
+        END TRY
+        BEGIN CATCH
+
+            DECLARE @ErrorNumber INT = ERROR_NUMBER();
+
+            IF XACT_STATE() <> 0
+                ROLLBACK TRANSACTION;
+
+            IF @ErrorNumber = 1205
+               AND @Attempt < @MaxAttempts
+            BEGIN
+                SET @Attempt += 1;
+
+                -- Simple example delay. Production applications
+                -- should use bounded backoff with jitter.
+                WAITFOR DELAY '00:00:01';
+
+                CONTINUE;
+            END;
+
+            THROW;
+
+        END CATCH;
+    END;
+END;</code></pre>
+
+        <p>Example execution:</p>
+
+        <pre class="sql-code"><code>EXEC dbo.TransferMoney
+    @FromAccountId = 1,
+    @ToAccountId = 2,
+    @Amount = 100.00;
+
+SELECT *
+FROM dbo.BankAccount;</code></pre>
+
+        <div class="info-box">
+            Retry the complete transaction, not just the statement that
+            encountered error 1205. The transaction may have been rolled
+            back, so earlier work must be repeated as part of the same
+            logical operation.
+        </div>
+
+        <h3>Production retry considerations</h3>
+        <ul>
+            <li>Retry only errors known to be transient and safe to retry.</li>
+            <li>Use a limited retry count.</li>
+            <li>Use exponential backoff with random jitter for high-concurrency applications.</li>
+            <li>Log retry attempts and deadlock frequency.</li>
+            <li>Make externally visible operations idempotent where possible.</li>
+            <li>Do not send emails, issue payments, or call external systems again blindly after a retry.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Prevent Deadlocks by Accessing Resources in a Consistent Order</h2>
+
+        <p>
+            One of the most effective prevention techniques is to make all
+            transactions acquire resources in the same order.
+        </p>
+
+        <h3>Problem: opposite account order</h3>
+
+        <pre class="sql-code"><code>-- Transaction A
+UPDATE dbo.BankAccount
+SET Balance = Balance - 100
+WHERE AccountId = 1;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance + 100
+WHERE AccountId = 2;
+
+-- Transaction B
+UPDATE dbo.BankAccount
+SET Balance = Balance - 200
+WHERE AccountId = 2;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance + 200
+WHERE AccountId = 1;</code></pre>
+
+        <h3>Improvement: consistent account order</h3>
+
+        <p>
+            Both transactions should access AccountId 1 before AccountId 2,
+            regardless of which account is the source or destination.
+        </p>
+
+        <pre class="sql-code"><code>-- Illustrative pattern:
+-- Determine the lower and higher account IDs first.
+-- Acquire/update the lower ID before the higher ID.
+
+DECLARE @FirstAccountId INT =
+    CASE
+        WHEN @FromAccountId < @ToAccountId
+            THEN @FromAccountId
+        ELSE @ToAccountId
+    END;
+
+DECLARE @SecondAccountId INT =
+    CASE
+        WHEN @FromAccountId < @ToAccountId
+            THEN @ToAccountId
+        ELSE @FromAccountId
+    END;
+
+-- Perform operations in this consistent order,
+-- while applying the correct debit/credit to each account.</code></pre>
+
+        <p>
+            Consistent ordering reduces circular wait for those resources.
+            It does not guarantee that every possible deadlock in the system
+            disappears, because other tables, indexes, triggers, and
+            application operations may introduce additional dependencies.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Prevent Deadlocks Through Better Indexing</h2>
+
+        <p>
+            Poor access paths can cause SQL Server to examine and lock more
+            rows or index keys than necessary. Appropriate indexes can reduce
+            the amount of work and the time locks are held.
+        </p>
+
+        <h3>Example table</h3>
+
+        <pre class="sql-code"><code>CREATE TABLE dbo.Orders
+(
+    OrderId INT NOT NULL
+        CONSTRAINT PK_Orders PRIMARY KEY,
+    CustomerId INT NOT NULL,
+    OrderStatus VARCHAR(20) NOT NULL,
+    OrderDate DATETIME2 NOT NULL
+);</code></pre>
+
+        <p>Example query:</p>
+
+        <pre class="sql-code"><code>UPDATE dbo.Orders
+SET OrderStatus = 'Processed'
+WHERE CustomerId = 100
+  AND OrderStatus = 'Pending';</code></pre>
+
+        <p>Potential supporting index:</p>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_Orders_Customer_Status
+ON dbo.Orders
+(
+    CustomerId,
+    OrderStatus
+);</code></pre>
+
+        <p>
+            The index may allow SQL Server to locate the matching rows more
+            efficiently. However, indexes also introduce additional structures
+            that must be maintained and can themselves participate in
+            lock dependencies.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Keep Transactions Short</h2>
+
+        <p>
+            Long-running transactions hold locks for longer periods and
+            increase the opportunity for blocking and deadlocks.
+        </p>
+
+        <h3>Risky pattern</h3>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance - 100
+WHERE AccountId = 1;
+
+-- Avoid user interaction, external API calls,
+-- lengthy calculations, or unnecessary waits here.
+
+WAITFOR DELAY '00:00:30';
+
+UPDATE dbo.BankAccount
+SET Balance = Balance + 100
+WHERE AccountId = 2;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <h3>Better approach</h3>
+
+        <ul>
+            <li>Perform lengthy calculations before opening the transaction when safe.</li>
+            <li>Do not wait for user input while holding database locks.</li>
+            <li>Do not call external services inside a database transaction unless the architecture explicitly requires it.</li>
+            <li>Update only the necessary rows.</li>
+            <li>Commit or roll back promptly.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Capture Deadlocks Using Extended Events</h2>
+
+        <p>
+            SQL Server provides the Extended Events infrastructure for
+            capturing diagnostic events. The system_health session commonly
+            captures the xml_deadlock_report event by default.
+        </p>
+
+        <h3>Read deadlock reports from system_health</h3>
+
+        <pre class="sql-code"><code>SELECT
+    XEvent.value(
+        '(event/@timestamp)[1]',
+        'datetime2'
+    ) AS DeadlockTime,
+
+    XEvent.query(
+        '(event/data/value/deadlock)[1]'
+    ) AS DeadlockGraph
+
+FROM
+(
+    SELECT
+        CAST(st.target_data AS XML) AS TargetData
+    FROM sys.dm_xe_session_targets AS st
+    INNER JOIN sys.dm_xe_sessions AS s
+        ON s.address = st.event_session_address
+    WHERE s.name = 'system_health'
+      AND st.target_name = 'ring_buffer'
+) AS Data
+CROSS APPLY TargetData.nodes(
+    'RingBufferTarget/event[@name="xml_deadlock_report"]'
+) AS XEventData(XEvent);</code></pre>
+
+        <p>
+            This query reads the ring-buffer target, which is limited in size
+            and can lose older events. The system_health session may also
+            use an event-file target depending on SQL Server version and
+            configuration.
+        </p>
+
+        <h3>Inspect the session targets</h3>
+
+        <pre class="sql-code"><code>SELECT
+    s.name AS SessionName,
+    t.target_name,
+    CAST(t.target_data AS XML) AS TargetData
+FROM sys.dm_xe_sessions AS s
+JOIN sys.dm_xe_session_targets AS t
+    ON s.address = t.event_session_address
+WHERE s.name = 'system_health';</code></pre>
+
+        <h3>Create a dedicated deadlock capture session</h3>
+
+        <pre class="sql-code"><code>CREATE EVENT SESSION CaptureDeadlocks
+ON SERVER
+ADD EVENT sqlserver.xml_deadlock_report
+ADD TARGET package0.event_file
+(
+    SET filename = 'C:\SQLXEvents\CaptureDeadlocks.xel',
+        max_file_size = 20,
+        max_rollover_files = 5
+)
+WITH
+(
+    STARTUP_STATE = ON
+);
+
+ALTER EVENT SESSION CaptureDeadlocks
+ON SERVER
+STATE = START;</code></pre>
+
+        <p>
+            The SQL Server service account must have permission to write
+            to the specified directory. Create the directory before starting
+            the session.
+        </p>
+
+        <h3>Read the event file</h3>
+
+        <pre class="sql-code"><code>SELECT
+    object_name,
+    CAST(event_data AS XML) AS EventData
+FROM sys.fn_xe_file_target_read_file
+(
+    'C:\SQLXEvents\CaptureDeadlocks*.xel',
+    NULL,
+    NULL,
+    NULL
+);</code></pre>
+
+        <div class="info-box">
+            Creating server-level Extended Events sessions and reading
+            diagnostic data requires appropriate permissions. Confirm
+            supported permissions and target paths for your SQL Server
+            version and environment.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>15. How to Read a Deadlock Graph</h2>
+
+        <p>
+            A deadlock graph contains information about participating
+            processes, resources, ownership, and waiting relationships.
+        </p>
+
+        <h3>Important XML elements</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Element</th>
+                    <th>What it tells you</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>victim-list</td><td>Identifies the selected deadlock victim.</td></tr>
+                <tr><td>process-list</td><td>Describes sessions involved in the deadlock.</td></tr>
+                <tr><td>resource-list</td><td>Describes locked resources and their owners and waiters.</td></tr>
+                <tr><td>process id</td><td>Internal process identifier in the deadlock graph.</td></tr>
+                <tr><td>spid</td><td>SQL Server session identifier.</td></tr>
+                <tr><td>waitresource</td><td>Resource the process is waiting for.</td></tr>
+                <tr><td>lockMode</td><td>Lock mode requested or held.</td></tr>
+                <tr><td>inputbuf</td><td>Submitted SQL batch or statement context.</td></tr>
+                <tr><td>executionStack</td><td>Execution context and statement information.</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Analysis procedure</h3>
+
+        <ol>
+            <li>Identify the victim process.</li>
+            <li>Find the other participating processes.</li>
+            <li>Inspect the resource list for each lock resource.</li>
+            <li>Determine which process owns each resource.</li>
+            <li>Determine which process is waiting for each resource.</li>
+            <li>Inspect the SQL statements and execution context.</li>
+            <li>Check indexes, transaction boundaries, and access order.</li>
+            <li>Change the design and verify that the deadlock is reduced or eliminated.</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Monitor Current Blocking and Waiting Sessions</h2>
+
+        <p>
+            The following query helps identify sessions currently blocked
+            by another session.
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    session_id,
+    blocking_session_id,
+    wait_type,
+    wait_time,
+    wait_resource,
+    status,
+    command
+FROM sys.dm_exec_requests
+WHERE blocking_session_id <> 0;</code></pre>
+
+        <p>
+            To inspect the SQL text associated with active requests:
+        </p>
+
+        <pre class="sql-code"><code>SELECT
+    r.session_id,
+    r.blocking_session_id,
+    r.wait_type,
+    r.wait_time,
+    r.wait_resource,
+    t.text AS SqlText
+FROM sys.dm_exec_requests AS r
+CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) AS t
+WHERE r.blocking_session_id <> 0;</code></pre>
+
+        <p>
+            These queries show current requests, not a complete historical
+            record of deadlocks. Use Extended Events or other monitoring
+            infrastructure to capture events over time.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>17. Other Deadlock Causes</h2>
+
+        <h3>17.1 Different table access order</h3>
+        <p>
+            One transaction updates Orders and then Customers, while another
+            updates Customers and then Orders.
+        </p>
+
+        <h3>17.2 Missing or unsuitable indexes</h3>
+        <p>
+            A statement may scan a larger range or acquire more locks than
+            a more selective access path would require.
+        </p>
+
+        <h3>17.3 Foreign key relationships</h3>
+        <p>
+            Updates and deletes can require checks against related tables.
+            Different access patterns involving parent and child tables
+            can contribute to deadlocks.
+        </p>
+
+        <h3>17.4 Triggers</h3>
+        <p>
+            A trigger can access additional tables during a modification.
+            The application may appear to update one table while the complete
+            transaction actually touches several tables.
+        </p>
+
+        <h3>17.5 Lock escalation</h3>
+        <p>
+            SQL Server can escalate many fine-grained locks to a table-level
+            lock when appropriate. This changes the resources that concurrent
+            sessions need and can affect blocking and deadlock behavior.
+        </p>
+
+        <h3>17.6 Parallel query execution</h3>
+        <p>
+            Some deadlocks involve exchange or worker-thread resources in
+            parallel plans rather than only ordinary data locks. These
+            require inspection of the deadlock graph and execution plan.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>18. Should You Use NOLOCK to Prevent Deadlocks?</h2>
+
+        <p>
+            NOLOCK is often suggested as a quick way to avoid blocking.
+            It is not a general deadlock prevention solution.
+        </p>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.BankAccount WITH (NOLOCK);</code></pre>
+
+        <p>
+            NOLOCK is equivalent to READ UNCOMMITTED for the table reference.
+            It can allow dirty reads and other inconsistent results, including
+            missing or duplicated rows under some concurrent data movement
+            conditions.
+        </p>
+
+        <p>
+            It also does not eliminate every lock interaction. Queries still
+            acquire schema-stability locks, and schema-modification operations
+            can still conflict with them.
+        </p>
+
+        <p>
+            Consider row-versioning isolation, such as READ COMMITTED
+            SNAPSHOT, when reducing reader-writer blocking is an appropriate
+            architectural goal. Row versioning has its own storage and
+            operational considerations and does not eliminate all deadlocks.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>19. Production Deadlock Prevention Checklist</h2>
+
+        <ul class="learning-list">
+            <li>Access shared tables and rows in a consistent order.</li>
+            <li>Keep transactions as short as possible.</li>
+            <li>Create indexes that support frequent transactional predicates.</li>
+            <li>Update only the rows that need modification.</li>
+            <li>Avoid unnecessary user interaction inside transactions.</li>
+            <li>Review triggers and foreign key access patterns.</li>
+            <li>Capture deadlock graphs using Extended Events.</li>
+            <li>Use bounded retry logic for error 1205.</li>
+            <li>Log deadlock frequency, statements, and retry outcomes.</li>
+            <li>Test changes under realistic concurrency.</li>
+            <li>Evaluate row-versioning isolation where appropriate.</li>
+            <li>Do not use NOLOCK as a universal concurrency fix.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>20. Hands-On Exercises</h2>
+
+        <ol>
+            <li>Run the two-session bank account example and reproduce a deadlock.</li>
+            <li>Repeat the example with both sessions accessing accounts in ascending AccountId order.</li>
+            <li>Set DEADLOCK_PRIORITY LOW in one session and observe victim selection.</li>
+            <li>Capture a deadlock report from system_health.</li>
+            <li>Inspect the process-list and resource-list elements in the deadlock XML.</li>
+            <li>Write a TRY/CATCH transaction that rolls back correctly using XACT_STATE().</li>
+            <li>Add bounded retry logic for error 1205.</li>
+            <li>Investigate whether a supporting index changes the access path and lock behavior.</li>
+            <li>Compare READ COMMITTED and READ COMMITTED SNAPSHOT in a test database.</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>21. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>What is a deadlock?</p>
+        <ul>
+            <li>A. A query that runs for a long time</li>
+            <li>B. A circular wait involving resources held by participating sessions</li>
+            <li>C. A database backup failure</li>
+            <li>D. A missing index</li>
+        </ul>
+        <p><strong>Answer:</strong> B — A deadlock is a cycle of resource dependencies.</p>
+
+        <h3>Question 2</h3>
+        <p>Which SQL Server error commonly identifies a deadlock victim?</p>
+        <ul>
+            <li>A. 2627</li>
+            <li>B. 1205</li>
+            <li>C. 547</li>
+            <li>D. 208</li>
+        </ul>
+        <p><strong>Answer:</strong> B — Error 1205 reports that a transaction was chosen as the deadlock victim.</p>
+
+        <h3>Question 3</h3>
+        <p>What does DEADLOCK_PRIORITY control?</p>
+        <ul>
+            <li>A. Index creation order</li>
+            <li>B. Deadlock victim selection priority</li>
+            <li>C. Transaction isolation level</li>
+            <li>D. Query timeout</li>
+        </ul>
+        <p><strong>Answer:</strong> B — It influences which transaction SQL Server selects as the victim.</p>
+
+        <h3>Question 4</h3>
+        <p>What is a good deadlock prevention technique?</p>
+        <ul>
+            <li>A. Access shared resources in a consistent order</li>
+            <li>B. Keep transactions open for longer</li>
+            <li>C. Add NOLOCK to every query</li>
+            <li>D. Remove all primary keys</li>
+        </ul>
+        <p><strong>Answer:</strong> A — Consistent access order reduces circular-wait opportunities.</p>
+
+        <h3>Question 5</h3>
+        <p>What should an application generally do after error 1205?</p>
+        <ul>
+            <li>A. Retry the failed transaction immediately forever</li>
+            <li>B. Retry the entire operation with bounded retry logic if safe</li>
+            <li>C. Ignore the error</li>
+            <li>D. Disable all database locks</li>
+        </ul>
+        <p><strong>Answer:</strong> B — Retry the complete logical transaction with limits and an appropriate delay.</p>
+
+        <h3>Question 6</h3>
+        <p>Which tool can capture SQL Server deadlock graphs?</p>
+        <ul>
+            <li>A. Extended Events</li>
+            <li>B. SQL Server Agent job history only</li>
+            <li>C. Database diagrams</li>
+            <li>D. SQL Server Profiler templates only</li>
+        </ul>
+        <p><strong>Answer:</strong> A — Extended Events can capture xml_deadlock_report events.</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>22. Key Takeaways</h2>
+
+        <ul class="learning-list">
+            <li>A deadlock is a circular wait between two or more sessions.</li>
+            <li>Blocking alone is not a deadlock.</li>
+            <li>SQL Server detects deadlocks and selects a victim to break the cycle.</li>
+            <li>Error 1205 indicates that a transaction was chosen as the victim.</li>
+            <li>TRY/CATCH and XACT_STATE() help manage transaction cleanup.</li>
+            <li>Retry the entire logical transaction, not just one statement.</li>
+            <li>Consistent resource access order is an important prevention technique.</li>
+            <li>Short transactions and appropriate indexes can reduce deadlock risk.</li>
+            <li>Extended Events provides valuable deadlock diagnostic information.</li>
+            <li>NOLOCK is not a universal solution to concurrency problems.</li>
+        </ul>
+
+        <p>
+            The goal is not merely to recover from deadlocks. It is to
+            understand their resource dependencies, correct the underlying
+            design where possible, and make the application resilient when
+            a deadlock still occurs.
+        </p>
+    </section>
+
+</main>

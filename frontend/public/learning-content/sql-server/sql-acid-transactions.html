@@ -1,0 +1,1339 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>ACID Transaction Guarantees in SQL Server</h1>
+        <p>
+            Understand how SQL Server protects data integrity and reliability
+            through Atomicity, Consistency, Isolation, and Durability.
+            Learn transaction handling, rollback, logging, recovery, and
+            real-world implementation patterns.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Learning Objectives</h2>
+        <ul class="learning-list">
+            <li>Understand the four ACID properties.</li>
+            <li>Implement transactions using BEGIN, COMMIT, and ROLLBACK.</li>
+            <li>Understand how SQL Server maintains atomicity.</li>
+            <li>Use constraints and business rules to maintain consistency.</li>
+            <li>Understand how isolation controls concurrent transactions.</li>
+            <li>Learn how the transaction log supports durability.</li>
+            <li>Understand checkpoints, crash recovery, and log records.</li>
+            <li>Build safe transaction-handling code with TRY/CATCH.</li>
+            <li>Recognize common transaction-management mistakes.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>2. What Is a Database Transaction?</h2>
+
+        <p>
+            A transaction is a logical unit of work containing one or more
+            database operations. SQL Server treats the transaction as a
+            single unit that must either complete successfully or be undone.
+        </p>
+
+        <p>
+            Consider transferring 1,000 from one bank account to another.
+            The operation requires two updates:
+        </p>
+
+        <ol>
+            <li>Subtract 1,000 from Account A.</li>
+            <li>Add 1,000 to Account B.</li>
+        </ol>
+
+        <p>
+            If the first update succeeds but the second fails, the database
+            must not leave the money deducted from Account A without being
+            credited to Account B.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Begin transaction</strong>
+                <p>Start the logical unit of work.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Debit account</strong>
+                <p>Subtract money from the source account.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Credit account</strong>
+                <p>Add money to the destination account.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Commit transaction</strong>
+                <p>Make the transaction's changes permanent.</p>
+            </div>
+        </div>
+
+        <p>
+            If an operation fails, SQL Server can roll back the transaction
+            so that the database does not retain a partially completed transfer.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>3. The Four ACID Properties</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Meaning</th>
+                    <th>Bank transfer example</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Atomicity</td>
+                    <td>All operations succeed or the transaction is undone.</td>
+                    <td>Both debit and credit succeed, or neither remains applied.</td>
+                </tr>
+                <tr>
+                    <td>Consistency</td>
+                    <td>Valid database rules remain satisfied.</td>
+                    <td>Balances cannot become negative if a constraint prohibits it.</td>
+                </tr>
+                <tr>
+                    <td>Isolation</td>
+                    <td>Concurrent transactions follow defined visibility and concurrency rules.</td>
+                    <td>Concurrent transfers cannot silently produce an invalid balance.</td>
+                </tr>
+                <tr>
+                    <td>Durability</td>
+                    <td>Committed changes survive a system failure under the database's durability guarantees.</td>
+                    <td>A committed transfer is recovered after a server restart.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>4. A Complete Bank Transfer Example</h2>
+
+        <h3>Create the Accounts Table</h3>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.BankAccount;
+
+CREATE TABLE dbo.BankAccount
+(
+    AccountId INT NOT NULL
+        CONSTRAINT PK_BankAccount PRIMARY KEY,
+
+    AccountName VARCHAR(50) NOT NULL,
+
+    Balance DECIMAL(12,2) NOT NULL,
+
+    CONSTRAINT CK_BankAccount_Balance
+        CHECK (Balance >= 0)
+);
+
+INSERT INTO dbo.BankAccount
+(
+    AccountId,
+    AccountName,
+    Balance
+)
+VALUES
+    (1, 'Alice', 10000.00),
+    (2, 'Bob', 5000.00);
+
+SELECT *
+FROM dbo.BankAccount;</code></pre>
+
+        <h3>Initial Account Balances</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>AccountId</th>
+                    <th>AccountName</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>Alice</td><td>10000.00</td></tr>
+                <tr><td>2</td><td>Bob</td><td>5000.00</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Transfer 1,000 from Alice to Bob</h3>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance - 1000
+WHERE AccountId = 1;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance + 1000
+WHERE AccountId = 2;
+
+COMMIT TRANSACTION;
+
+SELECT *
+FROM dbo.BankAccount;</code></pre>
+
+        <h3>Expected Result</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>AccountName</th>
+                    <th>Before</th>
+                    <th>After</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Alice</td><td>10000.00</td><td>9000.00</td></tr>
+                <tr><td>Bob</td><td>5000.00</td><td>6000.00</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            The total balance remains 15,000. The two updates form one
+            logical transaction.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>5. Atomicity — All or Nothing</h2>
+
+        <p>
+            Atomicity guarantees that a transaction's changes are treated
+            as one unit. If the transaction cannot complete, its changes
+            are rolled back.
+        </p>
+
+        <h3>Example: Force an error after the debit</h3>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance - 1000
+WHERE AccountId = 1;
+
+-- Simulate an error.
+THROW 50001, 'Simulated transfer failure.', 1;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance + 1000
+WHERE AccountId = 2;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <p>
+            The example deliberately throws an error. It does not include
+            error handling, so the transaction can remain open in the
+            session. Do not use this as production transaction code.
+        </p>
+
+        <h3>Correctly roll back after an error</h3>
+
+        <pre class="sql-code"><code>BEGIN TRY
+
+    BEGIN TRANSACTION;
+
+    UPDATE dbo.BankAccount
+    SET Balance = Balance - 1000
+    WHERE AccountId = 1;
+
+    THROW 50001, 'Simulated transfer failure.', 1;
+
+    UPDATE dbo.BankAccount
+    SET Balance = Balance + 1000
+    WHERE AccountId = 2;
+
+    COMMIT TRANSACTION;
+
+END TRY
+BEGIN CATCH
+
+    IF XACT_STATE() <> 0
+        ROLLBACK TRANSACTION;
+
+    SELECT
+        ERROR_NUMBER() AS ErrorNumber,
+        ERROR_MESSAGE() AS ErrorMessage;
+
+END CATCH;
+
+SELECT *
+FROM dbo.BankAccount;</code></pre>
+
+        <p>Expected behavior:</p>
+
+        <ul>
+            <li>The debit is executed within the transaction.</li>
+            <li>The deliberate error interrupts normal execution.</li>
+            <li>The CATCH block rolls back the transaction.</li>
+            <li>The original account balances are restored.</li>
+        </ul>
+
+        <h3>Atomicity and SQL Server's Transaction Log</h3>
+
+        <p>
+            SQL Server records changes in the transaction log. Log records
+            contain information needed to redo or undo operations.
+        </p>
+
+        <p>
+            When a transaction is rolled back, SQL Server uses the log to
+            undo its changes. Rollback itself is logged, so recovery can
+            continue correctly if another failure occurs during rollback.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Transaction begins</strong>
+                <p>SQL Server establishes transaction context.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Changes are logged</strong>
+                <p>Log records describe the modifications.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Error occurs</strong>
+                <p>The transaction cannot complete normally.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Rollback</strong>
+                <p>Logged changes are undone.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>6. Consistency — Maintain Valid Database Rules</h2>
+
+        <p>
+            Consistency means that transactions preserve defined database
+            rules. A transaction must take the database from one valid state
+            to another valid state.
+        </p>
+
+        <p>
+            SQL Server helps enforce consistency through:
+        </p>
+
+        <ul>
+            <li>PRIMARY KEY constraints.</li>
+            <li>FOREIGN KEY constraints.</li>
+            <li>UNIQUE constraints.</li>
+            <li>CHECK constraints.</li>
+            <li>NOT NULL constraints.</li>
+            <li>Data types and precision.</li>
+            <li>Application-level business rules implemented correctly.</li>
+        </ul>
+
+        <h3>Example: Prevent Negative Balances</h3>
+
+        <pre class="sql-code"><code>CREATE TABLE dbo.AccountWithRules
+(
+    AccountId INT PRIMARY KEY,
+    Balance DECIMAL(12,2) NOT NULL,
+
+    CONSTRAINT CK_AccountWithRules_Balance
+        CHECK (Balance >= 0)
+);
+
+INSERT INTO dbo.AccountWithRules
+VALUES (1, 5000);
+
+-- This update violates the CHECK constraint.
+UPDATE dbo.AccountWithRules
+SET Balance = -1000
+WHERE AccountId = 1;</code></pre>
+
+        <p>
+            SQL Server rejects the update because the new balance violates
+            the CHECK constraint.
+        </p>
+
+        <h3>Example: Foreign Key Consistency</h3>
+
+        <pre class="sql-code"><code>CREATE TABLE dbo.BankCustomer
+(
+    CustomerId INT PRIMARY KEY,
+    CustomerName VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE dbo.CustomerAccount
+(
+    AccountId INT PRIMARY KEY,
+    CustomerId INT NOT NULL,
+    Balance DECIMAL(12,2) NOT NULL,
+
+    CONSTRAINT FK_CustomerAccount_Customer
+        FOREIGN KEY (CustomerId)
+        REFERENCES dbo.BankCustomer(CustomerId)
+);
+
+INSERT INTO dbo.BankCustomer
+VALUES (1, 'Alice');
+
+INSERT INTO dbo.CustomerAccount
+VALUES (101, 1, 10000);</code></pre>
+
+        <p>
+            The foreign key prevents an account from referencing a customer
+            that does not exist.
+        </p>
+
+        <div class="info-box">
+            SQL Server cannot automatically understand every business rule.
+            For example, a rule that a customer's monthly withdrawals must
+            not exceed a limit may require carefully designed transactional
+            application logic in addition to database constraints.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>7. Isolation — Control Concurrent Transactions</h2>
+
+        <p>
+            Isolation controls how simultaneous transactions interact.
+            SQL Server provides multiple isolation levels, including
+            READ COMMITTED, REPEATABLE READ, SERIALIZABLE, and SNAPSHOT.
+        </p>
+
+        <h3>Example: Two users update the same account</h3>
+
+        <p>
+            Alice has a balance of 10,000. Two requests attempt to withdraw
+            2,000 and 3,000.
+        </p>
+
+        <h4>Session 1</h4>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance - 2000
+WHERE AccountId = 1;
+
+WAITFOR DELAY '00:00:10';
+
+COMMIT TRANSACTION;</code></pre>
+
+        <h4>Session 2</h4>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance - 3000
+WHERE AccountId = 1;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <p>
+            Both statements update the same row. SQL Server's write locking
+            coordinates these modifications. The second update generally
+            waits for the first transaction to release its conflicting lock.
+        </p>
+
+        <p>
+            If both transactions succeed, the final balance reflects both
+            withdrawals, assuming sufficient funds and no other failures.
+        </p>
+
+        <h3>Use a conditional update for a withdrawal</h3>
+
+        <pre class="sql-code"><code>DECLARE @WithdrawalAmount DECIMAL(12,2) = 2000;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance - @WithdrawalAmount
+WHERE AccountId = 1
+  AND Balance >= @WithdrawalAmount;
+
+IF @@ROWCOUNT = 0
+BEGIN
+    THROW 50002, 'Account not found or insufficient funds.', 1;
+END;</code></pre>
+
+        <p>
+            This single conditional update checks the available balance
+            and performs the debit as one atomic statement. In a larger
+            transaction, handle the error and roll back the complete unit
+            of work.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>8. Durability — Committed Data Survives Failure</h2>
+
+        <p>
+            Durability means that once SQL Server successfully commits a
+            transaction, the committed changes are protected against
+            ordinary server failures, subject to the configured durability
+            and storage guarantees.
+        </p>
+
+        <p>
+            SQL Server uses write-ahead logging (WAL). Before a modified
+            data page is written to the data file, the log records needed
+            to recover that modification must be hardened to stable storage.
+        </p>
+
+        <h3>How a commit works</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Modify data</strong>
+                <p>SQL Server changes data pages in memory.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Generate log records</strong>
+                <p>Changes are described in the transaction log.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Harden commit log</strong>
+                <p>Required log records are flushed to stable storage.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Commit acknowledged</strong>
+                <p>SQL Server reports successful commit.</p>
+            </div>
+        </div>
+
+        <p>
+            The data pages themselves do not all have to be written to the
+            data files before COMMIT returns. SQL Server can write dirty
+            pages later. The hardened transaction log allows recovery to
+            reconstruct committed changes when required.
+        </p>
+
+        <h3>Example: Commit a transaction</h3>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance + 500
+WHERE AccountId = 2;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <p>
+            After a successful commit, SQL Server has hardened the necessary
+            log records for the transaction under normal fully durable
+            transaction processing.
+        </p>
+
+        <h3>Delayed durability</h3>
+
+        <p>
+            SQL Server also supports delayed durable transactions. With
+            delayed durability, a commit can be acknowledged before the
+            corresponding log records are hardened to storage.
+        </p>
+
+        <p>
+            This can reduce commit latency, but a sudden failure can lose
+            recently committed transactions whose log records had not yet
+            been hardened.
+        </p>
+
+        <pre class="sql-code"><code>COMMIT TRANSACTION
+WITH (DELAYED_DURABILITY = ON);</code></pre>
+
+        <div class="info-box">
+            Delayed durability weakens the normal durability guarantee.
+            Use it only when the application explicitly accepts the
+            possibility of losing recently acknowledged transactions
+            after a failure.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>9. SQL Server Transaction Log Internals</h2>
+
+        <p>
+            The transaction log is a sequential record of database
+            modifications and transaction events. It supports rollback,
+            crash recovery, and other database features.
+        </p>
+
+        <h3>Important transaction log concepts</h3>
+
+        <ul>
+            <li><strong>Log record:</strong> Describes a logged database operation.</li>
+            <li><strong>LSN:</strong> Log Sequence Number, which identifies a position in the log stream.</li>
+            <li><strong>Commit record:</strong> Records successful transaction completion.</li>
+            <li><strong>Undo:</strong> Reverses changes from transactions that must not remain applied.</li>
+            <li><strong>Redo:</strong> Reapplies logged changes during recovery when required.</li>
+            <li><strong>Checkpoint:</strong> Helps limit the amount of work required during crash recovery.</li>
+            <li><strong>Log truncation:</strong> Makes inactive portions of the log reusable when recovery and backup requirements permit.</li>
+        </ul>
+
+        <h3>Transaction log and data files</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Database component</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Data file (.mdf / .ndf)</td>
+                    <td>Stores database objects and data pages.</td>
+                </tr>
+                <tr>
+                    <td>Transaction log (.ldf)</td>
+                    <td>Stores the log records needed for transaction processing and recovery.</td>
+                </tr>
+                <tr>
+                    <td>Buffer pool</td>
+                    <td>Holds cached database pages in memory.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Inspect database files</h3>
+
+        <pre class="sql-code"><code>SELECT
+    name,
+    type_desc,
+    physical_name,
+    size * 8 AS SizeKB
+FROM sys.database_files;</code></pre>
+
+        <h3>Inspect transaction log space</h3>
+
+        <pre class="sql-code"><code>SELECT
+    total_log_size_in_bytes / 1024.0 / 1024
+        AS TotalLogSizeMB,
+
+    used_log_space_in_bytes / 1024.0 / 1024
+        AS UsedLogSpaceMB,
+
+    used_log_space_in_percent
+FROM sys.dm_db_log_space_usage;</code></pre>
+
+        <p>
+            These queries help inspect database file configuration and
+            current log-space usage. They do not replace a complete log
+            backup and recovery strategy.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>10. Crash Recovery — What Happens After a Failure?</h2>
+
+        <p>
+            If SQL Server stops unexpectedly, it must bring the database
+            back to a transactionally consistent state before normal
+            database activity resumes.
+        </p>
+
+        <p>
+            SQL Server uses transaction log information and recovery
+            processing to determine which changes must remain and which
+            must be undone.
+        </p>
+
+        <h3>Three broad recovery phases</h3>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Analysis</strong>
+                <p>Determine the state of transactions and database pages at the recovery point.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Redo</strong>
+                <p>Reapply logged changes needed to bring database pages forward.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Undo</strong>
+                <p>Roll back incomplete transactions that were not committed.</p>
+            </div>
+        </div>
+
+        <h3>Example scenario</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Transaction</th>
+                    <th>State at failure</th>
+                    <th>Recovery action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Transaction A</td>
+                    <td>Committed</td>
+                    <td>Ensure committed changes are present.</td>
+                </tr>
+                <tr>
+                    <td>Transaction B</td>
+                    <td>Not committed</td>
+                    <td>Undo incomplete changes.</td>
+                </tr>
+                <tr>
+                    <td>Transaction C</td>
+                    <td>Committed, but data pages not yet written</td>
+                    <td>Redo logged changes if needed.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            The exact recovery work depends on the recovery checkpoint,
+            log records, database state, and SQL Server recovery mechanisms.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Write-Ahead Logging (WAL)</h2>
+
+        <p>
+            Write-ahead logging is fundamental to SQL Server durability.
+            It ensures that the log records describing a data modification
+            are written to stable storage before the corresponding modified
+            data page is written to the data file.
+        </p>
+
+        <h3>Why WAL matters</h3>
+
+        <p>
+            Imagine a data page has been modified in memory but has not yet
+            been written to disk. If the server fails, SQL Server can use
+            the transaction log to recover the committed change.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Update in memory</strong>
+                <p>A data page becomes dirty in the buffer pool.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Log record generated</strong>
+                <p>SQL Server records the operation in the transaction log.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Log hardened</strong>
+                <p>Required log records are flushed before the data page is written.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Data page written later</strong>
+                <p>Checkpoint or background writing can persist the page.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Safe Transaction Handling with TRY/CATCH</h2>
+
+        <p>
+            Production T-SQL should handle failures explicitly. A common
+            pattern combines TRY/CATCH, XACT_STATE(), XACT_ABORT, and
+            explicit transaction boundaries.
+        </p>
+
+        <h3>Recommended transfer procedure pattern</h3>
+
+        <pre class="sql-code"><code>CREATE OR ALTER PROCEDURE dbo.TransferMoney
+    @FromAccountId INT,
+    @ToAccountId INT,
+    @Amount DECIMAL(12,2)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    IF @Amount <= 0
+    BEGIN
+        THROW 50010, 'Transfer amount must be positive.', 1;
+    END;
+
+    IF @FromAccountId = @ToAccountId
+    BEGIN
+        THROW 50011, 'Source and destination must differ.', 1;
+    END;
+
+    BEGIN TRY
+
+        BEGIN TRANSACTION;
+
+        UPDATE dbo.BankAccount
+        SET Balance = Balance - @Amount
+        WHERE AccountId = @FromAccountId
+          AND Balance >= @Amount;
+
+        IF @@ROWCOUNT <> 1
+        BEGIN
+            THROW 50012,
+                'Source account not found or insufficient funds.',
+                1;
+        END;
+
+        UPDATE dbo.BankAccount
+        SET Balance = Balance + @Amount
+        WHERE AccountId = @ToAccountId;
+
+        IF @@ROWCOUNT <> 1
+        BEGIN
+            THROW 50013,
+                'Destination account not found.',
+                1;
+        END;
+
+        COMMIT TRANSACTION;
+
+    END TRY
+    BEGIN CATCH
+
+        IF XACT_STATE() <> 0
+        BEGIN
+            ROLLBACK TRANSACTION;
+        END;
+
+        THROW;
+
+    END CATCH;
+END;
+GO</code></pre>
+
+        <h3>Execute the procedure</h3>
+
+        <pre class="sql-code"><code>EXEC dbo.TransferMoney
+    @FromAccountId = 1,
+    @ToAccountId = 2,
+    @Amount = 1000;
+
+SELECT *
+FROM dbo.BankAccount;</code></pre>
+
+        <h3>Why use these statements?</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Statement</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>SET NOCOUNT ON</td>
+                    <td>Suppresses row-count messages from statements.</td>
+                </tr>
+                <tr>
+                    <td>SET XACT_ABORT ON</td>
+                    <td>Causes many run-time errors to terminate and roll back the transaction.</td>
+                </tr>
+                <tr>
+                    <td>BEGIN TRY</td>
+                    <td>Starts the protected execution block.</td>
+                </tr>
+                <tr>
+                    <td>BEGIN TRANSACTION</td>
+                    <td>Starts the transaction.</td>
+                </tr>
+                <tr>
+                    <td>XACT_STATE()</td>
+                    <td>Indicates whether the current transaction is active and committable.</td>
+                </tr>
+                <tr>
+                    <td>ROLLBACK TRANSACTION</td>
+                    <td>Undoes the current transaction.</td>
+                </tr>
+                <tr>
+                    <td>THROW</td>
+                    <td>Raises an error or rethrows the caught error.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            XACT_ABORT ON does not eliminate the need for TRY/CATCH.
+            Some errors are not handled by TRY/CATCH, and behavior depends
+            on the error type and execution context. The pattern above
+            handles ordinary run-time failures, but production procedures
+            must also consider transaction ownership and nested transaction
+            behavior.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>13. Understanding XACT_STATE()</h2>
+
+        <p>
+            XACT_STATE() tells you whether the current session has an active
+            transaction and whether that transaction can still be committed.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Value</th>
+                    <th>Meaning</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>An active transaction exists and can be committed.</td>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>No active user transaction exists.</td>
+                </tr>
+                <tr>
+                    <td>-1</td>
+                    <td>An active transaction exists but is uncommittable; it must be rolled back.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Example</h3>
+
+        <pre class="sql-code"><code>BEGIN TRY
+
+    BEGIN TRANSACTION;
+
+    UPDATE dbo.BankAccount
+    SET Balance = Balance - 100
+    WHERE AccountId = 1;
+
+    THROW 50020, 'Test transaction error.', 1;
+
+    COMMIT TRANSACTION;
+
+END TRY
+BEGIN CATCH
+
+    SELECT
+        XACT_STATE() AS TransactionState,
+        @@TRANCOUNT AS TransactionCount;
+
+    IF XACT_STATE() <> 0
+        ROLLBACK TRANSACTION;
+
+    THROW;
+
+END CATCH;</code></pre>
+
+        <p>
+            The transaction state helps determine whether rollback is
+            required. A transaction in state -1 cannot be committed.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Transaction Log and Recovery Models</h2>
+
+        <p>
+            SQL Server provides three database recovery models. They affect
+            transaction log management and the available restore options.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Recovery model</th>
+                    <th>Log backup support</th>
+                    <th>Typical use</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>SIMPLE</td>
+                    <td>Transaction log backups are not supported.</td>
+                    <td>Databases where point-in-time recovery is not required.</td>
+                </tr>
+                <tr>
+                    <td>FULL</td>
+                    <td>Supports transaction log backups.</td>
+                    <td>Databases requiring point-in-time recovery.</td>
+                </tr>
+                <tr>
+                    <td>BULK_LOGGED</td>
+                    <td>Supports log backups, with special considerations for minimally logged operations.</td>
+                    <td>Specific bulk-operation workloads.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Check the recovery model</h3>
+
+        <pre class="sql-code"><code>SELECT
+    name,
+    recovery_model_desc
+FROM sys.databases
+WHERE database_id = DB_ID();</code></pre>
+
+        <h3>Change the recovery model</h3>
+
+        <pre class="sql-code"><code>ALTER DATABASE YourDatabaseName
+SET RECOVERY FULL;</code></pre>
+
+        <p>
+            Changing to FULL recovery does not by itself create a complete
+            point-in-time recovery strategy. Take a full database backup
+            to establish the required backup chain, then schedule regular
+            transaction log backups.
+        </p>
+
+        <div class="info-box">
+            A recovery model is not a replacement for backups. Durability
+            protects committed transactions against ordinary failures,
+            while backups and restore procedures protect against data loss,
+            corruption, and operational mistakes.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>15. Implicit and Explicit Transactions</h2>
+
+        <h3>Explicit transaction</h3>
+
+        <p>
+            An explicit transaction is started and ended by T-SQL statements
+            such as BEGIN TRANSACTION, COMMIT, and ROLLBACK.
+        </p>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance - 100
+WHERE AccountId = 1;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance + 100
+WHERE AccountId = 2;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <h3>Implicit transaction mode</h3>
+
+        <p>
+            With IMPLICIT_TRANSACTIONS ON, certain statements automatically
+            start a transaction when no transaction is active. The
+            application must explicitly commit or roll back the transaction.
+        </p>
+
+        <pre class="sql-code"><code>SET IMPLICIT_TRANSACTIONS ON;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance + 100
+WHERE AccountId = 1;
+
+SELECT @@TRANCOUNT AS OpenTransactionCount;
+
+COMMIT TRANSACTION;
+
+SET IMPLICIT_TRANSACTIONS OFF;</code></pre>
+
+        <p>
+            Be careful when using implicit transaction mode. A forgotten
+            COMMIT or ROLLBACK can leave transactions open and cause
+            blocking or transaction-log growth.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Nested Transactions in SQL Server</h2>
+
+        <p>
+            SQL Server supports nested BEGIN TRANSACTION statements in the
+            sense that @@TRANCOUNT increases. However, these do not create
+            independently committable nested transactions.
+        </p>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+    SELECT @@TRANCOUNT AS TransactionCount; -- 1
+
+    BEGIN TRANSACTION;
+
+        SELECT @@TRANCOUNT AS TransactionCount; -- 2
+
+    COMMIT TRANSACTION;
+
+    SELECT @@TRANCOUNT AS TransactionCount; -- 1
+
+ROLLBACK TRANSACTION;
+
+SELECT @@TRANCOUNT AS TransactionCount; -- 0</code></pre>
+
+        <p>
+            An inner COMMIT only decreases @@TRANCOUNT. It does not make
+            the inner work independently durable. A full rollback generally
+            rolls back the entire transaction.
+        </p>
+
+        <h3>Savepoints</h3>
+
+        <p>
+            A savepoint marks a position inside a transaction. A rollback
+            to a savepoint can undo work performed after that point when
+            the transaction is still committable.
+        </p>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance - 100
+WHERE AccountId = 1;
+
+SAVE TRANSACTION AfterDebit;
+
+UPDATE dbo.BankAccount
+SET Balance = Balance + 100
+WHERE AccountId = 2;
+
+-- Undo work after the savepoint.
+ROLLBACK TRANSACTION AfterDebit;
+
+-- Commit the remaining work.
+COMMIT TRANSACTION;</code></pre>
+
+        <p>
+            A savepoint is not an independently committed transaction.
+            Savepoint rollback is not available when the transaction is
+            uncommittable, and distributed transactions have additional
+            restrictions.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>17. Transaction Performance and Operational Risks</h2>
+
+        <p>
+            Transactions protect consistency, but long-running or poorly
+            designed transactions can create operational problems.
+        </p>
+
+        <h3>Common performance risks</h3>
+
+        <ul>
+            <li>Long-running transactions hold locks longer.</li>
+            <li>Large transactions can generate substantial transaction log activity.</li>
+            <li>Concurrent transactions can block each other.</li>
+            <li>Transactions can participate in deadlocks.</li>
+            <li>Open transactions can delay log truncation.</li>
+            <li>Large rollbacks can take considerable time.</li>
+            <li>Unnecessary work inside transactions increases contention.</li>
+        </ul>
+
+        <h3>Inspect active transactions</h3>
+
+        <pre class="sql-code"><code>DBCC OPENTRAN;</code></pre>
+
+        <p>
+            DBCC OPENTRAN can help identify the oldest active transaction
+            in the current database.
+        </p>
+
+        <h3>Inspect active requests and blocking</h3>
+
+        <pre class="sql-code"><code>SELECT
+    r.session_id,
+    r.status,
+    r.command,
+    r.blocking_session_id,
+    r.wait_type,
+    r.wait_time,
+    r.open_transaction_count,
+    DB_NAME(r.database_id) AS DatabaseName
+FROM sys.dm_exec_requests AS r
+WHERE r.session_id <> @@SPID;</code></pre>
+
+        <p>
+            Use this query to investigate active requests. Additional
+            inspection of sessions, locks, and wait information may be
+            necessary to identify the root cause.
+        </p>
+
+        <h3>Best practices</h3>
+
+        <ul>
+            <li>Keep transactions as short as practical.</li>
+            <li>Validate inputs before starting expensive transactional work.</li>
+            <li>Access shared tables and rows in a consistent order where possible.</li>
+            <li>Use appropriate indexes to reduce unnecessary locking and scanning.</li>
+            <li>Handle deadlock errors with safe, bounded retries.</li>
+            <li>Monitor transaction-log growth and backup health.</li>
+            <li>Do not wait for user input while holding a database transaction open.</li>
+            <li>Use a clear transaction ownership convention in stored procedures.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>18. Common Mistakes</h2>
+
+        <ul>
+            <li>Updating one side of a transfer without updating the other inside the same transaction.</li>
+            <li>Assuming COMMIT means every modified data page has already been written to the data file.</li>
+            <li>Forgetting to roll back after an error.</li>
+            <li>Using a CHECK constraint as a substitute for all business-rule validation.</li>
+            <li>Keeping transactions open while performing unrelated application work.</li>
+            <li>Assuming nested transactions are independently committed.</li>
+            <li>Assuming a savepoint provides independent durability.</li>
+            <li>Using delayed durability without understanding the potential loss of recently acknowledged transactions.</li>
+            <li>Changing recovery models without planning the backup chain.</li>
+            <li>Ignoring transaction-log growth and long-running transactions.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>19. Real-World Applications of ACID</h2>
+
+        <h3>Banking</h3>
+        <p>
+            Money transfers, account debits, and credits must be atomic.
+            Constraints and business rules protect valid balances, while
+            concurrency controls coordinate simultaneous transfers.
+        </p>
+
+        <h3>E-commerce</h3>
+        <p>
+            An order may require inserting an order header, order lines,
+            and payment records. Database transactions can protect related
+            database changes, although external payment providers require
+            additional distributed workflow and compensation handling.
+        </p>
+
+        <h3>Inventory Management</h3>
+        <p>
+            A sale must not accidentally reduce inventory below the
+            permitted quantity. Conditional updates and constraints can
+            help enforce inventory rules under concurrency.
+        </p>
+
+        <h3>Payroll</h3>
+        <p>
+            Salary calculations, payroll details, and accounting entries
+            often need to be committed as one consistent database operation.
+        </p>
+
+        <h3>Booking Systems</h3>
+        <p>
+            Two users should not both successfully reserve the same
+            exclusive resource. Unique constraints and appropriate
+            transaction isolation can protect reservation rules.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>20. Hands-On Exercises</h2>
+
+        <ol>
+            <li>Create two bank accounts and implement a successful transfer.</li>
+            <li>Force an error after the debit and verify that rollback restores the original balance.</li>
+            <li>Add a CHECK constraint that prevents negative balances.</li>
+            <li>Add a foreign key from accounts to customers.</li>
+            <li>Run two concurrent withdrawals against the same account.</li>
+            <li>Use XACT_STATE() inside a CATCH block to inspect transaction state.</li>
+            <li>Demonstrate the difference between nested BEGIN TRANSACTION statements and savepoints.</li>
+            <li>Inspect open transactions using DBCC OPENTRAN.</li>
+            <li>Inspect the database recovery model and transaction-log usage.</li>
+            <li>Build a stored procedure that transfers money and handles errors safely.</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>21. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>What does Atomicity guarantee?</p>
+        <ul>
+            <li>A. Transactions execute without locks.</li>
+            <li>B. All transaction operations succeed or are rolled back.</li>
+            <li>C. Data is always stored in memory.</li>
+            <li>D. Queries always execute in parallel.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — Atomicity treats the transaction as one logical unit.</p>
+
+        <h3>Question 2</h3>
+        <p>Which property ensures that database rules remain valid?</p>
+        <ul>
+            <li>A. Atomicity</li>
+            <li>B. Consistency</li>
+            <li>C. Isolation</li>
+            <li>D. Durability</li>
+        </ul>
+        <p><strong>Answer:</strong> B — Consistency preserves defined database rules.</p>
+
+        <h3>Question 3</h3>
+        <p>Which property addresses concurrent transactions?</p>
+        <ul>
+            <li>A. Atomicity</li>
+            <li>B. Consistency</li>
+            <li>C. Isolation</li>
+            <li>D. Durability</li>
+        </ul>
+        <p><strong>Answer:</strong> C — Isolation controls how concurrent transactions interact.</p>
+
+        <h3>Question 4</h3>
+        <p>What does the transaction log help SQL Server do?</p>
+        <ul>
+            <li>A. Only store query execution plans.</li>
+            <li>B. Support rollback and recovery.</li>
+            <li>C. Replace all data files.</li>
+            <li>D. Automatically remove constraints.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — The transaction log supports undo, redo, and recovery.</p>
+
+        <h3>Question 5</h3>
+        <p>What does COMMIT do?</p>
+        <ul>
+            <li>A. Makes the transaction's changes committed.</li>
+            <li>B. Deletes the transaction log.</li>
+            <li>C. Reverses every update.</li>
+            <li>D. Disables constraints.</li>
+        </ul>
+        <p><strong>Answer:</strong> A — COMMIT completes the transaction successfully.</p>
+
+        <h3>Question 6</h3>
+        <p>What does XACT_STATE() return when a transaction is uncommittable?</p>
+        <ul>
+            <li>A. 0</li>
+            <li>B. 1</li>
+            <li>C. -1</li>
+            <li>D. 2</li>
+        </ul>
+        <p><strong>Answer:</strong> C — -1 indicates an active but uncommittable transaction.</p>
+
+        <h3>Question 7</h3>
+        <p>What is the purpose of write-ahead logging?</p>
+        <ul>
+            <li>A. Write data pages before log records.</li>
+            <li>B. Ensure required log records are hardened before corresponding data pages are written.</li>
+            <li>C. Prevent all deadlocks.</li>
+            <li>D. Avoid transaction logging.</li>
+        </ul>
+        <p><strong>Answer:</strong> B — WAL supports reliable transaction recovery.</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>22. Key Takeaways</h2>
+
+        <ul class="learning-list">
+            <li>Atomicity ensures all-or-nothing transaction behavior.</li>
+            <li>Consistency preserves database constraints and business rules.</li>
+            <li>Isolation controls concurrent transaction behavior.</li>
+            <li>Durability protects committed transactions against ordinary failures.</li>
+            <li>SQL Server uses its transaction log for rollback and recovery.</li>
+            <li>Write-ahead logging ensures required log records are persisted before corresponding data pages.</li>
+            <li>TRY/CATCH, XACT_ABORT, and XACT_STATE() help implement safe transaction handling.</li>
+            <li>Long-running transactions can cause blocking and transaction-log growth.</li>
+            <li>Recovery models and backup strategies are essential for database recoverability.</li>
+        </ul>
+
+        <p>
+            ACID is the foundation of reliable database transaction processing.
+            Understanding how SQL Server implements these guarantees helps
+            you build applications that remain correct under errors,
+            concurrent workloads, and unexpected failures.
+        </p>
+    </section>
+
+</main>

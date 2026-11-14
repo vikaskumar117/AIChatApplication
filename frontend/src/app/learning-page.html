@@ -1,34 +1,22 @@
-<section class="learning-home">
-  <header class="learning-heading">
-    <p class="topic-kicker">CONCEPTS OF ENGINEERING · ROADMAP</p>
-    <h1>Learn the concepts behind the code.</h1>
-    <p class="learning-intro">
-      Choose a module to explore concise explanations, practical examples, diagrams, and interview practice.
-    </p>
-  </header>
+<main>
+  <h1>Learning ({{ modules.length }} Modules and {{ totalTopics }} topics)</h1>
 
-  <div class="roadmap-visual" aria-label="Learning path from fundamentals to production systems">
-    <span>Fundamentals</span><i aria-hidden="true">→</i>
-    <span>Application design</span><i aria-hidden="true">→</i>
-    <span>Production systems</span>
-  </div>
+  <div class="learning-row">
+    <div class="learning-items">
+      <ul>
+        @for (module of modules; track module.id) {
+        <li>
+          <button type="button" (click)="openModule(module.id)" class="module-link"
+            [class.selected]="selectedModuleId() === module.id">
+            {{ module.title }} ({{ module.topics.length }} topics)
+          </button>
+        </li>
+        }
+      </ul>
+    </div>
 
-  <div class="module-grid">
-    @for (module of modules; track module.id; let index = $index) {
-      <button class="module-card" type="button" (click)="openModule(module.id)">
-        <span class="module-card-top">
-          <span class="module-symbol" aria-hidden="true">
-            <svg viewBox="0 0 40 40">
-              <path d="M8 11h24M8 20h15M8 29h19" />
-              <circle [attr.cx]="index % 2 === 0 ? 29 : 27" [attr.cy]="index % 3 === 0 ? 20 : 29" r="4" />
-            </svg>
-          </span>
-          <span class="module-card-count">{{ module.topics.length }} topics</span>
-        </span>
-        <strong>{{ module.title }}</strong>
-        <span class="module-card-description">{{ module.description }}</span>
-        <span class="module-card-action">Explore module <span aria-hidden="true">→</span></span>
-      </button>
-    }
+    <div class="learning-image">
+      <img src="assets/images/learning-page-illustration.svg" alt="Learning illustration" />
+    </div>
   </div>
-</section>
+</main>

@@ -1,0 +1,1048 @@
+
+<main class="container sql-learning-page sequential">
+
+    <header class="page-header">
+        <h1>Transaction Isolation Levels in SQL Server</h1>
+        <p>
+            Understand how SQL Server manages concurrent transactions,
+            prevents inconsistent reads, and balances data consistency
+            against concurrency and performance.
+        </p>
+    </header>
+
+    <section class="content-section">
+        <h2>1. Learning Objectives</h2>
+        <ul class="learning-list">
+            <li>Understand transaction isolation and concurrency control.</li>
+            <li>Learn all five SQL Server transaction isolation levels.</li>
+            <li>Reproduce dirty reads, non-repeatable reads, and phantom reads.</li>
+            <li>Understand shared, update, and exclusive locks.</li>
+            <li>Understand row versioning and the version store.</li>
+            <li>Compare READ COMMITTED SNAPSHOT and SNAPSHOT isolation.</li>
+            <li>Choose an appropriate isolation level for different workloads.</li>
+            <li>Understand the performance and blocking trade-offs.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>2. What Is Transaction Isolation?</h2>
+
+        <p>
+            In a database, multiple users and applications can execute
+            transactions simultaneously. Isolation determines how one
+            transaction is allowed to observe changes made by another
+            transaction.
+        </p>
+
+        <p>Consider two users accessing the same bank account:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>AccountId</th>
+                    <th>AccountName</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>John</td><td>5000.00</td></tr>
+            </tbody>
+        </table>
+
+        <ul>
+            <li>Transaction A updates the balance to 4000.</li>
+            <li>Transaction B reads the balance before Transaction A commits.</li>
+            <li>Transaction A might subsequently roll back.</li>
+        </ul>
+
+        <p>
+            Should Transaction B be allowed to read the uncommitted value?
+            The answer depends on the isolation level.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Transaction A</strong>
+                <p>Updates database data</p>
+            </div>
+            <div class="flow-step">
+                <strong>Transaction B</strong>
+                <p>Reads or modifies related data</p>
+            </div>
+            <div class="flow-step">
+                <strong>Isolation control</strong>
+                <p>Locks or row versions control visibility</p>
+            </div>
+            <div class="flow-step">
+                <strong>Consistent result</strong>
+                <p>Database follows the configured isolation rules</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>3. Create Sample Data</h2>
+
+        <p>Run this setup script in a test database.</p>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.Account;
+
+CREATE TABLE dbo.Account
+(
+    AccountId INT NOT NULL
+        CONSTRAINT PK_Account PRIMARY KEY,
+    AccountName VARCHAR(50) NOT NULL,
+    Balance DECIMAL(12,2) NOT NULL
+);
+
+INSERT INTO dbo.Account
+(
+    AccountId,
+    AccountName,
+    Balance
+)
+VALUES
+    (1, 'John', 5000.00),
+    (2, 'Mary', 8000.00),
+    (3, 'David', 3000.00);
+
+SELECT *
+FROM dbo.Account;</code></pre>
+
+        <p>Initial data:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>AccountId</th>
+                    <th>AccountName</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>John</td><td>5000.00</td></tr>
+                <tr><td>2</td><td>Mary</td><td>8000.00</td></tr>
+                <tr><td>3</td><td>David</td><td>3000.00</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>4. The Five SQL Server Isolation Levels</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Isolation level</th>
+                    <th>Dirty reads</th>
+                    <th>Non-repeatable reads</th>
+                    <th>Phantom reads</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>READ UNCOMMITTED</td>
+                    <td>Possible</td>
+                    <td>Possible</td>
+                    <td>Possible</td>
+                </tr>
+                <tr>
+                    <td>READ COMMITTED</td>
+                    <td>Prevented</td>
+                    <td>Possible</td>
+                    <td>Possible</td>
+                </tr>
+                <tr>
+                    <td>REPEATABLE READ</td>
+                    <td>Prevented</td>
+                    <td>Prevented</td>
+                    <td>Possible</td>
+                </tr>
+                <tr>
+                    <td>SERIALIZABLE</td>
+                    <td>Prevented</td>
+                    <td>Prevented</td>
+                    <td>Prevented</td>
+                </tr>
+                <tr>
+                    <td>SNAPSHOT</td>
+                    <td>Prevented</td>
+                    <td>Prevented within the transaction's snapshot</td>
+                    <td>Prevented within the transaction's snapshot</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            SQL Server also supports READ COMMITTED SNAPSHOT (RCSI), a
+            database-level option that uses row versioning to provide
+            statement-level read consistency under READ COMMITTED.
+            It is not a sixth session isolation level.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>5. READ UNCOMMITTED</h2>
+
+        <p>
+            READ UNCOMMITTED is the lowest isolation level. It permits a
+            transaction to read changes that another transaction has not
+            committed.
+        </p>
+
+        <p>
+            This behavior is called a dirty read.
+        </p>
+
+        <h3>Set the isolation level</h3>
+
+        <pre class="sql-code"><code>SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+BEGIN TRANSACTION;
+
+SELECT *
+FROM dbo.Account
+WHERE AccountId = 1;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <h3>Demonstrate a dirty read</h3>
+
+        <p>Open two query windows connected to the same database.</p>
+
+        <h4>Session 1 — Update without committing</h4>
+
+        <pre class="sql-code"><code>BEGIN TRANSACTION;
+
+UPDATE dbo.Account
+SET Balance = 1000
+WHERE AccountId = 1;
+
+-- Keep the transaction open.
+WAITFOR DELAY '00:00:20';
+
+ROLLBACK TRANSACTION;</code></pre>
+
+        <h4>Session 2 — Read uncommitted data</h4>
+
+        <p>Execute this while Session 1 is waiting:</p>
+
+        <pre class="sql-code"><code>SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+
+SELECT
+    AccountId,
+    AccountName,
+    Balance
+FROM dbo.Account
+WHERE AccountId = 1;</code></pre>
+
+        <p>Session 2 may return:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>AccountId</th>
+                    <th>AccountName</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td>John</td><td>1000.00</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            After Session 1 rolls back, the actual balance returns to 5000.
+            Session 2 has read a value that was never committed.
+        </p>
+
+        <div class="info-box">
+            READ UNCOMMITTED can also produce inconsistent results while
+            rows are being modified or moved. It should not be used simply
+            to make a slow query appear faster.
+        </div>
+
+        <h3>Equivalent table hint</h3>
+
+        <pre class="sql-code"><code>SELECT *
+FROM dbo.Account WITH (NOLOCK);</code></pre>
+
+        <p>
+            NOLOCK is equivalent to READ UNCOMMITTED for that table reference.
+            It does not eliminate every lock interaction, including schema
+            stability locks.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>6. READ COMMITTED</h2>
+
+        <p>
+            READ COMMITTED is SQL Server's default isolation level for a
+            newly opened session unless it has been changed.
+        </p>
+
+        <p>
+            It prevents dirty reads. A transaction can only read committed
+            data, but it may see different committed values if it reads the
+            same row multiple times.
+        </p>
+
+        <pre class="sql-code"><code>SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+BEGIN TRANSACTION;
+
+SELECT Balance
+FROM dbo.Account
+WHERE AccountId = 1;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <h3>Demonstrate non-repeatable reads</h3>
+
+        <h4>Session 1 — Read the account twice</h4>
+
+        <pre class="sql-code"><code>SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
+BEGIN TRANSACTION;
+
+SELECT Balance
+FROM dbo.Account
+WHERE AccountId = 1;
+
+WAITFOR DELAY '00:00:10';
+
+SELECT Balance
+FROM dbo.Account
+WHERE AccountId = 1;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <h4>Session 2 — Update between the reads</h4>
+
+        <p>Execute during Session 1's delay:</p>
+
+        <pre class="sql-code"><code>UPDATE dbo.Account
+SET Balance = Balance + 500
+WHERE AccountId = 1;</code></pre>
+
+        <p>Possible Session 1 output:</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Read</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>First read</td><td>5000.00</td></tr>
+                <tr><td>Second read</td><td>5500.00</td></tr>
+            </tbody>
+        </table>
+
+        <p>
+            The same transaction reads the same row twice but receives
+            different committed values. This is a non-repeatable read.
+        </p>
+
+        <h3>Locking behavior</h3>
+
+        <p>
+            With locking-based READ COMMITTED, shared locks are generally
+            released after the statement finishes. Exclusive locks protecting
+            modifications are held until transaction completion.
+        </p>
+
+        <p>
+            If READ_COMMITTED_SNAPSHOT is enabled, READ COMMITTED uses
+            statement-level row versions instead of shared data locks for
+            ordinary reads.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>7. REPEATABLE READ</h2>
+
+        <p>
+            REPEATABLE READ prevents another transaction from modifying
+            rows already read by the current transaction until it completes.
+        </p>
+
+        <p>
+            Shared locks on qualifying rows are held until transaction
+            completion. However, new rows matching the search condition
+            may still be inserted by other transactions.
+        </p>
+
+        <pre class="sql-code"><code>SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
+BEGIN TRANSACTION;
+
+SELECT Balance
+FROM dbo.Account
+WHERE AccountId = 1;
+
+WAITFOR DELAY '00:00:10';
+
+SELECT Balance
+FROM dbo.Account
+WHERE AccountId = 1;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <h3>Session 2 — Try to update the same row</h3>
+
+        <pre class="sql-code"><code>UPDATE dbo.Account
+SET Balance = Balance + 500
+WHERE AccountId = 1;</code></pre>
+
+        <p>
+            Session 2 must wait while Session 1 holds its shared lock.
+            Session 1 should see the same committed row value both times.
+        </p>
+
+        <div class="info-box">
+            REPEATABLE READ protects rows that have been read, but it does
+            not protect the entire range of values matching a predicate.
+            That distinction is important when preventing phantom reads.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>8. SERIALIZABLE</h2>
+
+        <p>
+            SERIALIZABLE is the strongest locking-based isolation level.
+            It prevents dirty reads, non-repeatable reads, and phantom reads.
+        </p>
+
+        <p>
+            SQL Server uses key-range locks where necessary to prevent
+            another transaction from inserting rows into a range read by
+            the current transaction.
+        </p>
+
+        <h3>Demonstrate phantom protection</h3>
+
+        <p>First, create a test table:</p>
+
+        <pre class="sql-code"><code>DROP TABLE IF EXISTS dbo.EmployeeSalary;
+
+CREATE TABLE dbo.EmployeeSalary
+(
+    EmployeeId INT NOT NULL
+        CONSTRAINT PK_EmployeeSalary PRIMARY KEY,
+    EmployeeName VARCHAR(50) NOT NULL,
+    Salary DECIMAL(12,2) NOT NULL
+);
+
+INSERT INTO dbo.EmployeeSalary
+(
+    EmployeeId,
+    EmployeeName,
+    Salary
+)
+VALUES
+    (1, 'Alice', 50000),
+    (2, 'Bob', 65000),
+    (3, 'Carol', 75000);</code></pre>
+
+        <h4>Session 1 — Read a salary range</h4>
+
+        <pre class="sql-code"><code>SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+BEGIN TRANSACTION;
+
+SELECT *
+FROM dbo.EmployeeSalary
+WHERE Salary BETWEEN 50000 AND 70000;
+
+WAITFOR DELAY '00:00:20';
+
+SELECT *
+FROM dbo.EmployeeSalary
+WHERE Salary BETWEEN 50000 AND 70000;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <h4>Session 2 — Insert into the range</h4>
+
+        <p>Execute while Session 1 is waiting:</p>
+
+        <pre class="sql-code"><code>INSERT INTO dbo.EmployeeSalary
+(
+    EmployeeId,
+    EmployeeName,
+    Salary
+)
+VALUES
+(
+    4,
+    'David',
+    60000
+);</code></pre>
+
+        <p>
+            Session 2 should wait until Session 1 finishes because the
+            serializable transaction protects the relevant key range.
+        </p>
+
+        <p>
+            Session 1 therefore does not see a newly inserted row in its
+            second query.
+        </p>
+
+        <h3>Why indexes matter</h3>
+
+        <p>
+            Create an index on Salary to provide an ordered key structure
+            for range access:
+        </p>
+
+        <pre class="sql-code"><code>CREATE NONCLUSTERED INDEX IX_EmployeeSalary_Salary
+ON dbo.EmployeeSalary (Salary);</code></pre>
+
+        <p>
+            SQL Server can use this index for range access and key-range
+            locking. Without a suitable index, it may need broader locking
+            strategies to enforce serializable behavior.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>9. SNAPSHOT Isolation</h2>
+
+        <p>
+            SNAPSHOT isolation uses row versioning to provide a transaction
+            with a consistent view of committed data as of the start of that
+            transaction.
+        </p>
+
+        <p>
+            Unlike locking-based REPEATABLE READ, a reader generally does not
+            need to hold shared data locks that block writers.
+        </p>
+
+        <h3>Enable SNAPSHOT isolation</h3>
+
+        <p>
+            This is a database-level configuration change. Run it in a
+            suitable maintenance window after evaluating the application
+            and version-store implications.
+        </p>
+
+        <pre class="sql-code"><code>ALTER DATABASE YourDatabaseName
+SET ALLOW_SNAPSHOT_ISOLATION ON;</code></pre>
+
+        <h3>Set transaction isolation</h3>
+
+        <pre class="sql-code"><code>SET TRANSACTION ISOLATION LEVEL SNAPSHOT;
+
+BEGIN TRANSACTION;
+
+SELECT Balance
+FROM dbo.Account
+WHERE AccountId = 1;
+
+WAITFOR DELAY '00:00:10';
+
+SELECT Balance
+FROM dbo.Account
+WHERE AccountId = 1;
+
+COMMIT TRANSACTION;</code></pre>
+
+        <h3>Concurrent update demonstration</h3>
+
+        <p>
+            Start the previous SNAPSHOT transaction in Session 1. While it
+            is waiting, update the same account from Session 2 and commit.
+        </p>
+
+        <pre class="sql-code"><code>UPDATE dbo.Account
+SET Balance = Balance + 500
+WHERE AccountId = 1;</code></pre>
+
+        <p>
+            Session 1 continues to see the committed version that existed
+            when its transaction began. It does not see Session 2's later
+            committed update.
+        </p>
+
+        <h3>Important: Snapshot update conflicts</h3>
+
+        <p>
+            SNAPSHOT isolation is not simply a way to allow every transaction
+            to update concurrently. If two snapshot transactions attempt to
+            modify the same row after one has committed a change since the
+            other transaction's snapshot began, SQL Server can terminate
+            one transaction with an update conflict.
+        </p>
+
+        <p>
+            The application must handle the conflict and decide whether
+            retrying the entire transaction is safe.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>10. READ COMMITTED SNAPSHOT (RCSI)</h2>
+
+        <p>
+            READ COMMITTED SNAPSHOT is a database-level option that changes
+            how READ COMMITTED reads are implemented.
+        </p>
+
+        <p>
+            With RCSI enabled, each statement sees a consistent snapshot
+            of committed data as of the beginning of that statement.
+        </p>
+
+        <h3>Enable RCSI</h3>
+
+        <pre class="sql-code"><code>ALTER DATABASE YourDatabaseName
+SET READ_COMMITTED_SNAPSHOT ON;</code></pre>
+
+        <p>
+            The database may need exclusive access while this setting is
+            changed. Plan the change carefully and verify the database state.
+        </p>
+
+        <h3>RCSI versus SNAPSHOT</h3>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>READ COMMITTED SNAPSHOT</th>
+                    <th>SNAPSHOT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Configuration</td>
+                    <td>Database option</td>
+                    <td>Database option plus session isolation level</td>
+                </tr>
+                <tr>
+                    <td>Consistency point</td>
+                    <td>Beginning of each statement</td>
+                    <td>Beginning of the transaction</td>
+                </tr>
+                <tr>
+                    <td>Ordinary read/write blocking</td>
+                    <td>Usually reduced</td>
+                    <td>Usually reduced</td>
+                </tr>
+                <tr>
+                    <td>Repeat reads</td>
+                    <td>May see different committed versions in separate statements</td>
+                    <td>See the same transaction snapshot</td>
+                </tr>
+                <tr>
+                    <td>Update conflicts</td>
+                    <td>Uses locking for writes; normal write conflicts can still occur</td>
+                    <td>Can produce snapshot update conflict errors</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="info-box">
+            RCSI and SNAPSHOT are different consistency models. RCSI provides
+            statement-level consistency; SNAPSHOT provides transaction-level
+            consistency.
+        </div>
+    </section>
+
+    <section class="content-section">
+        <h2>11. Understand Row Versioning Internals</h2>
+
+        <p>
+            SQL Server can preserve earlier committed versions of modified
+            rows so that readers can access a consistent version without
+            waiting for a writer's exclusive data lock.
+        </p>
+
+        <div class="processing-flow">
+            <div class="flow-step">
+                <strong>Transaction A modifies a row</strong>
+                <p>SQL Server creates or maintains version information.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Earlier row version retained</strong>
+                <p>The previous committed version remains available.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Transaction B reads</strong>
+                <p>The reader accesses the appropriate committed version.</p>
+            </div>
+            <div class="flow-step">
+                <strong>Version cleanup</strong>
+                <p>Old versions are cleaned up when no longer needed.</p>
+            </div>
+        </div>
+
+        <h3>Where are row versions stored?</h3>
+
+        <p>
+            Depending on SQL Server version and configuration, row versions
+            can be stored in tempdb or in the Persistent Version Store (PVS)
+            associated with Accelerated Database Recovery (ADR).
+        </p>
+
+        <ul>
+            <li>Traditional row versioning uses the tempdb version store.</li>
+            <li>When ADR is enabled, the PVS in the user database is used for the relevant versioning workloads.</li>
+            <li>Long-running snapshot transactions can delay cleanup of versions they still need.</li>
+            <li>Version storage requires monitoring and capacity planning.</li>
+        </ul>
+
+        <h3>Inspect version-store usage in tempdb</h3>
+
+        <pre class="sql-code"><code>SELECT
+    database_id,
+    reserved_page_count,
+    reserved_space_kb
+FROM sys.dm_tran_version_store_space_usage;</code></pre>
+
+        <p>
+            This DMV reports version-store space usage in tempdb by database.
+            It does not report the Persistent Version Store inside user
+            databases.
+        </p>
+
+        <h3>Inspect active snapshot transactions</h3>
+
+        <pre class="sql-code"><code>SELECT
+    transaction_id,
+    transaction_sequence_num,
+    elapsed_time_seconds,
+    is_snapshot
+FROM sys.dm_tran_active_snapshot_database_transactions;</code></pre>
+
+        <p>
+            DMV availability and permissions vary by SQL Server version.
+            Monitor long-running transactions and version-store pressure
+            as part of normal operations.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>12. Isolation Level Comparison</h2>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Isolation</th>
+                    <th>Read behavior</th>
+                    <th>Concurrency impact</th>
+                    <th>Typical use</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>READ UNCOMMITTED</td>
+                    <td>Can read uncommitted data.</td>
+                    <td>Low reader-writer blocking, but inconsistent reads possible.</td>
+                    <td>Rare, carefully justified cases where dirty data is acceptable.</td>
+                </tr>
+                <tr>
+                    <td>READ COMMITTED</td>
+                    <td>Reads committed data at statement execution.</td>
+                    <td>Locking-based implementation can block writers and readers.</td>
+                    <td>General transactional workloads.</td>
+                </tr>
+                <tr>
+                    <td>REPEATABLE READ</td>
+                    <td>Previously read rows cannot be changed by other transactions until completion.</td>
+                    <td>More locks held for longer.</td>
+                    <td>Transactions requiring stable values for previously read rows.</td>
+                </tr>
+                <tr>
+                    <td>SERIALIZABLE</td>
+                    <td>Protects rows and relevant key ranges.</td>
+                    <td>Can produce significant blocking and deadlocks.</td>
+                    <td>Operations requiring serializable range behavior.</td>
+                </tr>
+                <tr>
+                    <td>SNAPSHOT</td>
+                    <td>Reads from a transaction-level committed snapshot.</td>
+                    <td>Reader-writer blocking reduced; update conflicts possible.</td>
+                    <td>Transactions needing consistent multi-statement reads.</td>
+                </tr>
+                <tr>
+                    <td>RCSI</td>
+                    <td>Each statement reads a committed snapshot.</td>
+                    <td>Reader-writer blocking usually reduced.</td>
+                    <td>Systems with substantial concurrent read activity.</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="content-section">
+        <h2>13. How to Change Isolation Levels</h2>
+
+        <h3>Change isolation for the current session</h3>
+
+        <pre class="sql-code"><code>SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+
+SELECT *
+FROM dbo.Account;
+
+-- Change back when required.
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;</code></pre>
+
+        <p>
+            SET TRANSACTION ISOLATION LEVEL changes the isolation setting
+            for the current connection. Applications using connection pools
+            should ensure that session settings are managed consistently.
+        </p>
+
+        <h3>Check the current session isolation level</h3>
+
+        <pre class="sql-code"><code>SELECT
+    session_id,
+    transaction_isolation_level
+FROM sys.dm_exec_sessions
+WHERE session_id = @@SPID;</code></pre>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Value</th>
+                    <th>Isolation level</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>0</td><td>Unspecified</td></tr>
+                <tr><td>1</td><td>READ UNCOMMITTED</td></tr>
+                <tr><td>2</td><td>READ COMMITTED</td></tr>
+                <tr><td>3</td><td>REPEATABLE READ</td></tr>
+                <tr><td>4</td><td>SERIALIZABLE</td></tr>
+                <tr><td>5</td><td>SNAPSHOT</td></tr>
+            </tbody>
+        </table>
+
+        <h3>Inspect database row-versioning options</h3>
+
+        <pre class="sql-code"><code>SELECT
+    name,
+    is_read_committed_snapshot_on,
+    snapshot_isolation_state_desc,
+    is_accelerated_database_recovery_on
+FROM sys.databases
+WHERE database_id = DB_ID();</code></pre>
+    </section>
+
+    <section class="content-section">
+        <h2>14. Isolation Levels and SQL Server Locking</h2>
+
+        <p>
+            Locking-based isolation levels use locks to coordinate concurrent
+            access. The duration and granularity of locks depend on the
+            isolation level and execution plan.
+        </p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Isolation</th>
+                    <th>Typical read behavior</th>
+                    <th>Range protection</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>READ UNCOMMITTED</td>
+                    <td>Does not request shared data locks for ordinary reads.</td>
+                    <td>No serializable range protection.</td>
+                </tr>
+                <tr>
+                    <td>READ COMMITTED</td>
+                    <td>Shared locks are generally released after each statement under locking-based READ COMMITTED.</td>
+                    <td>No serializable range protection.</td>
+                </tr>
+                <tr>
+                    <td>REPEATABLE READ</td>
+                    <td>Shared locks on qualifying rows held until transaction completion.</td>
+                    <td>Does not generally protect gaps against new qualifying rows.</td>
+                </tr>
+                <tr>
+                    <td>SERIALIZABLE</td>
+                    <td>Uses locks and key-range locks as required.</td>
+                    <td>Protects qualifying ranges against phantom inserts.</td>
+                </tr>
+                <tr>
+                    <td>SNAPSHOT</td>
+                    <td>Reads committed row versions.</td>
+                    <td>Uses a transaction-level snapshot instead of reader range locks.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>
+            Actual lock acquisition can vary because of query plans, indexes,
+            lock hints, optimized locking features, and SQL Server version.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>15. Choosing the Right Isolation Level</h2>
+
+        <h3>Scenario 1: General web application</h3>
+        <p>
+            READ COMMITTED is a common default. RCSI may be appropriate when
+            read-heavy workloads suffer from reader-writer blocking.
+        </p>
+
+        <h3>Scenario 2: Financial transaction</h3>
+        <p>
+            A transfer operation must maintain business invariants. Use
+            appropriate transactional updates, constraints, and concurrency
+            controls. Do not assume that choosing SERIALIZABLE alone replaces
+            application-level validation.
+        </p>
+
+        <h3>Scenario 3: Consistent report with multiple queries</h3>
+        <p>
+            SNAPSHOT may be suitable when several statements in one
+            transaction need to observe the same committed database view.
+        </p>
+
+        <h3>Scenario 4: Prevent inserts into a searched range</h3>
+        <p>
+            SERIALIZABLE can protect the relevant key range against phantom
+            inserts. Ensure the transaction is short and the access path is
+            suitable.
+        </p>
+
+        <h3>Scenario 5: Analytics with tolerance for changing results</h3>
+        <p>
+            READ COMMITTED or RCSI may be appropriate depending on whether
+            each statement needs a committed snapshot and how the reporting
+            workload interacts with writers.
+        </p>
+    </section>
+
+    <section class="content-section">
+        <h2>16. Common Mistakes</h2>
+
+        <ul>
+            <li>Assuming READ COMMITTED guarantees the same value across multiple statements.</li>
+            <li>Confusing READ COMMITTED SNAPSHOT with SNAPSHOT isolation.</li>
+            <li>Using NOLOCK to hide blocking without understanding dirty reads.</li>
+            <li>Choosing SERIALIZABLE for every transaction without measuring concurrency impact.</li>
+            <li>Ignoring long-running transactions that retain locks or row versions.</li>
+            <li>Enabling row versioning without monitoring version-store capacity.</li>
+            <li>Assuming SNAPSHOT prevents all write conflicts.</li>
+            <li>Ignoring transaction scope in application code.</li>
+            <li>Changing database isolation options without testing connection and application behavior.</li>
+        </ul>
+    </section>
+
+    <section class="content-section">
+        <h2>17. Hands-On Exercises</h2>
+
+        <ol>
+            <li>Reproduce a dirty read using READ UNCOMMITTED.</li>
+            <li>Repeat the experiment using READ COMMITTED and observe blocking or committed-value behavior.</li>
+            <li>Reproduce a non-repeatable read using READ COMMITTED.</li>
+            <li>Repeat the experiment using REPEATABLE READ.</li>
+            <li>Insert a row into a searched range while another session uses SERIALIZABLE.</li>
+            <li>Enable SNAPSHOT isolation and compare repeated reads across concurrent updates.</li>
+            <li>Enable RCSI in a test database and compare reader-writer blocking.</li>
+            <li>Inspect active snapshot transactions and version-store usage.</li>
+            <li>Compare the execution and locking behavior of a range query with and without a suitable index.</li>
+        </ol>
+    </section>
+
+    <section class="content-section">
+        <h2>18. Knowledge Check</h2>
+
+        <h3>Question 1</h3>
+        <p>Which isolation level permits dirty reads?</p>
+        <ul>
+            <li>A. READ COMMITTED</li>
+            <li>B. SERIALIZABLE</li>
+            <li>C. READ UNCOMMITTED</li>
+            <li>D. SNAPSHOT</li>
+        </ul>
+        <p><strong>Answer:</strong> C — READ UNCOMMITTED permits reading uncommitted changes.</p>
+
+        <h3>Question 2</h3>
+        <p>Which isolation level prevents non-repeatable reads using locking?</p>
+        <ul>
+            <li>A. READ UNCOMMITTED</li>
+            <li>B. READ COMMITTED</li>
+            <li>C. REPEATABLE READ</li>
+            <li>D. All of the above</li>
+        </ul>
+        <p><strong>Answer:</strong> C — REPEATABLE READ holds shared locks on previously read qualifying rows until transaction completion.</p>
+
+        <h3>Question 3</h3>
+        <p>Which isolation level prevents phantom reads through key-range locking?</p>
+        <ul>
+            <li>A. READ COMMITTED</li>
+            <li>B. REPEATABLE READ</li>
+            <li>C. READ UNCOMMITTED</li>
+            <li>D. SERIALIZABLE</li>
+        </ul>
+        <p><strong>Answer:</strong> D — SERIALIZABLE protects relevant key ranges.</p>
+
+        <h3>Question 4</h3>
+        <p>What is the consistency scope of SNAPSHOT isolation?</p>
+        <ul>
+            <li>A. One statement</li>
+            <li>B. The entire transaction</li>
+            <li>C. One column</li>
+            <li>D. One index</li>
+        </ul>
+        <p><strong>Answer:</strong> B — SNAPSHOT provides a transaction-level view of committed data.</p>
+
+        <h3>Question 5</h3>
+        <p>What is the consistency scope of READ COMMITTED SNAPSHOT?</p>
+        <ul>
+            <li>A. One statement</li>
+            <li>B. The entire transaction</li>
+            <li>C. The entire server lifetime</li>
+            <li>D. One database file</li>
+        </ul>
+        <p><strong>Answer:</strong> A — RCSI provides statement-level consistency.</p>
+
+        <h3>Question 6</h3>
+        <p>What is one potential cost of row versioning?</p>
+        <ul>
+            <li>A. Version-store storage and cleanup overhead</li>
+            <li>B. Automatic removal of indexes</li>
+            <li>C. Inability to insert rows</li>
+            <li>D. Automatic disabling of constraints</li>
+        </ul>
+        <p><strong>Answer:</strong> A — Row versions require storage and cleanup management.</p>
+    </section>
+
+    <section class="outcome-section">
+        <h2>19. Key Takeaways</h2>
+
+        <ul class="learning-list">
+            <li>Isolation levels define how concurrent transactions observe data.</li>
+            <li>READ UNCOMMITTED allows dirty reads.</li>
+            <li>READ COMMITTED prevents dirty reads but allows non-repeatable and phantom reads.</li>
+            <li>REPEATABLE READ protects rows already read but does not prevent all phantom inserts.</li>
+            <li>SERIALIZABLE protects relevant key ranges.</li>
+            <li>SNAPSHOT provides transaction-level consistency through row versioning.</li>
+            <li>RCSI provides statement-level consistency through row versioning.</li>
+            <li>Row versioning reduces many reader-writer conflicts but has storage and cleanup costs.</li>
+            <li>Isolation level selection should reflect application consistency requirements and workload behavior.</li>
+        </ul>
+
+        <p>
+            The best isolation level is not necessarily the strongest one.
+            It is the level that satisfies the application's consistency
+            requirements while maintaining acceptable concurrency and
+            operational performance.
+        </p>
+    </section>
+
+</main>

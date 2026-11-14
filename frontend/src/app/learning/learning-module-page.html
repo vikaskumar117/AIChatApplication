@@ -1,0 +1,70 @@
+@if (module(); as currentModule) {
+  <div class="learning-page" [class.topics-hidden]="!topicsVisible()">
+    <aside id="topic-list">
+      <div class="sidebar-actions">
+        <button class="sidebar-action" type="button" (click)="backToModules()">
+          <svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"
+            />
+          </svg>
+          <span>Back</span>
+        </button>
+        <button
+          class="sidebar-action"
+          type="button"
+          [attr.aria-expanded]="topicsVisible()"
+          aria-controls="topic-items"
+          (click)="toggleTopics()"
+        >
+          <svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor">
+            <path
+              d="M0 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm5-1v12h7a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM4 2H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h2z"
+            />
+          </svg>
+          <span>{{ topicsVisible() ? 'Hide topics' : 'Show topics' }}</span>
+        </button>
+      </div>
+      <h2>{{ currentModule.title }} ({{ currentModule.topics.length }})</h2>
+      @if (topicsVisible()) {
+        <ul id="topic-items">
+          @for (topic of currentModule.topics; track topic.id) {
+            <li>
+              <button
+                type="button"
+                class="topic-link"
+                [class.selected]="topic.id === selectedTopic()?.id"
+                [attr.aria-current]="topic.id === selectedTopic()?.id ? 'page' : null"
+                (click)="openTopic(topic.id)"
+              >
+                {{ topic.title }}
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </aside>
+    <main>
+      @if (!topicsVisible()) {
+        <div class="lesson-toolbar">
+          <button class="sidebar-action" type="button" (click)="toggleTopics()">
+            <svg aria-hidden="true" viewBox="0 0 16 16" fill="currentColor">
+              <path
+                d="M0 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm5-1v12h7a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zM4 2H2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h2z"
+              />
+            </svg>
+            <span>Show topics</span>
+          </button>
+        </div>
+      }
+      @if (error()) {
+        <p>{{ error() }}</p>
+      } @else {
+        <div [innerHTML]="lessonHtml()"></div>
+      }
+    </main>
+  </div>
+} @else if (error()) {
+  <p>{{ error() }}</p>
+}

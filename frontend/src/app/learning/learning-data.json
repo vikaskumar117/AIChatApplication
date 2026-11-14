@@ -1,0 +1,1366 @@
+[
+  {
+    "id": "csharp-fundamentals",
+    "title": "C# Core Concepts & OOP",
+    "description": "Architect-level understanding of C# types, polymorphism, reusable abstractions, and object-oriented design.",
+    "topics": [
+      {
+        "id": "value-vs-reference-types",
+        "title": "Value Types vs Reference Types",
+        "priority": "High",
+        "summary": "Value and reference types differ in assignment and identity semantics, not by a universal stack-versus-heap rule."
+      },
+      {
+        "id": "structs-classes-records",
+        "title": "Struct vs Class vs Record",
+        "priority": "Very High",
+        "summary": "Classes model identity, structs model copied values, and records add value-oriented equality to either reference or value types."
+      },
+      {
+        "id": "choosing-csharp-type",
+        "title": "When to Use a Class, Struct, or Record",
+        "priority": "High",
+        "summary": "Choose types from domain semantics first, then validate allocation and copying costs with measurement."
+      },
+      {
+        "id": "boxing-unboxing",
+        "title": "Boxing and Unboxing",
+        "priority": "High",
+        "summary": "Boxing wraps a value type as an object/interface value; unboxing extracts a value of the exact value type."
+      },
+      {
+        "id": "ref-out-in",
+        "title": "ref, out, and in Parameters",
+        "priority": "High",
+        "summary": "These modifiers pass a variable by reference with distinct initialization and mutation rules."
+      },
+      {
+        "id": "abstract-class-interface",
+        "title": "Abstract Class vs Interface",
+        "priority": "Very High",
+        "summary": "An interface defines a substitutable capability contract; an abstract class can also own shared state and implementation."
+      },
+      {
+        "id": "generics-vs-object",
+        "title": "Generics vs Object-Based APIs",
+        "priority": "High",
+        "summary": "Generics preserve the element type; object-based APIs erase it and move checking and conversion work to runtime."
+      },
+      {
+        "id": "generics-variance",
+        "title": "Generics & Variance",
+        "priority": "Very High",
+        "summary": "Generics parameterize reusable code with compile-time type safety; variance allows safe conversions between selected constructed types."
+      },
+      {
+        "id": "overloading-overriding",
+        "title": "Overloading vs Overriding",
+        "priority": "Very High",
+        "summary": "Overloading selects among same-named signatures at compile time; overriding replaces inherited virtual behavior at runtime."
+      },
+      {
+        "id": "virtual-override-new",
+        "title": "virtual, override, and new",
+        "priority": "High",
+        "summary": "virtual opens a polymorphic method slot, override participates in that slot, and new hides a member by name."
+      },
+      {
+        "id": "oop-pillars",
+        "title": "Four OOP Pillars in a Working Design",
+        "priority": "Very High",
+        "summary": "Encapsulation, abstraction, inheritance, and polymorphism are complementary techniques for controlling change."
+      },
+      {
+        "id": "solid-srp",
+        "title": "SRP: Single Responsibility Principle",
+        "priority": "Very High",
+        "summary": "A module should have one cohesive responsibility—one primary reason to change—not merely one method."
+      },
+      {
+        "id": "solid-ocp",
+        "title": "OCP: Open/Closed Principle",
+        "priority": "High",
+        "summary": "Stable code should accept new supported behavior through extension points rather than repeated edits to a central decision block."
+      },
+      {
+        "id": "solid-lsp",
+        "title": "LSP: Liskov Substitution Principle",
+        "priority": "Very High",
+        "summary": "A subtype must honor the behavioral promises clients rely on when using the base contract."
+      },
+      {
+        "id": "solid-isp",
+        "title": "ISP: Interface Segregation Principle",
+        "priority": "High",
+        "summary": "Clients should depend on focused interfaces containing only operations they actually need."
+      },
+      {
+        "id": "solid-dip",
+        "title": "DIP: Dependency Inversion Principle",
+        "priority": "Very High",
+        "summary": "High-level policy and low-level details should depend on stable abstractions, with implementation details kept at the edge."
+      },
+      {
+        "id": "dependency-injection",
+        "title": "Dependency Injection and Its Value",
+        "priority": "Very High",
+        "summary": "Dependency injection supplies an object’s collaborators from outside instead of having the object construct concrete dependencies itself."
+      },
+      {
+        "id": "extension-methods",
+        "title": "Extension Methods",
+        "priority": "High",
+        "summary": "An extension method adds callable syntax to a type without modifying or inheriting from that type."
+      },
+      {
+        "id": "delegates-events-func-action",
+        "title": "Delegates, Events, Func, and Action",
+        "priority": "Very High",
+        "summary": "Delegates are type-safe method references; Func and Action are standard delegate shapes, while events control publisher notifications."
+      }
+    ]
+  },
+  {
+    "id": "csharp-coding-algorithms",
+    "title": "C# Coding & Algorithms",
+    "description": "Practice data structures, complexity analysis, and interview-style implementation problems.",
+    "topics": [
+      {
+        "id": "reverse-string",
+        "title": "Reverse a String",
+        "priority": "Very High",
+        "summary": "Reverse a string by converting it to a mutable character buffer and swapping characters from the two ends."
+      },
+      {
+        "id": "reverse-words",
+        "title": "Reverse Words in a Sentence",
+        "priority": "High",
+        "summary": "Split a sentence into words and emit them in reverse order without reversing the letters inside each word."
+      },
+      {
+        "id": "palindrome-two-pointers",
+        "title": "Palindrome Check with Two Pointers",
+        "priority": "Very High",
+        "summary": "Compare matching characters from both ends, skipping characters the problem defines as irrelevant."
+      },
+      {
+        "id": "anagram-frequency-count",
+        "title": "Anagram Check with Character Counts",
+        "priority": "Very High",
+        "summary": "Two strings are anagrams when their normalized character frequencies match exactly."
+      },
+      {
+        "id": "first-unique-character",
+        "title": "First Non-Repeating Character",
+        "priority": "High",
+        "summary": "Count characters in one pass, then scan in the original order to find the first character with count one."
+      },
+      {
+        "id": "two-sum-hash-map",
+        "title": "Two Sum with a Dictionary",
+        "priority": "Very High",
+        "summary": "Find two array positions whose values sum to a target by remembering values already seen."
+      },
+      {
+        "id": "longest-unique-substring",
+        "title": "Longest Substring Without Repeating Characters",
+        "priority": "High",
+        "summary": "Use a sliding window to find the longest contiguous substring whose characters are all unique."
+      },
+      {
+        "id": "binary-search",
+        "title": "Binary Search in a Sorted Array",
+        "priority": "High",
+        "summary": "Find a target in a sorted array by repeatedly discarding the half that cannot contain it."
+      },
+      {
+        "id": "linked-list-reversal-cycle",
+        "title": "Reverse a Linked List & Detect Cycles",
+        "priority": "High",
+        "summary": "Reverse a singly linked list in place, then use Floyd’s tortoise-and-hare algorithm to determine whether a list loops back on itself."
+      },
+      {
+        "id": "lru-cache",
+        "title": "LRU Cache",
+        "priority": "High",
+        "summary": "An LRU (least recently used) cache keeps a bounded set of entries and evicts the entry that has gone longest without use."
+      }
+    ]
+  },
+  {
+    "id": "dotnet-async-memory",
+    "title": "Async Programming, Tasks, Threads & Memory",
+    "description": "Design scalable asynchronous code, protect shared state, and diagnose managed-memory and resource-lifetime problems.",
+    "topics": [
+      {
+        "id": "async-vs-sync",
+        "title": "Asynchronous vs Synchronous Work",
+        "priority": "Very High",
+        "summary": "Synchronous calls wait inline; asynchronous operations let the caller make progress while an operation is pending."
+      },
+      {
+        "id": "task-vs-thread",
+        "title": "Task vs Thread",
+        "priority": "Very High",
+        "summary": "A Task models an operation’s completion and outcome; a Thread is an operating-system execution resource."
+      },
+      {
+        "id": "thread-pool",
+        "title": ".NET Thread Pool",
+        "priority": "High",
+        "summary": "The thread pool reuses worker threads for short-running work and coordinates queued callbacks and continuations."
+      },
+      {
+        "id": "async-internals",
+        "title": "What Happens Inside an Async Method",
+        "priority": "Very High",
+        "summary": "An async method runs synchronously until it reaches an incomplete awaitable, then returns control and resumes later."
+      },
+      {
+        "id": "async-await",
+        "title": "Compiler State Machine and Await",
+        "priority": "Very High",
+        "summary": "The compiler transforms an async method into a state machine that stores progress across suspension points."
+      },
+      {
+        "id": "task-vs-task-run",
+        "title": "Task vs Task.Run",
+        "priority": "High",
+        "summary": "Task represents work or completion; Task.Run schedules a delegate on the thread pool."
+      },
+      {
+        "id": "task-whenall-whenany",
+        "title": "Task.WhenAll vs Task.WhenAny",
+        "priority": "High",
+        "summary": "WhenAll completes after all supplied tasks complete; WhenAny completes when one task completes."
+      },
+      {
+        "id": "async-without-await",
+        "title": "Async Methods Without Await",
+        "priority": "High",
+        "summary": "An async method with no await runs synchronously and may add a redundant state machine or task wrapper."
+      },
+      {
+        "id": "unawaited-async",
+        "title": "Consequences of an Unawaited Async Call",
+        "priority": "Very High",
+        "summary": "An unawaited Task is unobserved by the caller: the operation still runs, but ordering, errors, and completion are no longer coordinated."
+      },
+      {
+        "id": "configureawait",
+        "title": "ConfigureAwait(false)",
+        "priority": "High",
+        "summary": "ConfigureAwait(false) tells an await not to require resuming on the captured synchronization context."
+      },
+      {
+        "id": "thread-safety",
+        "title": "Thread Safety and Race Conditions",
+        "priority": "Very High",
+        "summary": "Thread-safe code preserves invariants when multiple execution flows access shared state concurrently."
+      },
+      {
+        "id": "lock-vs-semaphoreslim",
+        "title": "lock vs SemaphoreSlim",
+        "priority": "High",
+        "summary": "lock synchronizes synchronous critical sections; SemaphoreSlim controls concurrent entry and supports asynchronous waiting."
+      },
+      {
+        "id": "thread-pool-starvation",
+        "title": "Thread Pool Starvation",
+        "priority": "Very High",
+        "summary": "Thread-pool starvation occurs when queued work cannot obtain worker threads promptly, often because workers are blocked."
+      },
+      {
+        "id": "memory-management",
+        "title": ".NET Memory Management",
+        "priority": "High",
+        "summary": "Managed memory allocation and reclamation are runtime-managed, while resource ownership and object reachability remain application responsibilities."
+      },
+      {
+        "id": "dotnet-garbage-collection",
+        "title": ".NET Garbage Collector",
+        "priority": "Very High",
+        "summary": "The garbage collector finds unreachable managed objects and reuses their memory, with runtime strategies tuned for common allocation patterns."
+      },
+      {
+        "id": "gc-generations",
+        "title": "Gen 0, Gen 1, and Gen 2",
+        "priority": "High",
+        "summary": "Generations group managed objects by survival history so the GC can collect short-lived objects more frequently and cheaply."
+      },
+      {
+        "id": "idisposable-finalizer",
+        "title": "IDisposable, IAsyncDisposable, and Finalizers",
+        "priority": "Very High",
+        "summary": "Dispose provides deterministic resource cleanup; finalization is a nondeterministic fallback for directly owned unmanaged resources."
+      },
+      {
+        "id": "memory-leak-diagnosis",
+        "title": "Diagnosing Memory Leaks",
+        "priority": "High",
+        "summary": "A managed memory leak is often unintended retention: objects remain reachable after the application no longer needs them."
+      }
+    ]
+  },
+  {
+    "id": "aspnet-core-web-api",
+    "title": "ASP.NET Core Web API",
+    "description": "Design maintainable HTTP APIs with explicit controller semantics, pipeline behavior, validation, and versioned contracts.",
+    "topics": [
+      {
+        "id": "http-method-semantics",
+        "title": "HTTP Method Semantics",
+        "priority": "Very High",
+        "summary": "HTTP methods communicate the intended operation and whether it is safe or idempotent, independent of how an endpoint is named."
+      },
+      {
+        "id": "common-http-status-codes",
+        "title": "Common HTTP Status Codes",
+        "priority": "Very High",
+        "summary": "Status codes classify success, client-side request problems, and server failures; 400, 401, 403, 404, 409, and 500 have distinct meanings."
+      },
+      {
+        "id": "request-pipeline",
+        "title": "ASP.NET Core Request Pipeline",
+        "priority": "Very High",
+        "summary": "The ordered middleware pipeline surrounds endpoint execution, so ordering determines which components can observe and affect a request."
+      },
+      {
+        "id": "custom-middleware",
+        "title": "Middleware & Custom Middleware",
+        "priority": "Very High",
+        "summary": "Middleware is an HTTP delegate that can inspect, transform, short-circuit, or delegate request processing."
+      },
+      {
+        "id": "controller-vs-controllerbase",
+        "title": "Controller vs ControllerBase",
+        "priority": "High",
+        "summary": "Controller extends ControllerBase with view and page-oriented capabilities; ControllerBase is the smaller choice for HTTP APIs."
+      },
+      {
+        "id": "controllerbase-advantages",
+        "title": "ControllerBase Advantages",
+        "priority": "Very High",
+        "summary": "ControllerBase gives API controllers MVC request, binding, validation, and response helpers without the view-rendering features of Controller."
+      },
+      {
+        "id": "controllers-vs-minimal-apis",
+        "title": "Controllers vs Minimal APIs",
+        "priority": "High",
+        "summary": "Controllers and Minimal APIs are two ASP.NET Core endpoint styles that share routing, dependency injection, authorization, and HTTP semantics."
+      },
+      {
+        "id": "api-controller-purpose",
+        "title": "Purpose of [ApiController]",
+        "priority": "Very High",
+        "summary": "[ApiController] opts MVC controllers into conventions that make API binding and client-error behavior more predictable."
+      },
+      {
+        "id": "without-apicontroller",
+        "title": "Controllers Without [ApiController]",
+        "priority": "High",
+        "summary": "A controller without [ApiController] can still serve an API, but it does not receive that attribute’s API-specific conventions automatically."
+      },
+      {
+        "id": "api-dtos",
+        "title": "API Data Transfer Objects (DTOs)",
+        "priority": "Very High",
+        "summary": "DTOs define intentional API input and output contracts, decoupled from persistence entities and internal domain models."
+      },
+      {
+        "id": "model-validation",
+        "title": "Model Validation",
+        "priority": "Very High",
+        "summary": "Model validation checks bound input against structural constraints, while application logic separately enforces business invariants."
+      },
+      {
+        "id": "response-result-types",
+        "title": "ASP.NET Core Response Result Types",
+        "priority": "High",
+        "summary": "Action return types communicate whether an endpoint returns a representation, several HTTP outcomes, or a framework-level result."
+      },
+      {
+        "id": "dependency-injection-lifetimes",
+        "title": "Dependency Injection & Service Lifetimes",
+        "priority": "Very High",
+        "summary": "Transient, scoped, and singleton lifetimes define how long a resolved service instance is reused and who disposes it."
+      },
+      {
+        "id": "middleware-vs-filters",
+        "title": "Middleware vs MVC Filters",
+        "priority": "High",
+        "summary": "Middleware wraps the application request pipeline; MVC filters run inside MVC execution and have action or result context."
+      },
+      {
+        "id": "global-exception-handling",
+        "title": "Global Exception Handling",
+        "priority": "Very High",
+        "summary": "A global exception boundary logs unexpected failures and returns a stable, safe error contract rather than leaking implementation details."
+      },
+      {
+        "id": "api-versioning",
+        "title": "API Versioning",
+        "priority": "High",
+        "summary": "API versioning manages incompatible contract evolution while clients migrate at different speeds."
+      },
+      {
+        "id": "logging-timing-middleware",
+        "title": "Logging & Timing Middleware",
+        "priority": "High",
+        "summary": "Request instrumentation correlates HTTP outcomes and elapsed time with structured logs and distributed traces."
+      }
+    ]
+  },
+  {
+    "id": "api-concurrency-resilience",
+    "title": "API Concurrency & Resilience",
+    "description": "Handle competing edits, retries, and failures without corrupting data or duplicating effects.",
+    "topics": [
+      {
+        "id": "data-concurrency-fundamentals",
+        "title": "Data Concurrency",
+        "priority": "Very High",
+        "summary": "Data concurrency is the behavior of overlapping operations that read or change shared state."
+      },
+      {
+        "id": "concurrent-user-edits",
+        "title": "Concurrent Edits & Lost Updates",
+        "priority": "Very High",
+        "summary": "A lost update occurs when a later save overwrites changes made after the editor loaded its original copy."
+      },
+      {
+        "id": "optimistic-vs-pessimistic-concurrency",
+        "title": "Optimistic vs Pessimistic Concurrency",
+        "priority": "Very High",
+        "summary": "Optimistic concurrency detects a conflict when committing; pessimistic concurrency acquires a lock to exclude competing work."
+      },
+      {
+        "id": "sqlserver-ef-rowversion",
+        "title": "SQL Server RowVersion & EF Core",
+        "priority": "Very High",
+        "summary": "SQL Server rowversion is an automatically changing binary version stamp that EF Core can use to detect a stale update."
+      },
+      {
+        "id": "api-concurrent-edit-handling",
+        "title": "Handling Concurrent Edits in an API",
+        "priority": "High",
+        "summary": "An API should define how a detected stale update is communicated and how a client can recover without overwriting newer state."
+      },
+      {
+        "id": "http-idempotent-methods",
+        "title": "Idempotent HTTP Methods",
+        "priority": "High",
+        "summary": "HTTP defines PUT and DELETE as idempotent in intended effect, and GET, HEAD, OPTIONS, and TRACE as safe and therefore idempotent."
+      },
+      {
+        "id": "request-idempotency",
+        "title": "Request Idempotency & Idempotency Keys",
+        "priority": "Very High",
+        "summary": "An idempotent operation has the same intended effect when the same request is repeated, which makes uncertain network retries safer."
+      },
+      {
+        "id": "put-vs-patch",
+        "title": "PUT vs PATCH",
+        "priority": "Very High",
+        "summary": "PUT conventionally replaces a resource representation; PATCH applies a defined partial modification."
+      },
+      {
+        "id": "put-avoiding-unnecessary-writes",
+        "title": "PUT: Avoiding Unnecessary Database Writes",
+        "priority": "High",
+        "summary": "A PUT request can be idempotent even if the server writes each time; avoiding needless writes is a separate optimization and side-effect concern."
+      },
+      {
+        "id": "duplicate-order-payment-requests",
+        "title": "Preventing Duplicate Orders & Payments",
+        "priority": "Very High",
+        "summary": "Duplicate-sensitive business operations need durable deduplication across retries, concurrent requests, and downstream failures."
+      },
+      {
+        "id": "api-error-status-codes",
+        "title": "Error Status Codes for APIs",
+        "priority": "High",
+        "summary": "Status codes distinguish invalid input, missing authentication, denied access, stale state, and unexpected server failure."
+      },
+      {
+        "id": "standard-api-error-response",
+        "title": "Standard API Error Responses",
+        "priority": "High",
+        "summary": "A standard error body gives clients stable machine-readable classification without exposing internal implementation details."
+      },
+      {
+        "id": "problem-details",
+        "title": "ProblemDetails in ASP.NET Core",
+        "priority": "High",
+        "summary": "ProblemDetails is ASP.NET Core’s model for producing interoperable error documents based on the Problem Details standard."
+      },
+      {
+        "id": "central-exception-handling",
+        "title": "Centralized Exception Handling",
+        "priority": "Very High",
+        "summary": "Centralized exception handling turns unhandled failures into consistent, safe API responses while preserving operational diagnostics."
+      }
+    ]
+  },
+  {
+    "id": "angular",
+    "title": "Angular",
+    "description": "Architect Angular applications with deliberate state, HTTP, routing, forms, and rendering choices.",
+    "topics": [
+      {
+        "id": "angular-lifecycle-hooks",
+        "title": "Angular Lifecycle Hooks",
+        "priority": "High",
+        "summary": "Lifecycle hooks mark specific points in a component or directive’s creation, input processing, rendering, and destruction."
+      },
+      {
+        "id": "angular-component-communication",
+        "title": "Component Communication",
+        "priority": "High",
+        "summary": "Communication mechanisms should follow component ownership and data direction, from direct parent-child contracts to shared state services."
+      },
+      {
+        "id": "angular-lazy-loading",
+        "title": "Lazy Loading",
+        "priority": "High",
+        "summary": "Lazy loading defers feature code until navigation or explicit demand, improving initial payload at the cost of later loading work."
+      },
+      {
+        "id": "angular-route-guards",
+        "title": "Route Guards",
+        "priority": "Very High",
+        "summary": "Route guards express client-side navigation policy and user experience; they never replace server-side authorization."
+      },
+      {
+        "id": "observable-vs-promise",
+        "title": "Observable vs Promise",
+        "priority": "Very High",
+        "summary": "Observable and Promise represent different asynchronous contracts: a single eventual result versus a lazy, composable sequence."
+      },
+      {
+        "id": "rxjs-subject-vs-behavior-subject",
+        "title": "Subject vs BehaviorSubject",
+        "priority": "Very High",
+        "summary": "Choose a multicast primitive by its late-subscriber contract, not simply because a value is shared."
+      },
+      {
+        "id": "forkjoin-combinelatest-merge",
+        "title": "forkJoin vs combineLatest vs merge",
+        "priority": "Very High",
+        "summary": "These operators combine sources with different timing contracts: final values, latest snapshots, or interleaved emissions."
+      },
+      {
+        "id": "parallel-api-calls",
+        "title": "Call APIs Simultaneously",
+        "priority": "High",
+        "summary": "Compose independent requests concurrently, and choose a join operator whose completion and failure semantics match the page contract."
+      },
+      {
+        "id": "cancel-http-requests",
+        "title": "Cancel In-Flight HTTP Requests",
+        "priority": "Very High",
+        "summary": "Cancel obsolete client-side work to avoid stale rendering and wasted resources, while distinguishing client abort from server rollback."
+      },
+      {
+        "id": "angular-http-interceptors",
+        "title": "HTTP Interceptors",
+        "priority": "Very High",
+        "summary": "Functional interceptors provide an ordered shared pipeline for cross-cutting request and response policies."
+      },
+      {
+        "id": "angular-api-errors",
+        "title": "Handle API Errors",
+        "priority": "Very High",
+        "summary": "Treat HTTP failures as typed application states, preserving useful diagnostics while presenting safe, actionable user feedback."
+      },
+      {
+        "id": "attach-jwt-angular",
+        "title": "Attach JWTs to Requests Safely",
+        "priority": "Very High",
+        "summary": "Attach an access token only to requests that are intended for the trusted API, and keep token storage and transport risks explicit."
+      },
+      {
+        "id": "token-expiration",
+        "title": "Token Expiration and Refresh",
+        "priority": "Very High",
+        "summary": "Handle expiry as an authentication lifecycle with race control, bounded replay, and secure failure behavior."
+      },
+      {
+        "id": "template-vs-reactive-forms",
+        "title": "Template-Driven vs Reactive Forms",
+        "priority": "High",
+        "summary": "Both approaches use Angular forms controls; they differ mainly in where the form model and validation logic are authored."
+      },
+      {
+        "id": "angular-change-detection",
+        "title": "Change Detection",
+        "priority": "Very High",
+        "summary": "Change detection synchronizes template bindings with application state; performance depends on what gets checked and how state changes are observed."
+      },
+      {
+        "id": "angular-default-vs-onpush",
+        "title": "Default vs OnPush",
+        "priority": "Very High",
+        "summary": "Default and OnPush differ in when a view is eligible for checking, not in whether Angular can update it."
+      },
+      {
+        "id": "angular-signals",
+        "title": "Angular Signals",
+        "priority": "Very High",
+        "summary": "Signals provide synchronous reactive state with tracked reads, derived values, and controlled side effects."
+      },
+      {
+        "id": "signals-vs-rxjs",
+        "title": "Signals vs RxJS",
+        "priority": "Very High",
+        "summary": "Signals model current synchronous state; RxJS models asynchronous sequences, time, cancellation, and event composition."
+      },
+      {
+        "id": "large-angular-app-state",
+        "title": "State Management in Large Applications",
+        "priority": "Very High",
+        "summary": "Large-app state architecture is a set of ownership and consistency decisions, not a requirement to put every value in one global store."
+      },
+      {
+        "id": "angular-performance",
+        "title": "Angular Performance",
+        "priority": "High",
+        "summary": "Optimize measured user-visible bottlenecks across rendering, network, bundle, and memory rather than chasing a single framework metric."
+      }
+    ]
+  },
+  {
+    "id": "api-security-auth",
+    "title": "API Security & Auth",
+    "description": "Protect APIs through layered identity, least-privilege authorization, browser controls, safe data handling, and abuse resistance.",
+    "topics": [
+      {
+        "id": "comprehensive-api-security",
+        "title": "Securing an ASP.NET Core API",
+        "priority": "Very High",
+        "summary": "API security is a layered system of transport protection, trusted identity, authorization, input and data safety, resilience, and operational response."
+      },
+      {
+        "id": "authentication-vs-authorization",
+        "title": "Authentication vs Authorization",
+        "priority": "Very High",
+        "summary": "Authentication establishes a trusted identity; authorization decides what that identity may do to a specific operation or resource."
+      },
+      {
+        "id": "jwt-oauth-oidc-distinction",
+        "title": "JWT vs OAuth 2.0 vs OpenID Connect",
+        "priority": "Very High",
+        "summary": "JWT is a token format, OAuth 2.0 is an authorization framework, and OpenID Connect is an authentication layer built on OAuth 2.0."
+      },
+      {
+        "id": "oauth-2-authorization",
+        "title": "OAuth 2.0 Authorization",
+        "priority": "Very High",
+        "summary": "OAuth 2.0 lets a client obtain limited access to a protected resource without sharing the resource owner’s password with that client."
+      },
+      {
+        "id": "oidc-user-sign-in",
+        "title": "OpenID Connect & User Sign-In",
+        "priority": "Very High",
+        "summary": "OpenID Connect adds an interoperable identity layer to OAuth 2.0 so a client can validate a user authentication result."
+      },
+      {
+        "id": "jwt-full-validation-flow",
+        "title": "JWT Access Token Validation",
+        "priority": "Very High",
+        "summary": "An API must validate a bearer access token’s cryptographic and protocol constraints before it trusts claims or authorizes a request."
+      },
+      {
+        "id": "roles-vs-policy-authorization",
+        "title": "Role vs Policy Authorization",
+        "priority": "High",
+        "summary": "Roles provide coarse identity groupings; policies express named requirements and can combine claims, roles, and custom handlers."
+      },
+      {
+        "id": "entra-user-sign-in",
+        "title": "Microsoft Entra ID & User Sign-In",
+        "priority": "High",
+        "summary": "Microsoft Entra ID is an identity platform that can authenticate users and issue protocol tokens for registered applications and APIs."
+      },
+      {
+        "id": "entra-aspnetcore-api",
+        "title": "Integrating Entra ID with an ASP.NET Core API",
+        "priority": "Very High",
+        "summary": "An ASP.NET Core API integrates with Entra as a resource server: validate bearer access tokens for the API, then apply application authorization."
+      },
+      {
+        "id": "service-to-service-authentication",
+        "title": "Service-to-Service Authentication",
+        "priority": "High",
+        "summary": "Workload identity authenticates an application or service without pretending it is an end user."
+      },
+      {
+        "id": "cors-and-preflight",
+        "title": "CORS & Browser Preflight",
+        "priority": "Very High",
+        "summary": "CORS is a browser-enforced cross-origin response-sharing policy, not authentication or protection against non-browser clients."
+      },
+      {
+        "id": "access-vs-refresh-tokens",
+        "title": "Access Tokens vs Refresh Tokens",
+        "priority": "Very High",
+        "summary": "Access tokens are presented to resource APIs; refresh tokens are high-value credentials used with the authorization server to obtain renewed access."
+      },
+      {
+        "id": "token-expiration-and-rotation",
+        "title": "Token Expiration & Key Rotation",
+        "priority": "High",
+        "summary": "Expiration bounds how long a credential is accepted; rotation replaces credentials or signing keys while preserving controlled continuity."
+      },
+      {
+        "id": "frontend-token-storage",
+        "title": "Frontend Token Storage",
+        "priority": "Very High",
+        "summary": "Browser token storage is a threat-model trade-off: script-readable storage exposes tokens to XSS, while cookie-based sessions require CSRF protections."
+      },
+      {
+        "id": "password-storage",
+        "title": "Secure Password Storage",
+        "priority": "Very High",
+        "summary": "Passwords should be stored as salted, deliberately expensive one-way password hashes, never as plaintext or reversibly encrypted values."
+      },
+      {
+        "id": "api-key-security",
+        "title": "API Keys",
+        "priority": "High",
+        "summary": "An API key identifies or gates a client integration but is a bearer secret and usually does not provide end-user identity or fine-grained authorization."
+      },
+      {
+        "id": "sql-injection-prevention",
+        "title": "SQL Injection Prevention",
+        "priority": "Very High",
+        "summary": "SQL injection occurs when untrusted input changes query structure; parameterization keeps values data rather than executable SQL."
+      },
+      {
+        "id": "xss-csrf-protection",
+        "title": "XSS & CSRF",
+        "priority": "Very High",
+        "summary": "XSS attacks run attacker-controlled script in a user’s browser; CSRF tricks a browser into sending an authenticated action using ambient credentials."
+      },
+      {
+        "id": "ssrf-defense",
+        "title": "Server-Side Request Forgery (SSRF)",
+        "priority": "Very High",
+        "summary": "SSRF abuses a server feature that fetches a caller-influenced destination, potentially crossing network trust boundaries."
+      },
+      {
+        "id": "broken-object-authorization",
+        "title": "Broken Object-Level Authorization (BOLA)",
+        "priority": "Very High",
+        "summary": "BOLA occurs when an API checks who the caller is but fails to check whether they may access the specific record they requested."
+      },
+      {
+        "id": "mass-assignment-defense",
+        "title": "Mass Assignment & Over-Posting",
+        "priority": "High",
+        "summary": "Mass assignment occurs when an API binds untrusted request fields directly to a domain or persistence object, allowing callers to set fields they should not control."
+      },
+      {
+        "id": "credential-stuffing-defense",
+        "title": "Credential Stuffing & Brute-Force Defense",
+        "priority": "High",
+        "summary": "Credential stuffing reuses leaked username/password pairs, while brute-force attacks repeatedly guess credentials; layered controls limit account takeover and abuse."
+      },
+      {
+        "id": "api-rate-limiting",
+        "title": "API Rate Limiting",
+        "priority": "High",
+        "summary": "Rate limiting bounds request consumption to protect service capacity and fairness, but it does not replace authorization or broader abuse defenses."
+      }
+    ]
+  },
+  {
+    "id": "sql-server",
+    "title": "SQL Server",
+    "description": "Write analytical queries and reason about indexes, transactions, concurrency, and production performance.",
+    "topics": [
+      {
+        "id": "sql-query-processing-order",
+        "title": "SQL Query Processing Order",
+        "priority": "Very High",
+        "summary": "A SELECT statement has a logical binding order: FROM, ON, JOIN, WHERE, GROUP BY, GROUPING SETS/CUBE/ROLLUP, HAVING, SELECT, DISTINCT, ORDER BY, then TOP/OFFSET-FETCH. FROM establishes input rowsets; ON evaluates the join predicate; JOIN combines matches (and preserves unmatched rows for outer joins); WHERE filters individual rows; GROUP BY forms groups; HAVING filters groups; SELECT computes output expressions and aliases; DISTINCT removes duplicate projected rows; ORDER BY orders output; TOP limits it."
+      },
+      {
+        "id": "sql-inner-vs-left-join",
+        "title": "INNER JOIN vs LEFT JOIN",
+        "priority": "Very High",
+        "summary": "INNER JOIN returns rows with matching join keys on both sides. LEFT JOIN preserves every left-side row and returns NULLs for right-side columns when no match exists."
+      },
+      {
+        "id": "sql-cte-temp-table-table-variable",
+        "title": "CTE vs Temporary Table vs Table Variable",
+        "priority": "Very High",
+        "summary": "A CTE names a query expression for one following statement; #temp tables are session-scoped tempdb tables; table variables are variables backed by tempdb with table-like structure and narrower scope."
+      },
+      {
+        "id": "sql-stored-procedure-vs-function",
+        "title": "Stored Procedure vs Function",
+        "priority": "Very High",
+        "summary": "A stored procedure is an executable database routine that can accept parameters, return result sets/output parameters, and perform data modifications. A function returns a scalar or table value and is designed to participate in expressions or FROM clauses, subject to SQL Server function restrictions."
+      },
+      {
+        "id": "sql-injection-prevention",
+        "title": "Prevent SQL Injection",
+        "priority": "Very High",
+        "summary": "SQL injection occurs when untrusted input is concatenated into SQL syntax, allowing input to alter the intended command or predicate."
+      },
+      {
+        "id": "sql-highest-salary-per-department",
+        "title": "Highest Salary Per Department",
+        "priority": "Very High",
+        "summary": "The maximum salary per department can be returned as a value, or with the employee row or rows that achieve it."
+      },
+      {
+        "id": "sql-employees-above-department-average",
+        "title": "Employees Above Their Department Average",
+        "priority": "Very High",
+        "summary": "A per-department comparison evaluates each employee salary against an aggregate calculated for that employee’s department."
+      },
+      {
+        "id": "sql-row-number-rank-dense-rank",
+        "title": "ROW_NUMBER vs RANK vs DENSE_RANK",
+        "priority": "Very High",
+        "summary": "These window ranking functions assign positions within an ordered partition. ROW_NUMBER assigns a unique sequence; RANK gives ties the same rank and leaves gaps; DENSE_RANK gives ties the same rank without gaps."
+      },
+      {
+        "id": "sql-second-highest-salary",
+        "title": "Find the Second-Highest Salary",
+        "priority": "Very High",
+        "summary": "Second-highest can mean the second distinct salary value, or the employee row in second place. Those meanings differ when salaries tie."
+      },
+      {
+        "id": "sql-top-three-per-department",
+        "title": "Department-Wise Top Three Salaries",
+        "priority": "Very High",
+        "summary": "Top-N-per-group returns a limited or ranked set of employees independently within each department. A window function computes a rank without collapsing employee rows."
+      },
+      {
+        "id": "sql-find-duplicates",
+        "title": "Find Duplicate Rows by Business Key",
+        "priority": "Very High",
+        "summary": "A duplicate is a repeated business key, not necessarily a byte-for-byte identical database row. The key might be a normalized email, external reference, or composite of several columns."
+      },
+      {
+        "id": "sql-delete-duplicates-keep-one",
+        "title": "Delete Duplicates While Keeping One",
+        "priority": "Very High",
+        "summary": "A deterministic keeper rule selects exactly one surviving row per duplicate business key; other rows become deletion candidates."
+      },
+      {
+        "id": "sql-clustered-nonclustered-indexes",
+        "title": "Clustered and Nonclustered Indexes",
+        "priority": "Very High",
+        "summary": "A clustered index is the table’s rowstore B-tree whose leaf level contains the data rows; a table has at most one. A nonclustered index is a separate B-tree with key columns and a row locator (clustered key or RID), and a table may have many."
+      },
+      {
+        "id": "sql-how-indexes-speed-queries",
+        "title": "How Indexes Speed Queries",
+        "priority": "Very High",
+        "summary": "A B-tree index narrows the rows that must be visited for selective predicates and can provide ordered rows or cover all columns needed by a query."
+      },
+      {
+        "id": "sql-execution-plans",
+        "title": "Read SQL Server Execution Plans",
+        "priority": "Very High",
+        "summary": "An execution plan is the optimizer’s chosen physical strategy: operators and data flow used to execute a query. An estimated plan contains estimates; an actual plan adds runtime observations such as actual rows and executions."
+      },
+      {
+        "id": "sql-slow-query-optimization",
+        "title": "Slow Query Optimization Method",
+        "priority": "Very High",
+        "summary": "Query optimization is a measured process of identifying the dominant cost (I/O, CPU, waits, blocking, network, or client processing) and changing the query, index, statistics, or workload safely."
+      },
+      {
+        "id": "sql-acid-transactions",
+        "title": "ACID Transaction Guarantees",
+        "priority": "Very High",
+        "summary": "ACID describes Atomicity (all-or-nothing), Consistency (valid states/invariants), Isolation (concurrent work behaves according to isolation rules), and Durability (committed work survives failures according to configured guarantees)."
+      },
+      {
+        "id": "sql-isolation-levels",
+        "title": "Transaction Isolation Levels",
+        "priority": "Very High",
+        "summary": "Isolation defines what changes a transaction can observe and which concurrent anomalies are prevented. SQL Server offers READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE, and SNAPSHOT; READ COMMITTED SNAPSHOT (RCSI) is a database option that provides statement-level versioned reads."
+      },
+      {
+        "id": "sql-concurrent-updates-same-row",
+        "title": "Concurrent Updates to the Same Row",
+        "priority": "Very High",
+        "summary": "Concurrent writes to one row contend for locks or encounter optimistic concurrency conflicts. A later write may wait, overwrite earlier values, or fail based on transaction and application design."
+      },
+      {
+        "id": "sql-deadlocks",
+        "title": "Deadlocks and Safe Recovery",
+        "priority": "Very High",
+        "summary": "A deadlock is a cycle of transactions, each holding a resource needed by another. SQL Server detects the cycle and chooses a victim; error 1205 means that victim transaction was rolled back."
+      },
+      {
+        "id": "sql-common-errors-2601-2627-547-1205",
+        "title": "Diagnose SQL Server Errors by Cause",
+        "priority": "Very High",
+        "summary": "SQL Server error numbers identify a failure category, but the constraint, statement, transaction state, and surrounding context explain the root cause. 2601 and 2627 indicate unique-key violations; 547 indicates a CHECK or FOREIGN KEY constraint conflict; 1205 means the transaction was selected as a deadlock victim."
+      }
+    ]
+  },
+  {
+    "id": "ef-core-diagnostics",
+    "title": "EF Core, Testing & Real Project Scenarios",
+    "description": "Build efficient data access, test meaningful boundaries, and diagnose production systems with evidence.",
+    "topics": [
+      {
+        "id": "efcore-fundamentals",
+        "title": "Entity Framework Core Fundamentals",
+        "priority": "Very High",
+        "summary": "Entity Framework Core (EF Core) is a .NET object-relational mapper (ORM): it maps .NET entity types and LINQ queries to relational schema and SQL through a database provider. DbContext is a unit-of-work and identity map that coordinates querying, change tracking, and saving."
+      },
+      {
+        "id": "efcore-code-first-database-first",
+        "title": "Code First vs Database First",
+        "priority": "Very High",
+        "summary": "Code First treats the EF model and migrations as the schema-evolution source of truth. Database First starts from an existing database and scaffolds entity types and DbContext from its schema; the generated code can be refreshed as the database changes."
+      },
+      {
+        "id": "efcore-tracking-vs-no-tracking",
+        "title": "Tracking vs No-Tracking Queries",
+        "priority": "Very High",
+        "summary": "A tracking query registers materialized entities in DbContext’s change tracker, which records state and original values for SaveChanges. A no-tracking query materializes results without registering them for normal updates; identity resolution controls whether repeated keys share an instance."
+      },
+      {
+        "id": "efcore-related-data-loading",
+        "title": "Eager, Lazy, and Explicit Loading",
+        "priority": "Very High",
+        "summary": "Eager loading fetches related data as part of the original query using Include/ThenInclude or projection. Lazy loading loads a navigation on access, commonly through proxies. Explicit loading deliberately issues a later query through the entry API."
+      },
+      {
+        "id": "efcore-n-plus-one",
+        "title": "Detect and Eliminate the N+1 Problem",
+        "priority": "Very High",
+        "summary": "N+1 is a query pattern where one query loads N parent records and subsequent navigation access issues roughly one additional query per parent."
+      },
+      {
+        "id": "efcore-query-optimization",
+        "title": "EF Core Query Optimization",
+        "priority": "Very High",
+        "summary": "EF Core query optimization aligns the LINQ expression, generated SQL, indexes, result shape, and database plan with the workload. Deferred IQueryable composition runs at the database only when materialized or enumerated."
+      },
+      {
+        "id": "efcore-mock-vs-stub",
+        "title": "Mock vs Stub vs Fake",
+        "priority": "Very High",
+        "summary": "A stub supplies predefined answers; a mock records or verifies expected interactions; a fake is a working simplified implementation (for example, an in-memory repository) that preserves a useful contract."
+      },
+      {
+        "id": "efcore-unit-testing",
+        "title": "Unit Testing Application Logic",
+        "priority": "Very High",
+        "summary": "A unit test verifies a focused unit of behavior with controlled inputs and collaborators, typically without booting the web host or connecting to a production-like database."
+      },
+      {
+        "id": "efcore-integration-tests",
+        "title": "Integration Testing APIs and Persistence",
+        "priority": "Very High",
+        "summary": "An integration test exercises multiple real components across a boundary, such as HTTP routing, dependency injection, serialization, EF Core translation, and a relational database."
+      },
+      {
+        "id": "efcore-scalable-api-design",
+        "title": "Design Scalable Data-Backed APIs",
+        "priority": "Very High",
+        "summary": "A scalable API bounds work per request, isolates failures, manages concurrency and resources, and supports horizontal growth without relying on process-local state."
+      },
+      {
+        "id": "efcore-slow-api-diagnostics",
+        "title": "Diagnose a Slow API in Production",
+        "priority": "Very High",
+        "summary": "Slow API diagnosis separates time spent in application code, database execution, network/dependency waits, queueing, serialization, and client transfer, then correlates a slow request with trace and resource evidence."
+      },
+      {
+        "id": "efcore-high-cpu-memory",
+        "title": "Diagnose High CPU and Memory",
+        "priority": "Very High",
+        "summary": "High CPU can result from application hot loops, excessive serialization, query translation/materialization, contention, or garbage collection. High memory can be allocation pressure, large caches, unbounded buffers, or retained object graphs."
+      },
+      {
+        "id": "efcore-logging-monitoring",
+        "title": "Logging, Metrics, and Distributed Tracing",
+        "priority": "Very High",
+        "summary": "Logs record discrete events, metrics aggregate numerical time series, and traces connect spans across a request and its dependencies. Together they describe what happened, how often, and where latency accumulated."
+      },
+      {
+        "id": "efcore-database-failure-handling",
+        "title": "Database Failure Handling and Resilience",
+        "priority": "Very High",
+        "summary": "Database failure handling distinguishes transient connectivity/failover conditions, command timeouts, deadlocks, constraint conflicts, cancellation, and permanent configuration or schema errors."
+      },
+      {
+        "id": "efcore-production-incident-handling",
+        "title": "Production Incident Response",
+        "priority": "Very High",
+        "summary": "Incident handling is a structured process to reduce customer impact, preserve evidence, communicate status, restore service, and prevent recurrence."
+      }
+    ]
+  },
+  {
+    "id": "azure-cloud",
+    "title": "Azure Cloud",
+    "description": "Choose Azure compute, messaging, and identity services with explicit scaling, delivery, networking, and security decisions.",
+    "topics": [
+      {
+        "id": "azure-compute-services",
+        "title": "App Service vs Functions vs Container Apps",
+        "priority": "Very High",
+        "summary": "Azure App Service, Azure Functions, and Azure Container Apps are managed compute platforms with different workload and operations boundaries."
+      },
+      {
+        "id": "azure-storage-services",
+        "title": "Azure Storage: Blob, Queue, and Files",
+        "priority": "High",
+        "summary": "Azure Storage provides distinct primitives: Blob for object data, Queue Storage for simple messages, and Azure Files for managed file shares."
+      },
+      {
+        "id": "azure-key-vault-managed-identity",
+        "title": "Key Vault & Managed Identity",
+        "priority": "High",
+        "summary": "Managed identity supplies an Azure workload identity; Key Vault controls access to stored secrets, keys, and certificates."
+      },
+      {
+        "id": "azure-api-management",
+        "title": "Azure API Management & Gateway Policies",
+        "priority": "High",
+        "summary": "API Management provides a managed API gateway and developer-facing API lifecycle capabilities; policies apply controlled cross-cutting behavior at the gateway."
+      },
+      {
+        "id": "azure-messaging-services",
+        "title": "Service Bus vs Event Hubs vs Event Grid",
+        "priority": "Very High",
+        "summary": "Azure Service Bus, Event Hubs, and Event Grid support distinct messaging semantics: durable work, retained event streams, and event notification routing."
+      },
+      {
+        "id": "azure-logic-apps",
+        "title": "Azure Logic Apps & Workflow Automation",
+        "priority": "Very High",
+        "summary": "Logic Apps orchestrates connector-based workflows across services; it is best for integration and business processes, not as a substitute for every application service."
+      },
+      {
+        "id": "azure-monitor-resilience-cost",
+        "title": "Azure Monitoring, Availability & Cost",
+        "priority": "High",
+        "summary": "Production Azure architecture connects service health and application telemetry to measurable reliability, recovery, and cost objectives."
+      }
+    ]
+  },
+  {
+    "id": "microservices",
+    "title": "Microservices",
+    "description": "Design service boundaries, communication, and failure recovery with explicit consistency and delivery guarantees.",
+    "topics": [
+      {
+        "id": "monolith-vs-microservices",
+        "title": "Monolith vs Microservices",
+        "priority": "High",
+        "summary": "A monolith packages an application as one deployable unit, while microservices split capabilities into separately owned and deployed services with explicit boundaries."
+      },
+      {
+        "id": "service-communication",
+        "title": "Service Communication",
+        "priority": "High",
+        "summary": "Service communication is a contract and transport through which independently deployed components exchange commands, queries, or facts."
+      },
+      {
+        "id": "sync-vs-async",
+        "title": "Synchronous vs Asynchronous Communication",
+        "priority": "High",
+        "summary": "Synchronous request/response keeps the caller waiting for a result; asynchronous messaging lets sender and receiver progress at different times."
+      },
+      {
+        "id": "timeout-deadline",
+        "title": "Timeouts and Deadlines",
+        "priority": "High",
+        "summary": "A timeout bounds how long one operation waits; a deadline is the end-to-end time budget by which the whole request must complete."
+      },
+      {
+        "id": "retry-policy",
+        "title": "Retry Policy",
+        "priority": "High",
+        "summary": "A retry is another attempt after a classified transient failure; backoff spaces attempts, and jitter randomizes timing among callers."
+      },
+      {
+        "id": "circuit-breaker",
+        "title": "Circuit Breaker",
+        "priority": "High",
+        "summary": "A circuit breaker temporarily rejects calls to a dependency after a configured failure signal, then permits a limited recovery probe."
+      },
+      {
+        "id": "api-gateway",
+        "title": "API Gateway",
+        "priority": "High",
+        "summary": "An API gateway is a controlled client-facing entry point that routes requests and may handle cross-cutting edge concerns such as authentication, rate limiting, and protocol translation."
+      },
+      {
+        "id": "service-discovery",
+        "title": "Service Discovery",
+        "priority": "High",
+        "summary": "Service discovery resolves a logical service name to currently available instances or endpoints."
+      },
+      {
+        "id": "rabbitmq-azure-service-bus",
+        "title": "RabbitMQ and Azure Service Bus Concepts",
+        "priority": "High",
+        "summary": "A message broker accepts messages and routes or stores them for consumers; RabbitMQ commonly uses exchanges, bindings, and queues, while Azure Service Bus provides queues and topics/subscriptions as managed messaging primitives."
+      },
+      {
+        "id": "event-driven-architecture",
+        "title": "Event-Driven Architecture",
+        "priority": "High",
+        "summary": "Event-driven architecture uses events—immutable statements that something already happened—to notify interested consumers without requiring the producer to invoke each one."
+      },
+      {
+        "id": "duplicate-message-handling",
+        "title": "Duplicate Message Handling and Idempotency",
+        "priority": "High",
+        "summary": "A duplicate message is the same logical delivery processed more than once; an idempotent operation produces the same effective state when repeated with the same identity."
+      },
+      {
+        "id": "distributed-transaction",
+        "title": "Distributed Transactions",
+        "priority": "High",
+        "summary": "A distributed transaction attempts to commit changes across multiple resource managers as one atomic outcome, commonly through a coordinator and a protocol such as two-phase commit."
+      },
+      {
+        "id": "saga-pattern",
+        "title": "Saga Pattern",
+        "priority": "High",
+        "summary": "A saga is a long-running business workflow made of local transactions, with forward actions and compensating actions to address later failure."
+      },
+      {
+        "id": "cross-service-consistency",
+        "title": "Cross-Service Consistency",
+        "priority": "High",
+        "summary": "Cross-service consistency describes how independently committed data copies and service-owned states converge and what stale or intermediate state consumers may observe."
+      },
+      {
+        "id": "transactional-outbox",
+        "title": "Transactional Outbox",
+        "priority": "High",
+        "summary": "The transactional outbox stores the intent to publish alongside the business state change in the same local database transaction."
+      },
+      {
+        "id": "downstream-outage",
+        "title": "Responding to a Downstream Outage",
+        "priority": "High",
+        "summary": "A downstream outage is any dependency becoming unavailable, slow, overloaded, or semantically unhealthy from this caller’s perspective."
+      },
+      {
+        "id": "failure-handling",
+        "title": "Failure Handling Across Services",
+        "priority": "High",
+        "summary": "Failure handling is the end-to-end policy for classifying errors, containing impact, recovering work, and communicating outcomes across service boundaries."
+      }
+    ]
+  },
+  {
+    "id": "design-patterns",
+    "title": "Design Patterns & SOLID",
+    "description": "Apply patterns and design principles when they clarify responsibilities, variation, and testable boundaries.",
+    "topics": [
+      {
+        "id": "why-design-patterns",
+        "title": "Patterns: What They Are and Why They Matter",
+        "priority": "High",
+        "summary": "A design pattern is a named, reusable arrangement of responsibilities and collaborations for a recurring design problem; it is guidance, not a library or a complete implementation."
+      },
+      {
+        "id": "solid-srp",
+        "title": "SOLID: Single Responsibility Principle",
+        "priority": "High",
+        "summary": "Single Responsibility Principle (SRP) says a module should have one coherent reason to change, often expressed as one actor or policy that owns its behavior."
+      },
+      {
+        "id": "solid-ocp",
+        "title": "SOLID: Open/Closed Principle",
+        "priority": "High",
+        "summary": "Open/Closed Principle (OCP) says a component should support anticipated extension without requiring changes to stable existing code."
+      },
+      {
+        "id": "solid-lsp",
+        "title": "SOLID: Liskov Substitution Principle",
+        "priority": "High",
+        "summary": "Liskov Substitution Principle (LSP) requires a subtype to remain usable wherever its base contract is expected without breaking promised behavior or strengthening preconditions."
+      },
+      {
+        "id": "solid-isp",
+        "title": "SOLID: Interface Segregation Principle",
+        "priority": "High",
+        "summary": "Interface Segregation Principle (ISP) says clients should not depend on operations they do not use; interfaces should represent cohesive client needs."
+      },
+      {
+        "id": "solid-dip",
+        "title": "SOLID: Dependency Inversion Principle",
+        "priority": "High",
+        "summary": "Dependency Inversion Principle (DIP) says high-level policy should not depend directly on low-level details; both should depend on abstractions owned around the policy."
+      },
+      {
+        "id": "dependency-injection-pattern",
+        "title": "Dependency Injection Pattern",
+        "priority": "High",
+        "summary": "Dependency injection supplies an object’s required collaborators from outside rather than having the object construct or locate them itself."
+      },
+      {
+        "id": "factory-pattern",
+        "title": "Factory Pattern",
+        "priority": "High",
+        "summary": "A factory centralizes object creation when construction depends on input, configuration, or a family of related products."
+      },
+      {
+        "id": "strategy-pattern",
+        "title": "Strategy Pattern: Shipping Rate Example",
+        "priority": "High",
+        "summary": "Strategy defines a family of interchangeable algorithms behind a common contract so a caller can select behavior without embedding each algorithm in its own conditional logic."
+      },
+      {
+        "id": "adapter-pattern",
+        "title": "Adapter Pattern",
+        "priority": "High",
+        "summary": "Adapter translates one interface or data model into another so incompatible components can collaborate without changing either component’s core contract."
+      },
+      {
+        "id": "decorator-pattern",
+        "title": "Decorator Pattern",
+        "priority": "High",
+        "summary": "Decorator wraps an object behind the same contract and adds behavior before or after delegating to the wrapped object."
+      },
+      {
+        "id": "observer-pattern",
+        "title": "Observer Pattern",
+        "priority": "High",
+        "summary": "Observer establishes a one-to-many notification relationship: a subject publishes a change or event and interested observers react without the subject directly owning each observer’s work."
+      },
+      {
+        "id": "singleton-pattern",
+        "title": "Singleton Pattern and DI Lifetime",
+        "priority": "High",
+        "summary": "Singleton describes one shared instance for a defined application/container lifetime; in .NET, singleton DI registration is often preferable to a globally accessible static instance."
+      },
+      {
+        "id": "repository-pattern",
+        "title": "Repository Pattern",
+        "priority": "High",
+        "summary": "A repository provides a domain-oriented boundary for retrieving and persisting aggregates while hiding persistence-specific details where that abstraction is valuable."
+      },
+      {
+        "id": "unit-of-work-pattern",
+        "title": "Unit of Work Pattern",
+        "priority": "High",
+        "summary": "A unit of work coordinates a set of related changes and commits them as one local persistence transaction where the store supports it."
+      },
+      {
+        "id": "cqrs-pattern",
+        "title": "CQRS",
+        "priority": "High",
+        "summary": "Command Query Responsibility Segregation separates operations that change state (commands) from operations that read and return data (queries)."
+      },
+      {
+        "id": "patterns-in-projects",
+        "title": "Patterns Used Together in Projects",
+        "priority": "High",
+        "summary": "Production systems commonly combine a few patterns around a use case: dependency injection assembles collaborators, a strategy selects policy, a repository may encapsulate domain queries, and a decorator adds cross-cutting behavior."
+      },
+      {
+        "id": "repository-unit-testing",
+        "title": "Repository Pattern and Unit Testing",
+        "priority": "High",
+        "summary": "A unit test verifies a focused unit of behavior with controlled collaborators; a repository can provide a seam for application behavior, but it does not make database behavior correct by itself."
+      },
+      {
+        "id": "singleton-thread-safety",
+        "title": "Singleton Thread Safety",
+        "priority": "High",
+        "summary": "Thread safety means concurrent operations preserve an object’s invariants and return valid results under the object’s shared-state access patterns."
+      }
+    ]
+  },
+  {
+    "id": "system-design",
+    "title": "System Design",
+    "description": "Design for scale, failure, and clear operational guarantees across distributed components.",
+    "topics": [
+      {
+        "id": "system-design-interview-method",
+        "title": "System Design: From Requirements to Architecture",
+        "priority": "Very High",
+        "summary": "A repeatable system-design process turns an ambiguous product request into a testable architecture and explicit trade-offs."
+      },
+      {
+        "id": "capacity-estimation",
+        "title": "Capacity Estimation: Traffic, Storage & Latency",
+        "priority": "Very High",
+        "summary": "Back-of-the-envelope estimates translate product usage into rough traffic, storage, bandwidth, and capacity requirements."
+      },
+      {
+        "id": "hld-url-shortener",
+        "title": "HLD Case Study: URL Shortener",
+        "priority": "High",
+        "summary": "A URL shortener maps a compact key to a destination and redirects reads quickly while protecting key uniqueness and abuse boundaries."
+      },
+      {
+        "id": "ecommerce-order-system",
+        "title": "Scalable E-Commerce Order API",
+        "priority": "Very High",
+        "summary": "Design checkout as a durable, idempotent workflow that preserves inventory and payment invariants while downstream work scales independently."
+      },
+      {
+        "id": "redis-distributed-cache",
+        "title": "Redis Distributed Caching",
+        "priority": "Very High",
+        "summary": "A shared Redis cache can reduce repeated source reads across service instances, provided the system deliberately manages stale values, misses, and cache failure."
+      },
+      {
+        "id": "distributed-rate-limiting",
+        "title": "Distributed Rate Limiting",
+        "priority": "High",
+        "summary": "A distributed rate limiter applies shared request quotas across service replicas while controlling bursts and protecting downstream capacity."
+      },
+      {
+        "id": "lld-inventory-reservation",
+        "title": "LLD Case Study: Inventory Reservation",
+        "priority": "High",
+        "summary": "Low-level design turns a business operation into explicit domain objects, contracts, state transitions, and concurrency invariants."
+      }
+    ]
+  },
+  {
+    "id": "gen-ai-dotnet",
+    "title": "Gen AI (.NET)",
+    "description": "Build .NET AI applications with governed retrieval, model routing, controlled tools, and safe streaming.",
+    "topics": [
+      {
+        "id": "prompt-streaming-guardrails",
+        "title": "Prompting, Streaming & Guardrails",
+        "priority": "High",
+        "summary": "Prompts define task context, streaming delivers partial output, and guardrails reduce risks through input, output, and resource controls."
+      },
+      {
+        "id": "llm-function-calling",
+        "title": "LLM Function & Tool Calling",
+        "priority": "High",
+        "summary": "Tool calling lets a model propose a structured request; trusted application code decides whether and how to execute it."
+      },
+      {
+        "id": "rag-architecture",
+        "title": "RAG Architecture in .NET",
+        "priority": "Very High",
+        "summary": "Retrieval-augmented generation (RAG) retrieves relevant authorized material at request time and supplies it to a language model as context."
+      },
+      {
+        "id": "multi-model-ai-gateway",
+        "title": "Multi-Model AI Gateway",
+        "priority": "Very High",
+        "summary": "A model gateway is an application boundary that applies policy and routes model requests to one or more approved deployments."
+      }
+    ]
+  }
+]
