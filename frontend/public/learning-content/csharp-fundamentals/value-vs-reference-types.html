@@ -1,0 +1,620 @@
+<main class="container sql-learning-page sequential">
+  <header class="page-header">
+    <h1>Value Types vs Reference Types in C#</h1>
+    <p class="description">
+      Learn how C# stores, copies, and passes data. This concept controls
+      predictable method behavior, memory usage, mutation, equality,
+      exception handling, and performance in real .NET applications.
+    </p>
+  </header>
+
+  <section class="content-section">
+    <h2>1. What Is the Difference?</h2>
+    <p>
+      A <strong>value type</strong> stores its data directly in a variable.
+      When it is assigned or passed to a method, C# normally creates a copy
+      of that data.
+    </p>
+    <p>
+      A <strong>reference type</strong> stores a reference, or address, to an
+      object on the managed heap. Assigning or passing a reference variable
+      normally copies the reference, not the complete object.
+    </p>
+
+    <div class="processing-flow" aria-label="Value and reference type copy flow">
+      <div class="flow-step">Value variable: holds data</div>
+      <div class="flow-step">Assignment: copies data</div>
+      <div class="flow-step">Reference variable: holds address</div>
+      <div class="flow-step">Assignment: copies address</div>
+    </div>
+
+    <div class="info-box">
+      <strong>Interview definition:</strong>
+      A value type represents a value and is copied; a reference type represents
+      an object identity and is accessed through a reference. Both categories
+      follow their own copy, mutation, and equality semantics.
+    </div>
+  </section>
+
+  <section class="content-section">
+    <h2>2. Why Do We Need to Understand This?</h2>
+    <p>
+      Two methods can receive the same visible value and behave differently:
+      changing a value-typed argument may not change the caller, while changing
+      an object through a reference-typed argument may change shared state.
+    </p>
+    <ul class="learning-list">
+      <li>Prevents accidental mutation of shared objects.</li>
+      <li>Explains why method parameters sometimes appear unchanged.</li>
+      <li>Helps choose the correct type for small immutable values.</li>
+      <li>Improves API design and code-review decisions.</li>
+      <li>Reduces confusion about aliases, equality, boxing, and copying.</li>
+    </ul>
+  </section>
+
+  <section class="content-section">
+    <h2>3. Real-World Analogy</h2>
+    <p>
+      Think of a value type like a printed bank cheque: copying the cheque
+      creates a separate piece of paper. Editing the copy does not change the
+      original.
+    </p>
+    <p>
+      A reference type is like sharing a house address: two people can hold
+      different copies of the address but both can visit and modify the same
+      house. The address is copied; the house is shared.
+    </p>
+  </section>
+
+  <section class="content-section">
+    <h2>4. Common Value and Reference Types</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Examples</th>
+          <th>Typical Copy Behavior</th>
+          <th>Storage Concept</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Numeric value types</td>
+          <td><code>int</code>, <code>decimal</code>, <code>double</code></td>
+          <td>Copies the numeric data</td>
+          <td>Usually on the stack or inline in an object</td>
+        </tr>
+        <tr>
+          <td><code>struct</code></td>
+          <td><code>DateTime</code>, custom DTO values</td>
+          <td>Copies the whole struct value</td>
+          <td>Inline or in containing storage</td>
+        </tr>
+        <tr>
+          <td><code>enum</code></td>
+          <td>OrderStatus, PaymentMode</td>
+          <td>Copies the underlying value</td>
+          <td>Stored as a value type</td>
+        </tr>
+        <tr>
+          <td><code>class</code></td>
+          <td>Customer, Order, HttpClient</td>
+          <td>Copies the reference</td>
+          <td>Object is allocated on the managed heap</td>
+        </tr>
+        <tr>
+          <td>Built-in reference types</td>
+          <td><code>string</code>, arrays, delegates</td>
+          <td>Copies references; objects may be immutable or mutable</td>
+          <td>Object is allocated on the managed heap</td>
+        </tr>
+        <tr>
+          <td>Nullable value type</td>
+          <td><code>int?</code>, <code>DateTime?</code></td>
+          <td>Copies <code>HasValue</code> and the value or null state</td>
+          <td>Special nullable value-type representation</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="content-section">
+    <h2>5. Simple C# Example</h2>
+    <pre class="sql-code"><code>int firstNumber = 10;
+int secondNumber = firstNumber;
+
+secondNumber = 20;
+
+Console.WriteLine(firstNumber);   // 10
+Console.WriteLine(secondNumber);  // 20
+
+var firstOrder = new Order { Total = 100m };
+var secondOrder = firstOrder;
+
+secondOrder.Total = 250m;
+
+Console.WriteLine(firstOrder.Total);   // 250
+Console.WriteLine(secondOrder.Total);  // 250
+
+public class Order
+{
+    public decimal Total { get; set; }
+}</code></pre>
+    <p>
+      The integer assignment copies 10 into a separate variable. The order
+      assignment copies only the reference, so both variables refer to the same
+      <code>Order</code> object.
+    </p>
+  </section>
+
+  <section class="content-section">
+    <h2>6. How Copying Works Internally</h2>
+    <div class="processing-flow" aria-label="Copying flow for C# types">
+      <div class="flow-step">1. Variable is declared</div>
+      <div class="flow-step">2. Value or reference is stored</div>
+      <div class="flow-step">3. Assignment occurs</div>
+      <div class="flow-step">4. Value or address is copied</div>
+      <div class="flow-step">5. Variables are read or mutated</div>
+    </div>
+    <p>
+      The CLR manages object allocation and garbage collection for reference
+      types. A reference variable does not itself contain the complete object.
+      It contains information that lets the runtime locate the object.
+    </p>
+    <p>
+      A value type can be stored in a stack frame, inline inside another object,
+      in an array, or in a reference-type field. Saying that value types are
+      “always on the stack” is therefore an incomplete interview answer.
+    </p>
+  </section>
+
+  <section class="content-section">
+    <h2>7. Method Parameters</h2>
+    <p>
+      By default, C# passes both value types and references by value. The
+      important distinction is what is being passed: a copied value or a copied
+      reference.
+    </p>
+    <pre class="sql-code"><code>void UpdateInt(int value)
+{
+    value = 50;
+}
+
+void UpdateOrder(Order order)
+{
+    order.Total = 50m;
+}
+
+void ReplaceOrder(Order order)
+{
+    order = new Order { Total = 75m };
+}
+
+var quantity = 10;
+var currentOrder = new Order { Total = 100m };
+
+UpdateInt(quantity);
+UpdateOrder(currentOrder);
+ReplaceOrder(currentOrder);
+
+Console.WriteLine(quantity);       // 10
+Console.WriteLine(currentOrder.Total); // 50</code></pre>
+    <p>
+      <code>UpdateInt</code> changes only its parameter copy.
+      <code>UpdateOrder</code> follows the shared reference and mutates the
+      caller’s object. <code>ReplaceOrder</code> assigns a new object only to
+      the parameter copy of the reference, so the caller’s variable still points
+      to the original object.
+    </p>
+  </section>
+
+  <section class="content-section">
+    <h2>8. ref, out, and in</h2>
+    <p>
+      Normal parameter passing copies the argument value or reference. The
+      <code>ref</code>, <code>out</code>, and <code>in</code> modifiers change
+      how the parameter is connected to the caller.
+    </p>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Modifier</th>
+          <th>Caller Variable</th>
+          <th>Method Return Relationship</th>
+          <th>Typical Use</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ref</code></td>
+          <td>Must be initialized</td>
+          <td>Method may read and update the same variable</td>
+          <td>In-place updates and Try-style APIs</td>
+        </tr>
+        <tr>
+          <td><code>out</code></td>
+          <td>Does not need to be initialized</td>
+          <td>Method must assign it before returning</td>
+          <td>Returning success plus an output value</td>
+        </tr>
+        <tr>
+          <td><code>in</code></td>
+          <td>Usually initialized by the caller</td>
+          <td>Method cannot reassign or modify the argument</td>
+          <td>Readonly large struct passing</td>
+        </tr>
+      </tbody>
+    </table>
+    <pre class="sql-code"><code>bool TryParseAmount(string text, out decimal amount)
+{
+    amount = 0m;
+    return decimal.TryParse(text, out amount);
+}
+
+void ApplyDiscount(ref decimal total, decimal discount)
+{
+    total -= discount;
+}
+
+decimal total = 500m;
+ApplyDiscount(ref total, 50m);
+
+if (TryParseAmount("125.50", out decimal parsedAmount))
+{
+    Console.WriteLine(parsedAmount);
+}</code></pre>
+  </section>
+
+  <section class="content-section">
+    <h2>9. Mutable and Immutable Types</h2>
+    <p>
+      The reference-versus-value distinction is not identical to mutable-versus-
+      immutable. A reference type can be immutable, and a value type can contain
+      mutable reference fields.
+    </p>
+    <pre class="sql-code"><code>public readonly record struct Money(decimal Amount, string Currency);
+
+public sealed class Customer
+{
+    public required string Name { get; init; }
+    public required IReadOnlyList&lt;string&gt; Tags { get; init; }
+}</code></pre>
+    <p>
+      <code>Money</code> is a value type with immutable fields. <code>Customer</code>
+      is a reference type, and changing or sharing its <code>Tags</code> collection
+      can still introduce mutable alias behavior unless the collection itself is
+      safely copied or made read-only.
+    </p>
+  </section>
+
+  <section class="content-section">
+    <h2>10. Equality Is a Separate Concept</h2>
+    <p>
+      Value types usually use value-oriented equality. Two values are equal if
+      their meaningful fields have equal values. Reference types usually default
+      to reference equality, meaning the same object instance is required.
+    </p>
+    <pre class="sql-code"><code>var pointA = new Point(10, 20);
+var pointB = new Point(10, 20);
+
+Console.WriteLine(pointA == pointB); // true for a record struct
+
+var firstOrder = new Order { Id = 101 };
+var secondOrder = new Order { Id = 101 };
+
+Console.WriteLine(firstOrder == secondOrder); // false for a normal class
+
+public readonly record struct Point(int X, int Y);
+
+public class Order
+{
+    public int Id { get; init; }
+}</code></pre>
+  </section>
+
+  <section class="content-section">
+    <h2>11. Enterprise Example: Order Calculation</h2>
+    <p>
+      In an ASP.NET Core service, immutable money values can be passed around
+      without changing caller state. Mutable entities can represent persistence
+      identity and require a clear unit-of-work boundary.
+    </p>
+    <pre class="sql-code"><code>public readonly record struct Money(decimal Amount, string Currency)
+{
+    public Money
+    {
+        if (Amount &lt; 0)
+            throw new ArgumentOutOfRangeException(nameof(Amount));
+        if (string.IsNullOrWhiteSpace(Currency))
+            throw new ArgumentException("Currency is required.", nameof(Currency));
+    }
+}
+
+public sealed class Order
+{
+    public Guid Id { get; init; }
+    public decimal Total { get; private set; }
+
+    public void ApplyDiscount(decimal discount)
+    {
+        if (discount &lt; 0 || discount &gt; Total)
+            throw new ArgumentOutOfRangeException(nameof(discount));
+
+        Total -= discount;
+    }
+}
+
+public sealed class OrderCalculator
+{
+    public Money Calculate(Money subtotal, decimal taxRate)
+    {
+        var tax = subtotal.Amount * taxRate;
+        return new Money(subtotal.Amount + tax, subtotal.Currency);
+    }
+}</code></pre>
+    <p>
+      <code>Money</code> is best represented as a small immutable value.
+      <code>Order</code> is a stateful entity and belongs as a reference type
+      because mutations occur over time and the object has identity.
+    </p>
+  </section>
+
+  <section class="content-section">
+    <h2>12. Value Type vs Reference Type Comparison</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Concern</th>
+          <th>Value Type</th>
+          <th>Reference Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Assignment</td>
+          <td>Copies the value</td>
+          <td>Copies the reference</td>
+        </tr>
+        <tr>
+          <td>Mutation</td>
+          <td>Changes only the copied variable</td>
+          <td>May change a shared object</td>
+        </tr>
+        <tr>
+          <td>Default value</td>
+          <td>Zero-filled or logically empty</td>
+          <td><code>null</code></td>
+        </tr>
+        <tr>
+          <td>Typical equality</td>
+          <td>Field/value equality</td>
+          <td>Reference identity unless overridden</td>
+        </tr>
+        <tr>
+          <td>Inheritance</td>
+          <td>Cannot be a base for custom inheritance</td>
+          <td>Supports class inheritance</td>
+        </tr>
+        <tr>
+          <td>Common allocation</td>
+          <td>Inline where possible</td>
+          <td>Managed heap object</td>
+        </tr>
+        <tr>
+          <td>Good fit</td>
+          <td>Small, meaningful, short-lived values</td>
+          <td>Identity, lifecycle, and mutable domain entities</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="content-section">
+    <h2>13. Boxing and Unboxing</h2>
+    <p>
+      Boxing converts a value type to an <code>object</code> or interface
+      reference. The CLR creates a heap object containing the value. Unboxing
+      extracts the value and verifies its type.
+    </p>
+    <pre class="sql-code"><code>object value = 42;        // Boxing
+int number = (int)value;  // Unboxing
+
+// May box in some overload resolution paths.
+PrintValue(42);
+
+void PrintValue(object? value)
+{
+    Console.WriteLine(value);
+}</code></pre>
+    <div class="info-box">
+      <strong>Performance note:</strong>
+      Repeated boxing in hot paths causes allocations and type checking.
+      Prefer generics, overloads, and value-aware APIs instead of treating
+      <code>object</code> as a general-purpose data container.
+    </div>
+  </section>
+
+  <section class="content-section">
+    <h2>14. Common Interview Questions</h2>
+    <ol>
+      <li>
+        <strong>What is the difference between a value type and a reference type?</strong>
+        A value type stores its data directly and is copied by value. A reference
+        type stores a reference to a heap object and normally copies that reference.
+      </li>
+      <li>
+        <strong>Is every value type stored on the stack?</strong>
+        No. Storage location depends on context. A struct can be contained inside
+        an object or array and exist in heap-backed storage.
+      </li>
+      <li>
+        <strong>What happens when an object reference is assigned to another variable?</strong>
+        Both variables can refer to the same instance. Mutating the object through
+        either reference affects the shared object.
+      </li>
+      <li>
+        <strong>Are method parameters passed by reference?</strong>
+        No by default. C# passes parameter values normally, but the parameter value
+        can be a reference to an object.
+      </li>
+      <li>
+        <strong>Why are large structs sometimes passed with <code>in</code>?</strong>
+        <code>in</code> communicates that the argument will not be modified and can
+        avoid unnecessary copying for large readonly structs.
+      </li>
+      <li>
+        <strong>What is boxing?</strong>
+        It wraps a value type in a heap object or interface reference.
+      </li>
+      <li>
+        <strong>When should you prefer a class over a struct?</strong>
+        Prefer a class for identity, mutable lifecycle, inheritance, or objects
+        larger than a few fields.
+      </li>
+      <li>
+        <strong>Can a struct contain reference types?</strong>
+        Yes. The struct itself is copied, but its reference fields can still
+        point to shared objects.
+      </li>
+      <li>
+        <strong>How does null apply?</strong>
+        Ordinary reference types can be null; ordinary value types cannot without
+        a nullable wrapper such as <code>int?</code>.
+      </li>
+      <li>
+        <strong>What is an alias in C#?</strong>
+        An alias is a second variable or property that refers to the same object
+        as another reference.
+      </li>
+    </ul>
+  </section>
+
+  <section class="content-section">
+    <h2>15. Challenging Senior-Level Scenario</h2>
+    <p>
+      A pricing service exposes a <code>DiscountRequest</code> object and returns
+      a mutable <code>Money</code> struct from a collection. Engineers report
+      inconsistent totals because a method changes a field in the struct copy
+      returned from a dictionary.
+    </p>
+    <div class="info-box">
+      <strong>Senior solution:</strong>
+      Use immutable value objects for <code>Money</code>, return them through
+      complete DTO or record APIs, and keep mutable entities inside an explicit
+      application or unit-of-work boundary. Do not solve aliasing with a
+      defensive copy everywhere unless ownership and mutation requirements
+      justify it.
+    </div>
+  </section>
+
+  <section class="content-section">
+    <h2>16. Common Mistakes</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Mistake</th>
+          <th>Why It Is Wrong</th>
+          <th>Correction</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>“All structs are faster than classes.”</td>
+          <td>Copying large structs can cost more than copying references.</td>
+          <td>Measure and prefer small, meaningful immutable structs.</td>
+        </tr>
+        <tr>
+          <td>Making every DTO a struct</td>
+          <td>Large or mutable structs create surprising copy behavior.</td>
+          <td>Use classes or records based on identity and mutation needs.</td>
+        </tr>
+        <tr>
+          <td>Assuming assignment clones an object</td>
+          <td>Classes copy references, not the complete object.</td>
+          <td>Use explicit clone or copy methods when independent state is required.</td>
+        </tr>
+        <tr>
+          <td>Using <code>object</code> for hot-loop values</td>
+          <td>Boxing creates heap allocations.</td>
+          <td>Use generics or typed overloads.</td>
+        </tr>
+        <tr>
+          <td>Ignoring reference fields inside structs</td>
+          <td>The struct copy may share mutable arrays or collections.</td>
+          <td>Make the complete value immutable or use a class.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="content-section">
+    <h2>17. When to Use Each</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Use a Value Type</th>
+          <th>Use a Reference Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Small immutable measurements or coordinates.</td>
+          <td>Mutable domain entities with identity.</td>
+        </tr>
+        <tr>
+          <td>Business values such as money, range, or postal coordinates.</td>
+          <td>Objects requiring inheritance or polymorphism.</td>
+        </tr>
+        <tr>
+          <td>A value has no <code>null</code> lifecycle meaning.</td>
+          <td>Object lifetime or shared state must be represented.</td>
+        </tr>
+        <tr>
+          <td>Equality means field values are equal.</td>
+          <td>Equality means object identity unless explicitly customized.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="content-section">
+    <h2>18. Hands-On Exercises</h2>
+    <ol>
+      <li>Create a <code>Point</code> record struct and compare two equal values.</li>
+      <li>Write a method that receives a normal class reference and mutates it.</li>
+      <li>Write a method that replaces a class reference instead of mutating it.</li>
+      <li>Demonstrate <code>ref</code>, <code>out</code>, and <code>in</code> with three methods.</li>
+      <li>Create a mutable struct and show why copying it can cause bugs.</li>
+    </ol>
+  </section>
+
+  <section class="content-section">
+    <h2>19. 60-Second Interview Answer</h2>
+    <p>
+      In C#, value types store their data directly and assignments normally copy
+      the value, while reference types store references to managed heap objects
+      and assignments copy the reference. Because C# passes parameters by value
+      by default, a reference parameter still copies the reference, allowing
+      methods to mutate the shared object but not replace the caller’s variable.
+      Value types are good for small immutable domain values, while classes are
+      better for identity and mutable lifecycle. Equality, mutability, storage,
+      and boxing are separate decisions. Senior developers should choose types
+      based on domain semantics and avoid assumptions about every struct being
+      faster or every object being a heap allocation detail.
+    </p>
+  </section>
+
+  <section class="outcome-section">
+    <h2>20. Key Takeaways</h2>
+    <ul class="learning-list">
+      <li>Assignment copies a value or copies a reference.</li>
+      <li>Parameters are normally passed by value, even for reference types.</li>
+      <li>Reference variables can be aliases for the same mutable object.</li>
+      <li>Do not say that all value types are always stored on the stack.</li>
+      <li>Use classes for identity and mutable lifecycles.</li>
+      <li>Use small immutable structs or records for meaningful value concepts.</li>
+      <li>Use <code>ref</code>, <code>out</code>, and <code>in</code> deliberately.</li>
+      <li>Test performance-sensitive code instead of assuming struct or class is faster.</li>
+    </ul>
+  </section>
+</main>

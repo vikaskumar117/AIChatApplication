@@ -10,7 +10,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, distinctUntilChanged, map, of, switchMap } from 'rxjs';
-import learningData from './learning-data.json';
+import learningData from './learning-syllabus.json';
 
 type LearningModule = (typeof learningData)[number];
 type LearningTopic = LearningModule['topics'][number];

@@ -1,7 +1,7 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
-import learningData from './learning/learning-data.json';
+import learningData from './learning/learning-syllabus.json';
 
 @Component({
   selector: 'app-learning-page',
